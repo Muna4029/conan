@@ -28,7 +28,7 @@ class XcodeBuild(object):
             sdk = "{}{}".format(self._sdk, self._sdk_version)
         return "SDKROOT={}".format(sdk) if sdk else ""
 
-    def build(self, xcodeproj, target=None):
+    def build(self, xcodeproj, target=None, configuration=None):
         """
         Call to ``xcodebuild`` to build a Xcode project.
 
@@ -39,8 +39,9 @@ class XcodeBuild(object):
         :return: the return code for the launched ``xcodebuild`` command.
         """
         target = "-target {}".format(target) if target else "-alltargets"
+        build_config = configuration or self._build_type
         cmd = "xcodebuild -project {} -configuration {} -arch {} " \
-              "{} {} {}".format(xcodeproj, self._build_type, self._arch, self._sdkroot,
+              "{} {} {}".format(xcodeproj, build_config, self._arch, self._sdkroot,
                                 self._verbosity, target)
 
         deployment_target_key = xcodebuild_deployment_target_key(self._os)
