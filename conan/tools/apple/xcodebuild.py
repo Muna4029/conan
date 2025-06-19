@@ -28,7 +28,7 @@ class XcodeBuild(object):
             sdk = "{}{}".format(self._sdk, self._sdk_version)
         return "SDKROOT={}".format(sdk) if sdk else ""
 
-    def build(self, xcodeproj, target=None, configuration=None):
+    def build(self, xcodeproj, target=None, configuration=None, build_options=[]):
         """
         Call to ``xcodebuild`` to build a Xcode project.
 
@@ -50,4 +50,5 @@ class XcodeBuild(object):
         if deployment_target_key and self._os_version:
             cmd += f" {deployment_target_key}={self._os_version}"
 
+        cmd += f" {" ".join(build_options)}"
         self._conanfile.run(cmd)
