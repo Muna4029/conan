@@ -41,7 +41,7 @@ class XcodeBuild(object):
         target = "-target {}".format(target) if target else "-alltargets"
         build_config = configuration or self._build_type
         cmd = "xcodebuild -project '{}' -configuration {} -arch {} " \
-              "SYMROOT='{}' OBJROOT='{}' " \
+              "SYMROOT='{}' OBJROOT='{}' RUN_CLANG_STATIC_ANALYZER=NO " \
               "{} {} {}".format(xcodeproj, build_config, self._arch,
                                 self._conanfile.build_folder, self._conanfile.build_folder,
                                 self._sdkroot, self._verbosity, target)
