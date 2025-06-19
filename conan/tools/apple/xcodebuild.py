@@ -52,5 +52,5 @@ class XcodeBuild(object):
         if deployment_target_key and self._os_version:
             cmd += f" {deployment_target_key}={self._os_version}"
 
-        cmd += f" {" ".join(build_options)}"
+        cmd += f" {' '.join(build_options)}"
         self._conanfile.run(cmd)
