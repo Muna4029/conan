@@ -36,6 +36,8 @@ class XcodeBuild(object):
         :param target: the target to build, in case this argument is passed to the ``build()``
                        method it will add the ``-target`` argument to the build system call. If not passed, it
                        will build all the targets passing the ``-alltargets`` argument instead.
+        :param configuration: the configuration to build, defaults to profile's ``settings.build_type``.
+        :param build_options: arbitrary options (list of strings) to be passed to ``xcodebuild`` as is.
         :return: the return code for the launched ``xcodebuild`` command.
         """
         target = "-target {}".format(target) if target else "-alltargets"
