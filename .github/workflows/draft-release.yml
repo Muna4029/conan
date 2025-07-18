@@ -1,0 +1,128 @@
+name: Build and Draft Release
+
+on:
+  push:
+    branches:
+      - 'develop2'
+      - 'release/2.*'
+      - 'czoido/test-release' # remove after testing
+
+jobs:
+  prepare:
+    name: Prepare Build
+    runs-on: ubuntu-latest
+    outputs:
+      package_version: ${{ steps.vars.outputs.package_version }}
+      is_release_branch: ${{ steps.vars.outputs.is_release_branch }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version and determine branch type
+        id: vars
+        run: |
+          # Extract version from __init__.py
+          VERSION=$(awk -F"'" '/__version__ =/ {print $2}' conan/__init__.py)
+          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Check if it is a release branch and set an output
+          IS_RELEASE_BRANCH="false"
+          if [[ "${{ github.ref_name }}" == release/2.* ]]; then
+            IS_RELEASE_BRANCH="true"
+          fi
+          echo "is_release_branch=$IS_RELEASE_BRANCH" >> $GITHUB_OUTPUT
+
+          echo "Version found: $VERSION"
+          echo "Is release branch: $IS_RELEASE_BRANCH"
+
+  package:
+    name: Package for ${{ matrix.platform }}/${{ matrix.arch }}
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux
+            arch: x86_64
+            runner: ubuntu-latest
+          - platform: Windows
+            arch: x86_64
+            runner: windows-latest
+          - platform: Windows
+            arch: i686
+            runner: windows-latest
+          - platform: M2Macos
+            arch: arm64
+            runner: macos-14
+          - platform: M2Macos
+            arch: x86_64
+            runner: macos-latest
+          - platform: LinuxArm
+            arch: arm64
+            runner: ubuntu-22.04-arm
+    steps:
+      - name: Generate Read-Only App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_RELEASE_ID }}
+          private_key: ${{ secrets.GH_APP_RELEASE_PRIVATE_KEY }}
+          permission-contents: read
+
+      - name: Checkout release-tools repository
+        uses: actions/checkout@v4
+        with:
+          repository: conan-io/release-tools
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Build packages
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          rm -rf dist
+          ./jenkins/build_packages.sh ${{ needs.prepare.outputs.package_version }} ${{ github.sha }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conan-packages-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/*
+
+  # # Job to create a DRAFT release (only for release branches)
+  # create-draft:
+  #   name: Create Draft Release
+  #   needs: [prepare, package]
+  #   runs-on: ubuntu-latest
+  #   # This job only runs for branches like 'release/2.X'
+  #   if: needs.prepare.outputs.is_release_branch == 'true'
+  #   steps:
+  #     - name: Generate Write-Access App Token
+  #       id: generate_token
+  #       uses: actions/create-github-app-token@v2
+  #       with:
+  #         app_id: ${{ secrets.GH_APP_RELEASE_ID }}
+  #         private_key: ${{ secrets.GH_APP_RELEASE_PRIVATE_KEY }}
+  #         permission-contents: write
+
+  #     - name: Download all packages
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: conan-packages
+  #         path: dist
+
+  #     - name: Create DRAFT GitHub Release
+  #       env:
+  #         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+  #       run: |
+  #         # Create a release in draft mode
+  #         gh release create ${{ needs.prepare.outputs.package_version }} \
+  #            --repo ${{ github.repository }} \
+  #            --title "Conan ${{ needs.prepare.outputs.package_version }}" \
+  #            --notes "Release draft for version ${{ needs.prepare.outputs.package_version }}. Please review and publish." \
+  #            --target ${{ github.sha }} \
+  #            --draft \
+  #            dist/*
