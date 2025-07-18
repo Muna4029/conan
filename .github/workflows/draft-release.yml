@@ -26,7 +26,7 @@ jobs:
           echo "conan_version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version found: $VERSION"
 
-  generate_app_token:
+  generate-app-token:
     name: Generate App Token
     runs-on: ubuntu-latest
     needs: prepare
@@ -47,7 +47,7 @@ jobs:
 
   package:
     name: Package for ${{ matrix.platform }}/${{ matrix.arch }}
-    needs: [prepare, generate_app_token]
+    needs: [prepare, generate-app-token]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -76,7 +76,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: conan-io/release-tools
-          token: ${{ needs.generate_app_token.outputs.token }}
+          token: ${{ needs.generate-app-token.outputs.token }}
 
       - name: Build packages
         shell: bash
