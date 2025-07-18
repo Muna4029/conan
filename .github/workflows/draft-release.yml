@@ -37,18 +37,18 @@ jobs:
           - platform: Linux
             arch: x86_64
             runner: ubuntu-latest
-          # - platform: Windows
-          #   arch: x86_64
-          #   runner: windows-latest
-          # - platform: Windows
-          #   arch: i686
-          #   runner: windows-latest
-          - platform: macOS
+          - platform: Windows
+            arch: x86_64
+            runner: windows-latest
+          - platform: Windows
+            arch: i686
+            runner: windows-latest
+          - platform: mac
             arch: arm64
             runner: macos-14
-          - platform: macOS
+          - platform: mac
             arch: x86_64
-            runner: macos-latest
+            runner: macos-14
           - platform: LinuxArm
             arch: arm64
             runner: ubuntu-22.04-arm
