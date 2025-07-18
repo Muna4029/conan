@@ -43,10 +43,10 @@ jobs:
           - platform: Windows
             arch: i686
             runner: windows-latest
-          - platform: mac
+          - platform: macOS
             arch: arm64
             runner: macos-14
-          - platform: mac
+          - platform: macOS
             arch: x86_64
             runner: macos-14
           - platform: LinuxArm
