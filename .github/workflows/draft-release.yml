@@ -43,15 +43,15 @@ jobs:
           # - platform: Windows
           #   arch: i686
           #   runner: windows-latest
-          # - platform: M2Macos
-          #   arch: arm64
-          #   runner: macos-14
-          # - platform: M2Macos
-          #   arch: x86_64
-          #   runner: macos-latest
-          # - platform: LinuxArm
-          #   arch: arm64
-          #   runner: ubuntu-22.04-arm
+          - platform: macOS
+            arch: arm64
+            runner: macos-14
+          - platform: macOS
+            arch: x86_64
+            runner: macos-latest
+          - platform: LinuxArm
+            arch: arm64
+            runner: ubuntu-22.04-arm
     steps:
       - name: Generate Read-Only App Token
         id: generate_token
