@@ -3,8 +3,8 @@ name: Build and Draft Release
 on:
   push:
     branches:
-      - 'develop2'
-      - 'release/2.*'
+      # - 'develop2'
+      # - 'release/2.*'
       - 'czoido/test-release' # remove after testing
 
 jobs:
