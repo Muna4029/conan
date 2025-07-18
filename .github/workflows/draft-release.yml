@@ -13,28 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       conan_version: ${{ steps.vars.outputs.conan_version }}
-      is_release_branch: ${{ steps.vars.outputs.is_release_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract version and determine branch type
+      - name: Extract version
         id: vars
         run: |
           # Extract version from __init__.py
           VERSION=$(awk -F"'" '/__version__ =/ {print $2}' conan/__init__.py)
           echo "conan_version=$VERSION" >> $GITHUB_OUTPUT
-
-          # Check if it is a release branch and set an output
-          IS_RELEASE_BRANCH="false"
-          if [[ "${{ github.ref_name }}" == release/2.* ]]; then
-            IS_RELEASE_BRANCH="true"
-          fi
-          echo "is_release_branch=$IS_RELEASE_BRANCH" >> $GITHUB_OUTPUT
-
           echo "Version found: $VERSION"
-          echo "Is release branch: $IS_RELEASE_BRANCH"
 
   package:
     name: Package for ${{ matrix.platform }}/${{ matrix.arch }}
@@ -98,7 +88,7 @@ jobs:
   #   needs: [prepare, package]
   #   runs-on: ubuntu-latest
   #   # This job only runs for branches like 'release/2.X'
-  #   if: needs.prepare.outputs.is_release_branch == 'true'
+  #   if: startsWith(github.ref_name, 'release/2.')
   #   steps:
   #     - name: Generate Write-Access App Token
   #       id: generate_token
