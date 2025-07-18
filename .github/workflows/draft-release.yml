@@ -43,7 +43,7 @@ jobs:
           - platform: Windows
             arch: i686
             runner: windows-latest
-          - platform: WindowsArm
+          - platform: Windows
             arch: arm64
             runner: windows-11-arm
           - platform: Macos
@@ -52,7 +52,7 @@ jobs:
           - platform: Macos
             arch: x86_64
             runner: macos-14
-          - platform: LinuxArm
+          - platform: Linux
             arch: arm64
             runner: ubuntu-22.04-arm
     steps:
