@@ -43,6 +43,9 @@ jobs:
           - platform: Windows
             arch: i686
             runner: windows-latest
+          - platform: WindowsArm
+            arch: arm64
+            runner: windows-11-arm
           - platform: Macos
             arch: arm64
             runner: macos-14
