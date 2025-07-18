@@ -148,6 +148,11 @@ jobs:
         with:
           name: release-notes
 
+      - name: List downloaded files
+        run: |
+          ls
+          ls dist
+
   #     - name: Create DRAFT GitHub Release
   #       env:
   #         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
