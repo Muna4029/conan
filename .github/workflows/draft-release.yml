@@ -12,7 +12,7 @@ jobs:
     name: Prepare Build
     runs-on: ubuntu-latest
     outputs:
-      package_version: ${{ steps.vars.outputs.package_version }}
+      conan_version: ${{ steps.vars.outputs.conan_version }}
       is_release_branch: ${{ steps.vars.outputs.is_release_branch }}
 
     steps:
@@ -24,7 +24,7 @@ jobs:
         run: |
           # Extract version from __init__.py
           VERSION=$(awk -F"'" '/__version__ =/ {print $2}' conan/__init__.py)
-          echo "package_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "conan_version=$VERSION" >> $GITHUB_OUTPUT
 
           # Check if it is a release branch and set an output
           IS_RELEASE_BRANCH="false"
@@ -84,7 +84,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
         run: |
           rm -rf dist
-          ./jenkins/build_packages.sh ${{ needs.prepare.outputs.package_version }} ${{ github.sha }}
+          ./jenkins/build_packages.sh ${{ needs.prepare.outputs.conan_version }} ${{ github.sha }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -119,10 +119,10 @@ jobs:
   #         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
   #       run: |
   #         # Create a release in draft mode
-  #         gh release create ${{ needs.prepare.outputs.package_version }} \
+  #         gh release create ${{ needs.prepare.outputs.conan_version }} \
   #            --repo ${{ github.repository }} \
-  #            --title "Conan ${{ needs.prepare.outputs.package_version }}" \
-  #            --notes "Release draft for version ${{ needs.prepare.outputs.package_version }}. Please review and publish." \
+  #            --title "Conan ${{ needs.prepare.outputs.conan_version }}" \
+  #            --notes "Release draft for version ${{ needs.prepare.outputs.conan_version }}. Please review and publish." \
   #            --target ${{ github.sha }} \
   #            --draft \
   #            dist/*
