@@ -15,7 +15,7 @@ jobs:
       conan_version: ${{ steps.vars.outputs.conan_version }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout conan repository
         uses: actions/checkout@v4
 
       - name: Extract version
@@ -25,6 +25,38 @@ jobs:
           VERSION=$(awk -F"'" '/__version__ =/ {print $2}' conan/__init__.py)
           echo "conan_version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version found: $VERSION"
+
+      - name: Generate Read-Only App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_APP_RELEASE_ID }}
+          private-key: ${{ secrets.GH_APP_RELEASE_PRIVATE_KEY }}
+          permission-contents: read
+          owner: conan-io
+          repositories: |
+            conan
+            release-tools
+
+      - name: Checkout release-tools repository
+        uses: actions/checkout@v4
+        with:
+          repository: conan-io/release-tools
+          token: ${{ steps.generate_token.outputs.token }}
+          path: release-tools
+
+      - name: Get Changelog
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          pip install PyGithub
+          python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md
+
+      - name: Upload changelog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes-${{ steps.vars.outputs.conan_version }}.md
 
   package:
     name: Package for ${{ matrix.platform }}/${{ matrix.arch }}
@@ -89,38 +121,42 @@ jobs:
           name: conan-artifacts-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/*
 
-  # # Job to create a DRAFT release (only for release branches)
-  # create-draft:
-  #   name: Create Draft Release
-  #   needs: [prepare, package]
-  #   runs-on: ubuntu-latest
-  #   # This job only runs for branches like 'release/2.X'
-  #   if: startsWith(github.ref_name, 'release/2.')
-  #   steps:
-  #     - name: Generate Write-Access App Token
-  #       id: generate_token
-  #       uses: actions/create-github-app-token@v2
-  #       with:
-  #         app-id: ${{ secrets.GH_APP_RELEASE_ID }}
-  #         private-key: ${{ secrets.GH_APP_RELEASE_PRIVATE_KEY }}
-  #         permission-contents: write
+  # Job to create a DRAFT release (only for release branches)
+  create-draft:
+    name: Create Draft Release
+    needs: [prepare, package]
+    runs-on: ubuntu-latest
+    # This job only runs for branches like 'release/2.X'
+    # if: startsWith(github.ref_name, 'release/2.') # uncomment later, now for testing
+    steps:
+      - name: Generate Write-Access App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_APP_RELEASE_ID }}
+          private-key: ${{ secrets.GH_APP_RELEASE_PRIVATE_KEY }}
+          permission-contents: read # change to write for the real one
 
-  #     - name: Download all packages
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: conan-artifacts
-  #         path: dist
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          name: conan-artifacts-*
+          path: dist
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
 
   #     - name: Create DRAFT GitHub Release
   #       env:
   #         GH_TOKEN: ${{ steps.generate_token.outputs.token }}
   #       run: |
-  #         # Create a release in draft mode
+  #         # Create a release in draft mode using the generated changelog
   #         gh release create ${{ needs.prepare.outputs.conan_version }} \
   #            --repo ${{ github.repository }} \
   #            --title "Conan ${{ needs.prepare.outputs.conan_version }}" \
-  #            --notes "Release draft for version ${{ needs.prepare.outputs.conan_version }}. Please review and publish." \
+  #            --notes-file release-notes-${{ needs.prepare.outputs.conan_version }}.md \
   #            --target ${{ github.sha }} \
   #            --draft \
   #            dist/*
-
