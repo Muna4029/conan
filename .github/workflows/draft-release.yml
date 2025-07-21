@@ -50,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           pip install PyGithub
-          python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md
+          python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md > release-notes-${{ steps.vars.outputs.conan_version }}.md 2>&1 || true
 
       - name: Upload changelog artifact
         uses: actions/upload-artifact@v4
