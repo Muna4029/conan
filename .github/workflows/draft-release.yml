@@ -118,7 +118,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: conan-artifacts-${{ matrix.platform }}-${{ matrix.arch }}
+          name: conan-packages
           path: dist/*
 
   # Job to create a DRAFT release (only for release branches)
@@ -140,7 +140,7 @@ jobs:
       - name: Download all packages
         uses: actions/download-artifact@v4
         with:
-          name: conan-artifacts-*
+          name: conan-packages
           path: dist
 
       - name: Download changelog
