@@ -195,7 +195,9 @@ jobs:
 
       - name: List downloaded files
         run: |
+          echo "ls"
           ls
+          echo "ls dist"
           ls dist
 
   #     - name: Create DRAFT GitHub Release
