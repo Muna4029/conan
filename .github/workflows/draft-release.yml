@@ -166,7 +166,7 @@ jobs:
         shell: bash
         run: |
           echo "${{ secrets.RELEASE_SIGN_PRIVATE_KEY }}" | gpg --batch --import
-          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.GPG_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.RELEASE_SIGN_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
 
       - name: Generate and Sign Checksums
         id: checksum
@@ -177,7 +177,7 @@ jobs:
           CHECKSUM_FILE="${{ needs.prepare.outputs.conan_version }}-SHA-256.txt"
           cd dist
           find . -type f -name 'conan-*' -print0 | xargs -0 sha256sum > $CHECKSUM_FILE
-          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --local-user "${{ secrets.GPG_KEY_ID }}" $CHECKSUM_FILE
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --local-user "${{ secrets.RELEASE_SIGN_KEY_ID }}" $CHECKSUM_FILE
           cd ..
           echo "checksum_file_name=$CHECKSUM_FILE" >> $GITHUB_OUTPUT
 
@@ -190,8 +190,8 @@ jobs:
       - name: Cleanup GPG keys
         shell: bash
         run: |
-          gpg --batch --yes --delete-secret-keys "${{ secrets.GPG_KEY_ID }}"
-          gpg --batch --yes --delete-keys "${{ secrets.GPG_KEY_ID }}"
+          gpg --batch --yes --delete-secret-keys "${{ secrets.RELEASE_SIGN_KEY_ID }}"
+          gpg --batch --yes --delete-keys "${{ secrets.RELEASE_SIGN_KEY_ID }}"
 
       - name: List downloaded files
         run: |
