@@ -7,6 +7,9 @@ on:
       # - 'release/2.*'
       - 'czoido/test-release' # remove after testing
 
+permissions:
+  contents: read
+
 jobs:
   prepare:
     name: Prepare Build
@@ -20,6 +23,7 @@ jobs:
 
       - name: Extract version
         id: vars
+        shell: bash
         run: |
           # Extract version from __init__.py
           VERSION=$(awk -F"'" '/__version__ =/ {print $2}' conan/__init__.py)
@@ -48,6 +52,7 @@ jobs:
       - name: Get Changelog
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        shell: bash
         run: |
           pip install PyGithub
           python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md > release-notes-${{ steps.vars.outputs.conan_version }}.md 2>&1 || true
@@ -132,6 +137,8 @@ jobs:
     needs: [prepare, package]
     runs-on: ubuntu-latest
     # if: startsWith(github.ref_name, 'release/2.') # uncomment later, now for testing
+    permissions:
+      contents: write
     steps:
       - name: Generate Write-Access App Token
         id: generate_token
@@ -154,26 +161,37 @@ jobs:
           name: release-notes
 
       - name: Setup GPG
+        env:
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        shell: bash
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.GPG_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.GPG_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
 
       - name: Generate and Sign Checksums
         id: checksum
+        shell: bash
+        env:
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           CHECKSUM_FILE="${{ needs.prepare.outputs.conan_version }}-SHA-256.txt"
           cd dist
-          # Use find to avoid issues with too many arguments for sha256sum
-          find . -type f -name 'conan-*' -exec sha256sum {} + > $CHECKSUM_FILE
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --local-user "${{ secrets.GPG_KEY_ID }}" $CHECKSUM_FILE
+          find . -type f -name 'conan-*' -print0 | xargs -0 sha256sum > $CHECKSUM_FILE
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --local-user "${{ secrets.GPG_KEY_ID }}" $CHECKSUM_FILE
           cd ..
           echo "checksum_file_name=$CHECKSUM_FILE" >> $GITHUB_OUTPUT
 
       - name: Verify Signed Checksums
+        shell: bash
         run: |
-          echo "Verifying GPG signature..."
           echo "${{ secrets.GPG_PUBLIC_KEY }}" | gpg --batch --import
           gpg --verify dist/${{ steps.checksum.outputs.checksum_file_name }}.asc dist/${{ steps.checksum.outputs.checksum_file_name }}
+
+      - name: Cleanup GPG keys
+        shell: bash
+        run: |
+          gpg --batch --yes --delete-secret-keys "${{ secrets.GPG_KEY_ID }}"
+          gpg --batch --yes --delete-keys "${{ secrets.GPG_KEY_ID }}"
 
       - name: List downloaded files
         run: |
