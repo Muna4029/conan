@@ -162,17 +162,17 @@ jobs:
 
       - name: Setup GPG
         env:
-          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          PASSPHRASE: ${{ secrets.RELEASE_SIGN_PASSPHRASE }}
         shell: bash
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.RELEASE_SIGN_PRIVATE_KEY }}" | gpg --batch --import
           printf '%s' "$PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.GPG_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
 
       - name: Generate and Sign Checksums
         id: checksum
         shell: bash
         env:
-          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          PASSPHRASE: ${{ secrets.RELEASE_SIGN_PASSPHRASE }}
         run: |
           CHECKSUM_FILE="${{ needs.prepare.outputs.conan_version }}-SHA-256.txt"
           cd dist
@@ -184,7 +184,7 @@ jobs:
       - name: Verify Signed Checksums
         shell: bash
         run: |
-          echo "${{ secrets.GPG_PUBLIC_KEY }}" | gpg --batch --import
+          echo "${{ secrets.RELEASE_SIGN_PUBLIC_KEY }}" | gpg --batch --import
           gpg --verify dist/${{ steps.checksum.outputs.checksum_file_name }}.asc dist/${{ steps.checksum.outputs.checksum_file_name }}
 
       - name: Cleanup GPG keys
