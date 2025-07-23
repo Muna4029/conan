@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           pip install PyGithub
-          python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md > release-notes-${{ steps.vars.outputs.conan_version }}.md 2>&1 || true
+          python3 release-tools/release/get_changelog.py ${{ steps.vars.outputs.conan_version }} --format=md > release-notes-${{ steps.vars.outputs.conan_version }}.md || true
 
       - name: Display Changelog Content
         run: |
