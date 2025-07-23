@@ -127,12 +127,10 @@ jobs:
           name: conan-packages-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/*
 
-  # Job to create a DRAFT release (only for release branches)
   create-draft:
     name: Create Draft Release
     needs: [prepare, package]
     runs-on: ubuntu-latest
-    # This job only runs for branches like 'release/2.X'
     # if: startsWith(github.ref_name, 'release/2.') # uncomment later, now for testing
     steps:
       - name: Generate Write-Access App Token
@@ -154,6 +152,28 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: release-notes
+
+      - name: Setup GPG
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "${{ secrets.GPG_KEY_ID }}" --armor --detach-sign -o /dev/null /dev/null
+
+      - name: Generate and Sign Checksums
+        id: checksum
+        run: |
+          CHECKSUM_FILE="${{ needs.prepare.outputs.conan_version }}-SHA-256.txt"
+          cd dist
+          # Use find to avoid issues with too many arguments for sha256sum
+          find . -type f -name 'conan-*' -exec sha256sum {} + > $CHECKSUM_FILE
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --local-user "${{ secrets.GPG_KEY_ID }}" $CHECKSUM_FILE
+          cd ..
+          echo "checksum_file_name=$CHECKSUM_FILE" >> $GITHUB_OUTPUT
+
+      - name: Verify Signed Checksums
+        run: |
+          echo "Verifying GPG signature..."
+          echo "${{ secrets.GPG_PUBLIC_KEY }}" | gpg --batch --import
+          gpg --verify dist/${{ steps.checksum.outputs.checksum_file_name }}.asc dist/${{ steps.checksum.outputs.checksum_file_name }}
 
       - name: List downloaded files
         run: |
