@@ -47,6 +47,7 @@ class TestProfileDetectAPI:
         assert expected in client.out
 
     @pytest.mark.skipif(platform.system() != "Linux", reason="Only linux")
+    @pytest.mark.tool("gcc")
     def test_profile_detect_libc(self):
         client = TestClient()
         tpl1 = textwrap.dedent("""
