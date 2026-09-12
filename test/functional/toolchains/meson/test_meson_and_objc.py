@@ -5,10 +5,10 @@ import textwrap
 
 import pytest
 
-from conan.tools.apple.apple import _to_apple_arch, XCRun
+from conan.internal.util.runners import conan_run
 from conan.test.utils.mocks import ConanFileMock
 from conan.test.utils.tools import TestClient
-from conan.internal.util.runners import conan_run
+from conan.tools.apple.apple import XCRun, _to_apple_arch
 
 _conanfile_py = textwrap.dedent("""
 from conan import ConanFile
