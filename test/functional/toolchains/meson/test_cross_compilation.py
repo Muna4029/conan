@@ -2,14 +2,15 @@ import os
 import platform
 import tempfile
 import textwrap
+
 import pytest
 
-from conan.tools.apple.apple import _to_apple_arch, XCRun
+from conan.internal.util.runners import conan_run
 from conan.test.assets.sources import gen_function_cpp, gen_function_h
-from test.conftest import tools_locations
 from conan.test.utils.mocks import ConanFileMock
 from conan.test.utils.tools import TestClient
-from conan.internal.util.runners import conan_run
+from conan.tools.apple.apple import XCRun, _to_apple_arch
+from test.conftest import tools_locations
 
 _conanfile_py = textwrap.dedent("""
 from conan import ConanFile
@@ -197,7 +198,7 @@ def test_android_meson_toolchain_cross_compiling(arch, expected_arch):
     content = client.load(os.path.join("conan_meson_cross.ini"))
     assert "needs_exe_wrapper = true" in content
     assert "Target machine cpu family: {}".format(expected_arch if expected_arch != "i386" else "x86") in client.out
-    assert "Target machine cpu: {}".format(arch) in client.out
+    assert f"Target machine cpu: {arch}" in client.out
     libhello_name = "libhello.a" if platform.system() != "Windows" else "libhello.lib"
     libhello = os.path.join(client.current_folder, "build", libhello_name)
     demo = os.path.join(client.current_folder, "build", "demo")
@@ -224,7 +225,7 @@ def test_use_meson_toolchain():
     c.run("new meson_lib -d name=hello -d version=0.1")
     ndk_path = tools_locations["android_ndk"]["system"]["path"][platform.system()]
     pkgconf = tools_locations["pkg_config"]
-    pkgconf_path = pkgconf[pkgconf["default"]]["path"].get(platform.system()) + f'/pkg-config'
+    pkgconf_path = pkgconf[pkgconf["default"]]["path"].get(platform.system()) + '/pkg-config'
     android = textwrap.dedent(f"""
        [settings]
        os=Android

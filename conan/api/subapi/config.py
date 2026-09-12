@@ -24,6 +24,10 @@ class ConfigAPI:
         self._conan_api = conan_api
         self._helpers = helpers
 
+    @property
+    def global_conf(self):
+        return self._helpers.global_conf
+
     def home(self):
         """ return the current Conan home folder containing the configuration files like
         remotes, settings, profiles, and the packages cache. It is provided for debugging
