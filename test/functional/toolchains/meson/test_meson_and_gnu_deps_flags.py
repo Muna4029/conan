@@ -4,8 +4,8 @@ import textwrap
 
 import pytest
 
-from test.functional.toolchains.meson._base import TestMesonBase
 from conan.test.utils.tools import TestClient
+from test.functional.toolchains.meson._base import TestMesonBase
 
 
 class TestMesonToolchainAndGnuFlags(TestMesonBase):
@@ -25,7 +25,7 @@ class TestMesonToolchainAndGnuFlags(TestMesonBase):
             deps_flags = '"-Wpedantic", "-Werror"'
             flags = '"-Wall", "-finline-functions"'
         # Dependency - hello/0.1
-        conanfile_py = textwrap.dedent("""
+        conanfile_py = textwrap.dedent(f"""
         from conan import ConanFile
 
         class HelloConan(ConanFile):
@@ -33,9 +33,9 @@ class TestMesonToolchainAndGnuFlags(TestMesonBase):
             version = "0.1"
 
             def package_info(self):
-                self.cpp_info.cxxflags = [{}]
+                self.cpp_info.cxxflags = [{deps_flags}]
                 self.cpp_info.defines = ['DEF1=one_string', 'DEF2=other_string']
-        """.format(deps_flags))
+        """)
         client.save({"conanfile.py": conanfile_py})
         client.run("create .")
         # Dependency - other/0.1
