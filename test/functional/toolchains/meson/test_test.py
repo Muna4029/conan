@@ -1,7 +1,7 @@
 import os
+import textwrap
 
 import pytest
-import textwrap
 
 from conan.test.assets.sources import gen_function_cpp
 from test.functional.toolchains.meson._base import TestMesonBase

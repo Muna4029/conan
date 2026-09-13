@@ -6,9 +6,9 @@ import textwrap
 
 import pytest
 
+from conan.api.model import RecipeReference
 from conan.test.assets.sources import gen_function_cpp, gen_function_h
 from conan.test.utils.tools import TestClient
-from conan.api.model import RecipeReference
 from test.functional.toolchains.meson._base import TestMesonBase
 
 
