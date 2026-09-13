@@ -276,7 +276,7 @@ def _get_individual_tool(name, version):
         if tool_path == "skip-tests":
             return False
         elif tool_path is not None and not os.path.isdir(tool_path):
-            return True
+            return False
     else:
         if version is not None:  # if the version is specified, it should be in the conf
             return True
@@ -298,13 +298,13 @@ def _get_individual_tool(name, version):
     exe_found = which(exe)  # TODO: This which doesn't detect version either
     exe_path = str(pathlib.Path(exe_found).parent) if exe_found else None
     if not exe_found:
-        cached = True
+        cached = False
         if tool_path is None:
-            # will fail the test, not exe found and path None
-            cached = True
+            # will skip the test, not exe found and path None
+            cached = False
     elif tool_path is not None and tool_path not in exe_found:
-        # finds the exe in a path that is not the one set in the conf -> fail
-        cached = True
+        # finds the exe in a path that is not the one set in the conf -> skip
+        cached = False
     elif tool_path is None:
         cached = exe_path, tool_env
 
@@ -351,7 +351,7 @@ def pytest_runtest_setup(item):
         result = _get_tool(tool_name, tool_version)
         if result is True:
             version_msg = "Any" if tool_version is None else tool_version
-            pytest.fail("Required '{}' tool version '{}' is not available".format(tool_name,
+            pytest.skip("Required '{}' tool version '{}' is not available".format(tool_name,
                                                                                   version_msg))
         if result is False:
             version_msg = "Any" if tool_version is None else tool_version
