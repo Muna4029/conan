@@ -63,15 +63,18 @@ class PkgConan(ConanFile):
 
 
 class TestPackageOptionsCreate:
-
     def test_test_package(self):
-        """ non scoped options will be put in the package scope
+        """non scoped options will be put in the package scope
         -o shared=True <=> -o pkg:shared=True
         """
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
+        c.save(
+            {
+                "dep/conanfile.py": dep,
                 "conanfile.py": conanfile,
-                "test_package/conanfile.py": test_conanfile})
+                "test_package/conanfile.py": test_conanfile,
+            }
+        )
         c.run("export dep")
         c.run("create . -o shared=True --build=missing")
 
@@ -93,9 +96,13 @@ class TestPackageOptionsCreate:
         all shared should affect both the package and the test_package
         """
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
+        c.save(
+            {
+                "dep/conanfile.py": dep,
                 "conanfile.py": conanfile,
-                "test_package/conanfile.py": test_conanfile})
+                "test_package/conanfile.py": test_conanfile,
+            }
+        )
         c.run("export dep")
         c.run("create . -o *:shared=True --build=missing")
 
@@ -114,9 +121,13 @@ class TestPackageOptionsCreate:
 
     def test_test_package_consumers(self):
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
+        c.save(
+            {
+                "dep/conanfile.py": dep,
                 "conanfile.py": conanfile,
-                "test_package/conanfile.py": test_conanfile})
+                "test_package/conanfile.py": test_conanfile,
+            }
+        )
         c.run("export dep")
         c.run("create . -o &:shared=True --build=missing")
 
@@ -140,9 +151,13 @@ class TestPackageOptionsCreate:
 
     def test_test_package_non_consumers(self):
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
+        c.save(
+            {
+                "dep/conanfile.py": dep,
                 "conanfile.py": conanfile,
-                "test_package/conanfile.py": test_conanfile})
+                "test_package/conanfile.py": test_conanfile,
+            }
+        )
         c.run("export dep")
         c.run("create . -o !&:shared=True --build=missing")
 
@@ -161,9 +176,13 @@ class TestPackageOptionsCreate:
 
     def test_test_package_only(self):
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
+        c.save(
+            {
+                "dep/conanfile.py": dep,
                 "conanfile.py": conanfile,
-                "test_package/conanfile.py": test_conanfile})
+                "test_package/conanfile.py": test_conanfile,
+            }
+        )
         c.run("export dep")
         c.run("create . -o &:shared=True -o shared=False --build=missing")
 
@@ -182,12 +201,10 @@ class TestPackageOptionsCreate:
 
 
 class TestPackageOptionsInstall:
-
     @pytest.mark.parametrize("pattern", ["", "*:", "&:"])
     def test_test_package(self, pattern):
         c = TestClient()
-        c.save({"dep/conanfile.py": dep,
-                "conanfile.py": conanfile})
+        c.save({"dep/conanfile.py": dep, "conanfile.py": conanfile})
         c.run("export dep")
         c.run(f"build . -o {pattern}shared=True --build=missing")
 

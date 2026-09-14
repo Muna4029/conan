@@ -6,12 +6,15 @@ from conan.internal.util.files import save
 
 
 def test_profile_local_folder_priority_cache():
-    """ includes or args without "./" will resolve to the cache first
-    """
+    """includes or args without "./" will resolve to the cache first"""
     c = TestClient()
-    c.save({"profiles/default": f"include(otherprofile)",
+    c.save(
+        {
+            "profiles/default": "include(otherprofile)",
             "profiles/otherprofile": "[settings]\nos=AIX",
-            "conanfile.txt": ""})
+            "conanfile.txt": "",
+        }
+    )
     save(os.path.join(c.paths.profiles_path, "otherprofile"), "[settings]\nos=FreeBSD")
 
     # Must use local path, otherwise look for it in the cache
@@ -20,12 +23,15 @@ def test_profile_local_folder_priority_cache():
 
 
 def test_profile_local_folder_priority_relative():
-    """ The local include(./profile) must have priority over a file with same name in cache
-    """
+    """The local include(./profile) must have priority over a file with same name in cache"""
     c = TestClient()
-    c.save({"profiles/default": f"include(./otherprofile)",
+    c.save(
+        {
+            "profiles/default": "include(./otherprofile)",
             "profiles/otherprofile": "[settings]\nos=AIX",
-            "conanfile.txt": ""})
+            "conanfile.txt": "",
+        }
+    )
     save(os.path.join(c.paths.profiles_path, "otherprofile"), "[settings]\nos=FreeBSD")
 
     # Must use local path, otherwise look for it in the cache
@@ -34,11 +40,9 @@ def test_profile_local_folder_priority_relative():
 
 
 def test_profile_cache_folder_priority():
-    """ The cache include(./profile) must have priority over a file with same name in local
-    """
+    """The cache include(./profile) must have priority over a file with same name in local"""
     c = TestClient()
-    c.save({"otherprofile": "[settings]\nos=FreeBSD",
-            "conanfile.txt": ""})
+    c.save({"otherprofile": "[settings]\nos=FreeBSD", "conanfile.txt": ""})
     save(os.path.join(c.paths.profiles_path, "default"), "include(./otherprofile)")
     save(os.path.join(c.paths.profiles_path, "otherprofile"), "[settings]\nos=AIX")
 
@@ -67,8 +71,7 @@ def test_profile_cli_priority():
         user.myconf:myvalue3*={"3": "5"}
         user.myconf:myvalue5={"6": "7"}
         """)
-    c.save({"profile1": profile1,
-            "profile2": profile2})
+    c.save({"profile1": profile1, "profile2": profile2})
     c.run("profile show -pr=./profile1 -pr=./profile2")
     assert "os=FreeBSD" in c.out
     assert "user.myconf:myvalue1=2" in c.out
@@ -109,9 +112,7 @@ def test_profiles_patterns_include():
                 self.output.info(f"MyCompilerVersion={self.settings.compiler.version}!!!")
                 self.output.info(f"MyCompilerCpp={self.settings.compiler.cppstd}!!!")
             """)
-    c.save({"conanfile.py": conanfile,
-            "msvc": msvc,
-            "clang": clang})
+    c.save({"conanfile.py": conanfile, "msvc": msvc, "clang": clang})
     c.run("install . -pr=clang")
     assert "conanfile.py (test_pkg/0.1): MyCompiler=clang!!!" in c.out
     assert "conanfile.py (test_pkg/0.1): MyCompilerVersion=18!!!" in c.out

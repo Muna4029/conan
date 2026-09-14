@@ -22,12 +22,18 @@ def test_merge_alias(requires):
                 else:
                     self.{requires}("pkg/(alias_release)")
         """)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg"),
-            "alias_release/conanfile.py": GenConanfile("pkg", "alias_release").with_class_attribute(
-                "alias = 'pkg/0.1'"),
-            "alias_debug/conanfile.py": GenConanfile("pkg", "alias_debug").with_class_attribute(
-                "alias = 'pkg/0.2'"),
-            "app/conanfile.py": app})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg"),
+            "alias_release/conanfile.py": GenConanfile(
+                "pkg", "alias_release"
+            ).with_class_attribute("alias = 'pkg/0.1'"),
+            "alias_debug/conanfile.py": GenConanfile(
+                "pkg", "alias_debug"
+            ).with_class_attribute("alias = 'pkg/0.2'"),
+            "app/conanfile.py": app,
+        }
+    )
     c.run("create pkg --version=0.1")
     c.run("create pkg --version=0.2")
     c.run("export alias_release")
@@ -35,13 +41,21 @@ def test_merge_alias(requires):
     c.run("lock create app -s build_type=Release --lockfile-out=release.lock")
     c.run("lock create app -s build_type=Debug --lockfile-out=debug.lock")
 
-    c.run("lock merge --lockfile=release.lock --lockfile=debug.lock --lockfile-out=conan.lock")
+    c.run(
+        "lock merge --lockfile=release.lock --lockfile=debug.lock --lockfile-out=conan.lock"
+    )
 
     # Update alias, won't be used
-    c.save({"alias_release/conanfile.py": GenConanfile("pkg", "alias_release").with_class_attribute(
-                "alias = 'pkg/0.3'"),
-            "alias_debug/conanfile.py": GenConanfile("pkg", "alias_debug").with_class_attribute(
-                "alias = 'pkg/0.4'")})
+    c.save(
+        {
+            "alias_release/conanfile.py": GenConanfile(
+                "pkg", "alias_release"
+            ).with_class_attribute("alias = 'pkg/0.3'"),
+            "alias_debug/conanfile.py": GenConanfile(
+                "pkg", "alias_debug"
+            ).with_class_attribute("alias = 'pkg/0.4'"),
+        }
+    )
     c.run("export alias_release")
     c.run("export alias_debug")
 

@@ -87,7 +87,10 @@ def test_error_pref():
     r1 = RecipeReference.loads("pkg/1.0#rrev1:pid#rrev2")
     with pytest.raises(ConanException) as exc:
         r1.validate_ref()
-    assert "Invalid recipe reference 'pkg/1.0#rrev1:pid#rrev2' is a package reference" in str(exc)
+    assert (
+        "Invalid recipe reference 'pkg/1.0#rrev1:pid#rrev2' is a package reference"
+        in str(exc)
+    )
 
     r1 = RecipeReference.loads("pkg/1.0:pid")
     with pytest.raises(ConanException) as exc:

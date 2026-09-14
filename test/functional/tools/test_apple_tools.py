@@ -34,41 +34,35 @@ def test_xcrun():
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Requires OSX and xcrun tool")
 def test_xcrun_sdks():
     def _common_asserts(xcrun_):
-        assert xcrun_.cc.endswith('clang')
-        assert xcrun_.cxx.endswith('clang++')
-        assert xcrun_.ar.endswith('ar')
-        assert xcrun_.ranlib.endswith('ranlib')
-        assert xcrun_.strip.endswith('strip')
-        assert xcrun_.find('lipo').endswith('lipo')
+        assert xcrun_.cc.endswith("clang")
+        assert xcrun_.cxx.endswith("clang++")
+        assert xcrun_.ar.endswith("ar")
+        assert xcrun_.ranlib.endswith("ranlib")
+        assert xcrun_.strip.endswith("strip")
+        assert xcrun_.find("lipo").endswith("lipo")
         assert os.path.isdir(xcrun_.sdk_path)
 
-    conanfile = ConanFileMock( runner=conan_run)
-    conanfile.settings = MockSettings(
-        {"os": "Macos",
-         "arch": "x86"})
+    conanfile = ConanFileMock(runner=conan_run)
+    conanfile.settings = MockSettings({"os": "Macos", "arch": "x86"})
     xcrun = XCRun(conanfile)
     _common_asserts(xcrun)
 
-    conanfile.settings = MockSettings(
-        {"os": "iOS",
-         "arch": "x86"})
-    xcrun = XCRun(conanfile, sdk='macosx')
+    conanfile.settings = MockSettings({"os": "iOS", "arch": "x86"})
+    xcrun = XCRun(conanfile, sdk="macosx")
     _common_asserts(xcrun)
     # Simulator
     assert "iPhoneOS" not in xcrun.sdk_path
 
     conanfile.settings = MockSettings(
-        {"os": "iOS",
-         "os.sdk": "iphoneos",
-         "arch": "armv7"})
+        {"os": "iOS", "os.sdk": "iphoneos", "arch": "armv7"}
+    )
     xcrun = XCRun(conanfile)
     _common_asserts(xcrun)
     assert "iPhoneOS" in xcrun.sdk_path
 
     conanfile.settings = MockSettings(
-        {"os": "watchOS",
-         "os.sdk": "watchos",
-         "arch": "armv7"})
+        {"os": "watchOS", "os.sdk": "watchos", "arch": "armv7"}
+    )
     xcrun = XCRun(conanfile)
     _common_asserts(xcrun)
     assert "WatchOS" in xcrun.sdk_path
@@ -114,13 +108,17 @@ def test_xcrun_in_tool_requires():
     """)
 
     client.save({"conanfile.py": conanfile, "profile_ios": profile_ios})
-    client.run("create . --name=pkg --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'")
+    client.run(
+        "create . --name=pkg --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'"
+    )
     assert re.search("sdk:.*iPhoneOS", str(client.out))
     assert not re.search("sdk:.*MacOSX", str(client.out))
 
     client.save({"br.py": tool.format("")})
     client.run("export br.py --name=br --version=0.1")
-    client.run("create . --name=pkg --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'")
+    client.run(
+        "create . --name=pkg --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'"
+    )
     assert not re.search("sdk:.*iPhoneOS", str(client.out))
     assert re.search("sdk:.*MacOSX", str(client.out))
 
@@ -161,13 +159,19 @@ def test_xcrun_in_required_by_tool_requires():
         arch=armv8
     """)
 
-    client.save({"cmake.py": GenConanfile("cmake", "1.0").with_requires("openssl/1.0"),
-                 "openssl.py": openssl,
-                 "consumer.py": consumer,
-                 "profile_ios": profile_ios})
+    client.save(
+        {
+            "cmake.py": GenConanfile("cmake", "1.0").with_requires("openssl/1.0"),
+            "openssl.py": openssl,
+            "consumer.py": consumer,
+            "profile_ios": profile_ios,
+        }
+    )
 
     client.run("export openssl.py --name=openssl --version=1.0")
     client.run("export cmake.py")
-    client.run("create consumer.py --name=consumer --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'")
+    client.run(
+        "create consumer.py --name=consumer --version=1.0 -pr:h=./profile_ios -pr:b=default --build='*'"
+    )
 
     assert re.search("sdk for building openssl:.*MacOSX", str(client.out))

@@ -39,9 +39,13 @@ def test_exports_sources_patch():
                 cmake = load(self, path)
                 self.output.info("MYPATCH-BUILD: {}".format(cmake))
             """)
-    c.save({"conanfile.py": conanfile,
+    c.save(
+        {
+            "conanfile.py": conanfile,
             "patches/mypatch": "mypatch!",
-            "CMakeLists.txt": "mycmake!"})
+            "CMakeLists.txt": "mycmake!",
+        }
+    )
     c.run("create .")
     assert "pkg/0.1: MYPATCH-SOURCE mypatch!" in c.out
     assert "pkg/0.1: MYCMAKE-BUILD: mycmake!" in c.out

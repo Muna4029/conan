@@ -7,20 +7,25 @@ from conan.test.utils.tools import TestClient, GenConanfile
 
 
 class ConanAliasTest(unittest.TestCase):
-
     def test_repeated_alias(self):
         client = TestClient(light=True)
-        client.alias("hello/0.x@lasote/channel",  "hello/0.1@lasote/channel")
-        client.alias("hello/0.x@lasote/channel",  "hello/0.2@lasote/channel")
-        client.alias("hello/0.x@lasote/channel",  "hello/0.3@lasote/channel")
+        client.alias("hello/0.x@lasote/channel", "hello/0.1@lasote/channel")
+        client.alias("hello/0.x@lasote/channel", "hello/0.2@lasote/channel")
+        client.alias("hello/0.x@lasote/channel", "hello/0.3@lasote/channel")
 
     def test_basic(self):
         client = TestClient(light=True, default_server_user=True)
         for i in (1, 2):
-            client.save({"conanfile.py": GenConanfile().with_name("hello").with_version("0.%s" % i)})
+            client.save(
+                {
+                    "conanfile.py": GenConanfile()
+                    .with_name("hello")
+                    .with_version("0.%s" % i)
+                }
+            )
             client.run("export . --user=lasote --channel=channel")
 
-        client.alias("hello/0.x@lasote/channel",  "hello/0.1@lasote/channel")
+        client.alias("hello/0.x@lasote/channel", "hello/0.1@lasote/channel")
         conanfile_chat = textwrap.dedent("""
             from conan import ConanFile
             class TestConan(ConanFile):
@@ -30,10 +35,15 @@ class ConanAliasTest(unittest.TestCase):
                 """)
         client.save({"conanfile.py": conanfile_chat}, clean_first=True)
         client.run("export . --user=lasote --channel=channel")
-        client.save({"conanfile.txt": "[requires]\nchat/1.0@lasote/channel"}, clean_first=True)
+        client.save(
+            {"conanfile.txt": "[requires]\nchat/1.0@lasote/channel"}, clean_first=True
+        )
 
         client.run("install . --build=missing")
-        assert "chat/1.0@lasote/channel: WARN: legacy: Requirement 'alias' is provided in Conan 2" in client.out
+        assert (
+            "chat/1.0@lasote/channel: WARN: legacy: Requirement 'alias' is provided in Conan 2"
+            in client.out
+        )
 
         client.assert_listed_require({"hello/0.1@lasote/channel": "Cache"})
         assert "hello/0.x@lasote/channel: hello/0.1@lasote/channel" in client.out
@@ -51,19 +61,21 @@ class ConanAliasTest(unittest.TestCase):
 
         client.run("install .")
         assert "'alias' is a Conan 1.X legacy feature" in client.out
-        client.assert_listed_require({"hello/0.1@lasote/channel": "Downloaded (default)"})
+        client.assert_listed_require(
+            {"hello/0.1@lasote/channel": "Downloaded (default)"}
+        )
         self.assertNotIn("hello/0.x@lasote/channel from", client.out)
 
-        client.alias("hello/0.x@lasote/channel",  "hello/0.2@lasote/channel")
+        client.alias("hello/0.x@lasote/channel", "hello/0.2@lasote/channel")
         client.run("install . --build=missing")
         self.assertIn("hello/0.2", client.out)
         self.assertNotIn("hello/0.1", client.out)
 
     def test_not_override_package(self):
-        """ Do not override a package with an alias
+        """Do not override a package with an alias
 
-            If we create an alias with the same name as an existing package, it will
-            override the package without any warning.
+        If we create an alias with the same name as an existing package, it will
+        override the package without any warning.
         """
         t = TestClient(light=True)
         conanfile = textwrap.dedent("""

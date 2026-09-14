@@ -93,8 +93,9 @@ def test_editable_cmake_components():
                 self.run(os.path.join(self.cpp.build.bindirs[0], "example"))
                 self.run(os.path.join(self.cpp.build.bindirs[0], "example2"))
             """)
-    app_cpp = gen_function_cpp(name="main", includes=["hello/hello", "bye/bye"],
-                               calls=["hello", "bye"])
+    app_cpp = gen_function_cpp(
+        name="main", includes=["hello/hello", "bye/bye"], calls=["hello", "bye"]
+    )
     app_cpp2 = gen_function_cpp(name="main", includes=["hello/hello"], calls=["hello"])
 
     app_cmakelists = textwrap.dedent("""
@@ -113,16 +114,20 @@ def test_editable_cmake_components():
         """)
 
     client = TestClient()
-    client.save({"greetings/conanfile.py": conanfile_greetings,
-                 "greetings/src/CMakeLists.txt": cmakelists_greetings,
-                 "greetings/src/hello/hello.h": hello_h,
-                 "greetings/src/hello.cpp": hello_cpp,
-                 "greetings/src/bye/bye.h": bye_h,
-                 "greetings/src/bye.cpp": bye_cpp,
-                 "app/conanfile.py": app_conanfile,
-                 "app/example.cpp": app_cpp,
-                 "app/example2.cpp": app_cpp2,
-                 "app/CMakeLists.txt": app_cmakelists})
+    client.save(
+        {
+            "greetings/conanfile.py": conanfile_greetings,
+            "greetings/src/CMakeLists.txt": cmakelists_greetings,
+            "greetings/src/hello/hello.h": hello_h,
+            "greetings/src/hello.cpp": hello_cpp,
+            "greetings/src/bye/bye.h": bye_h,
+            "greetings/src/bye.cpp": bye_cpp,
+            "app/conanfile.py": app_conanfile,
+            "app/example.cpp": app_cpp,
+            "app/example2.cpp": app_cpp2,
+            "app/CMakeLists.txt": app_cmakelists,
+        }
+    )
     client.run("create greetings")
     client.run("build app")
     assert "hello: Release!" in client.out

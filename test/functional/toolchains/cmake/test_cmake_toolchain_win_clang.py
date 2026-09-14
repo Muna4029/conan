@@ -15,7 +15,7 @@ from conan.test.utils.tools import TestClient
 def client():
     # IMPORTANT: This cannot use the default tests location, if in Windows, it can be another unit
     # like F and Visual WONT FIND ClangCL
-    t = tempfile.mkdtemp(suffix='conans')
+    t = tempfile.mkdtemp(suffix="conans")
     c = TestClient(cache_folder=t)
     clang_profile = textwrap.dedent("""
         [settings]
@@ -56,11 +56,16 @@ def client():
                 cmd = os.path.join(self.package_folder, "bin", "my_app")
                 self.output.info("MYCMD={}!".format(os.path.abspath(cmd)))
         """)
-    c.save({"conanfile.py": conanfile,
+    c.save(
+        {
+            "conanfile.py": conanfile,
             "clang": clang_profile,
-            "CMakeLists.txt": gen_cmakelists(appname="my_app", appsources=["src/main.cpp"],
-                                             install=True),
-            "src/main.cpp": gen_function_cpp(name="main")})
+            "CMakeLists.txt": gen_cmakelists(
+                appname="my_app", appsources=["src/main.cpp"], install=True
+            ),
+            "src/main.cpp": gen_function_cpp(name="main"),
+        }
+    )
     return c
 
 
@@ -68,7 +73,7 @@ def client():
 @pytest.mark.tool("clang", "18")
 @pytest.mark.skipif(platform.system() != "Windows", reason="requires Win")
 class TestLLVMClang:
-    """ External LLVM/clang, with different CMake generators
+    """External LLVM/clang, with different CMake generators
     This links always with the VS runtime, it is built-in
     """
 
@@ -77,12 +82,14 @@ class TestLLVMClang:
     @pytest.mark.tool("clang", "18")  # repeated, for priority over the mingw64 clang
     @pytest.mark.parametrize("runtime", ["static", "dynamic"])
     def test_clang_mingw(self, client, runtime):
-        """ compiling with an LLVM-clang installed, which uses by default the
+        """compiling with an LLVM-clang installed, which uses by default the
         VS runtime
         """
-        client.run("create . --name=pkg --version=0.1 -pr=clang "
-                   "-s compiler.runtime_version=v144 "
-                   "-s compiler.runtime={}".format(runtime))
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang "
+            "-s compiler.runtime_version=v144 "
+            "-s compiler.runtime={}".format(runtime)
+        )
         # clang compilations in Windows will use MinGW Makefiles by default
         assert 'cmake -G "MinGW Makefiles"' in client.out
         assert "GNU-like command-line" in client.out
@@ -95,16 +102,20 @@ class TestLLVMClang:
         check_exe_run(client.out, "main", "clang", None, "Release", "x86_64", "14")
         cmd = re.search(r"MYCMD=(.*)!", str(client.out)).group(1)
         cmd = cmd + ".exe"
-        static_runtime = (runtime == "static")
-        check_vs_runtime(cmd, client, "17", build_type="Release", static_runtime=static_runtime)
+        static_runtime = runtime == "static"
+        check_vs_runtime(
+            cmd, client, "17", build_type="Release", static_runtime=static_runtime
+        )
 
     @pytest.mark.tool("ninja")
     @pytest.mark.tool("visual_studio", "17")
     @pytest.mark.parametrize("generator", ["Ninja", "NMake Makefiles"])
     def test_clang_cmake_ninja_nmake(self, client, generator):
-        client.run("create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic "
-                   "-s compiler.runtime_version=v144 "
-                   '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator))
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic "
+            "-s compiler.runtime_version=v144 "
+            '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator)
+        )
 
         assert 'cmake -G "{}"'.format(generator) in client.out
         assert "GNU-like command-line" in client.out
@@ -126,9 +137,11 @@ class TestLLVMClang:
             """)
         client.save({"comp_exes": pr})
 
-        client.run("create . --name=pkg --version=0.1 -pr=clang -pr=comp_exes "
-                   "-s compiler.runtime=dynamic -s compiler.runtime_version=v144 "
-                   '-c tools.cmake.cmaketoolchain:generator="Ninja"')
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -pr=comp_exes "
+            "-s compiler.runtime=dynamic -s compiler.runtime_version=v144 "
+            '-c tools.cmake.cmaketoolchain:generator="Ninja"'
+        )
 
         assert 'cmake -G "Ninja"' in client.out
         assert "MSVC-like command-line" in client.out
@@ -147,11 +160,21 @@ class TestLLVMClang:
     def test_clang_cmake_runtime_version(self, client):
         generator = "Ninja"
         # Make sure that normal CMakeLists with verify=False works
-        client.save({"CMakeLists.txt": gen_cmakelists(verify=False, appname="my_app",
-                                                      appsources=["src/main.cpp"], install=True)})
-        client.run("create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic -s compiler.cppstd=17 "
-                   "-s compiler.runtime_version=v144 "
-                   '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator))
+        client.save(
+            {
+                "CMakeLists.txt": gen_cmakelists(
+                    verify=False,
+                    appname="my_app",
+                    appsources=["src/main.cpp"],
+                    install=True,
+                )
+            }
+        )
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic -s compiler.cppstd=17 "
+            "-s compiler.runtime_version=v144 "
+            '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator)
+        )
 
         assert 'cmake -G "{}"'.format(generator) in client.out
         assert "GNU-like command-line" in client.out
@@ -171,14 +194,17 @@ class TestVSClangCL:
     """
     This is also LLVM/Clang, but distributed with the VS installation
     """
+
     @pytest.mark.tool("cmake", "3.27")
     @pytest.mark.tool("visual_studio", "17")
     def test_clang_visual_studio_generator(self, client):
-        """ This is using the embedded ClangCL compiler, not the external one"""
+        """This is using the embedded ClangCL compiler, not the external one"""
         generator = "Visual Studio 17"
-        client.run("create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic "
-                   "-s compiler.cppstd=17 -s compiler.runtime_version=v144 "
-                   '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator))
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -s compiler.runtime=dynamic "
+            "-s compiler.cppstd=17 -s compiler.runtime_version=v144 "
+            '-c tools.cmake.cmaketoolchain:generator="{}"'.format(generator)
+        )
         assert 'cmake -G "{}"'.format(generator) in client.out
         assert "MSVC-like command-line" in client.out
         assert "main __clang_major__19" in client.out
@@ -199,13 +225,15 @@ class TestVSClangCL:
 class TestMsysClang:
     @pytest.mark.tool("msys2_clang64")
     def test_msys2_clang(self, client):
-        """ Using the msys2 clang64 subsystem
+        """Using the msys2 clang64 subsystem
         We are not really injecting the msys2 root with make, so using
         MinGW Makefiles
         """
-        client.run('create . --name=pkg --version=0.1 -pr=clang -s os.subsystem=msys2 '
-                   '-s compiler.libcxx=libc++ '
-                   '-c tools.cmake.cmaketoolchain:generator="MinGW Makefiles"')
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -s os.subsystem=msys2 "
+            "-s compiler.libcxx=libc++ "
+            '-c tools.cmake.cmaketoolchain:generator="MinGW Makefiles"'
+        )
         # clang compilations in Windows will use MinGW Makefiles by default
         assert 'cmake -G "MinGW Makefiles"' in client.out
         # TODO: Version is still not controlled
@@ -223,19 +251,26 @@ class TestMsysClang:
 
         cmd = re.search(r"MYCMD=(.*)!", str(client.out)).group(1)
         cmd = cmd + ".exe"
-        check_vs_runtime(cmd, client, "17", build_type="Release",
-                         static_runtime=False, subsystem="clang64")
+        check_vs_runtime(
+            cmd,
+            client,
+            "17",
+            build_type="Release",
+            static_runtime=False,
+            subsystem="clang64",
+        )
 
     @pytest.mark.tool("msys2_mingw64_clang64")
     def test_msys2_clang_mingw(self, client):
-        """ compiling with the clang INSIDE mingw, which uses the
+        """compiling with the clang INSIDE mingw, which uses the
         MinGW runtime, not the MSVC one
         For 32 bits, it doesn't seem possible to install the toolchain
         For 64 bits require "pacman -S mingw-w64-x86-clang++"
         """
         # TODO: This should probably go to the ``os.subsystem=ming64" but lets do it in other PR
-        client.run('create . --name=pkg --version=0.1 -pr=clang '
-                   '-s compiler.libcxx=libstdc++')
+        client.run(
+            "create . --name=pkg --version=0.1 -pr=clang -s compiler.libcxx=libstdc++"
+        )
         # clang compilations in Windows will use MinGW Makefiles by default
         assert 'cmake -G "MinGW Makefiles"' in client.out
         # TODO: Version is still not controlled
@@ -252,20 +287,35 @@ class TestMsysClang:
 
         cmd = re.search(r"MYCMD=(.*)!", str(client.out)).group(1)
         cmd = cmd + ".exe"
-        check_vs_runtime(cmd, client, "17", build_type="Release",
-                         static_runtime=False, subsystem="mingw64")
+        check_vs_runtime(
+            cmd,
+            client,
+            "17",
+            build_type="Release",
+            static_runtime=False,
+            subsystem="mingw64",
+        )
 
     @pytest.mark.tool("msys2_clang64")
     def test_clang_pure_c(self, client):
-        """ compiling with the clang INSIDE mingw, which uses the
+        """compiling with the clang INSIDE mingw, which uses the
         MinGW runtime, not the MSVC one
         For 32 bits, it doesn't seem possible to install the toolchain
         For 64 bits require "pacman -S mingw-w64-x86-clang++"
         """
-        client.save({"CMakeLists.txt": gen_cmakelists(verify=False, language="C", appname="my_app",
-                                                      appsources=["src/main.c"], install=True),
-                     "src/main.c": gen_function_c(name="main")})
-        client.run(f"create . --name=pkg --version=0.1 -pr=clang")
+        client.save(
+            {
+                "CMakeLists.txt": gen_cmakelists(
+                    verify=False,
+                    language="C",
+                    appname="my_app",
+                    appsources=["src/main.c"],
+                    install=True,
+                ),
+                "src/main.c": gen_function_c(name="main"),
+            }
+        )
+        client.run("create . --name=pkg --version=0.1 -pr=clang")
         # clang compilations in Windows will use MinGW Makefiles by default
         assert 'cmake -G "MinGW Makefiles"' in client.out
         assert "main __clang_major__19" in client.out
@@ -282,8 +332,14 @@ class TestMsysClang:
         cmd = re.search(r"MYCMD=(.*)!", str(client.out)).group(1)
         cmd = cmd + ".exe"
         # static_runtime equivalent to C, for checking, no dep on libc++
-        check_vs_runtime(cmd, client, "17", build_type="Release", static_runtime=True,
-                         subsystem="clang64")
+        check_vs_runtime(
+            cmd,
+            client,
+            "17",
+            build_type="Release",
+            static_runtime=True,
+            subsystem="clang64",
+        )
 
 
 @pytest.mark.tool("cmake")
@@ -301,8 +357,11 @@ def test_error_clang_cmake_ninja_custom_cxx(client):
         [buildenv]
         CXX=/no/exist/clang++
         """)
-    client.save({"clang":     clang_profile})
-    client.run("create . --name=pkg --version=0.1 -pr=clang "
-               "-c tools.cmake.cmaketoolchain:generator=Ninja", assert_error=True)
-    assert 'Could not find compiler' in client.out
-    assert '/no/exist/clang++' in client.out
+    client.save({"clang": clang_profile})
+    client.run(
+        "create . --name=pkg --version=0.1 -pr=clang "
+        "-c tools.cmake.cmaketoolchain:generator=Ninja",
+        assert_error=True,
+    )
+    assert "Could not find compiler" in client.out
+    assert "/no/exist/clang++" in client.out

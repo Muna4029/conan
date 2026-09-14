@@ -34,10 +34,10 @@ def test_compose():
     env.compose_env(env2)
     env = env.vars(ConanFileMock())
     assert env.get("MyVar") == "MyValue"
-    assert env.get("MyVar2") == 'MyValue2'
-    assert env.get("MyVar3") == 'MyValue3'
+    assert env.get("MyVar2") == "MyValue2"
+    assert env.get("MyVar3") == "MyValue3"
     assert env.get("MyVar4") == "MyValue4"
-    assert env.get("MyVar5") == ''
+    assert env.get("MyVar5") == ""
 
 
 def test_define_append():
@@ -45,7 +45,9 @@ def test_define_append():
     env.define("MyVar", "MyValue")
     env.append("MyVar", "MyValue1")
     env.append("MyVar", ["MyValue2", "MyValue3"])
-    assert env.vars(ConanFileMock()).get("MyVar") == "MyValue MyValue1 MyValue2 MyValue3"
+    assert (
+        env.vars(ConanFileMock()).get("MyVar") == "MyValue MyValue1 MyValue2 MyValue3"
+    )
 
     env = Environment()
     env.append("MyVar", "MyValue")
@@ -54,29 +56,32 @@ def test_define_append():
     assert env.vars(ConanFileMock()).get("MyVar") == "MyValue2"
 
 
-@pytest.mark.parametrize("op1, v1, s1, op2, v2, s2, result",
-                         [("define", "Val1", " ", "define", "Val2", " ", "Val1"),
-                          ("define", "Val1", " ", "append", "Val2", " ", "Val1"),
-                          ("define", "Val1", " ", "prepend", "Val2", " ", "Val1"),
-                          ("define", "Val1", " ", "unset", "", " ", "Val1"),
-                          ("append", "Val1", " ", "define", "Val2", " ", "Val2 Val1"),
-                          ("append", "Val1", " ", "append", "Val2", " ", "MyVar Val2 Val1"),
-                          ("append", "Val1", " ", "prepend", "Val2", " ", "Val2 MyVar Val1"),
-                          ("append", "Val1", " ", "unset", "", " ", "Val1"),
-                          ("prepend", "Val1", " ", "define", "Val2", " ", "Val1 Val2"),
-                          ("prepend", "Val1", " ", "append", "Val2", " ", "Val1 MyVar Val2"),
-                          ("prepend", "Val1", " ", "prepend", "Val2", " ", "Val1 Val2 MyVar"),
-                          ("prepend", "Val1", " ", "unset", "", " ", "Val1"),
-                          ("unset", "", " ", "define", "Val2", " ", ""),
-                          ("unset", "", " ", "append", "Val2", " ", ""),
-                          ("unset", "", " ", "prepend", "Val2", " ", ""),
-                          ("unset", "", " ", "unset", "", " ", ""),
-                          # different separators
-                          ("append", "Val1", "+", "append", "Val2", "-", "MyVar+Val2+Val1"),
-                          ("append", "Val1", "+", "prepend", "Val2", "-", "Val2+MyVar+Val1"),
-                          ("unset", "", " ", "append", "Val2", "+", ""),
-                          ("unset", "", " ", "prepend", "Val2", "+", ""),
-                          ])
+@pytest.mark.parametrize(
+    "op1, v1, s1, op2, v2, s2, result",
+    [
+        ("define", "Val1", " ", "define", "Val2", " ", "Val1"),
+        ("define", "Val1", " ", "append", "Val2", " ", "Val1"),
+        ("define", "Val1", " ", "prepend", "Val2", " ", "Val1"),
+        ("define", "Val1", " ", "unset", "", " ", "Val1"),
+        ("append", "Val1", " ", "define", "Val2", " ", "Val2 Val1"),
+        ("append", "Val1", " ", "append", "Val2", " ", "MyVar Val2 Val1"),
+        ("append", "Val1", " ", "prepend", "Val2", " ", "Val2 MyVar Val1"),
+        ("append", "Val1", " ", "unset", "", " ", "Val1"),
+        ("prepend", "Val1", " ", "define", "Val2", " ", "Val1 Val2"),
+        ("prepend", "Val1", " ", "append", "Val2", " ", "Val1 MyVar Val2"),
+        ("prepend", "Val1", " ", "prepend", "Val2", " ", "Val1 Val2 MyVar"),
+        ("prepend", "Val1", " ", "unset", "", " ", "Val1"),
+        ("unset", "", " ", "define", "Val2", " ", ""),
+        ("unset", "", " ", "append", "Val2", " ", ""),
+        ("unset", "", " ", "prepend", "Val2", " ", ""),
+        ("unset", "", " ", "unset", "", " ", ""),
+        # different separators
+        ("append", "Val1", "+", "append", "Val2", "-", "MyVar+Val2+Val1"),
+        ("append", "Val1", "+", "prepend", "Val2", "-", "Val2+MyVar+Val1"),
+        ("unset", "", " ", "append", "Val2", "+", ""),
+        ("unset", "", " ", "prepend", "Val2", "+", ""),
+    ],
+)
 def test_compose_combinations(op1, v1, s1, op2, v2, s2, result):
     env = Environment()
     if op1 != "unset":
@@ -95,33 +100,36 @@ def test_compose_combinations(op1, v1, s1, op2, v2, s2, result):
     assert env._values["MyVar"].get_str("{name}", None, None) == result
 
 
-@pytest.mark.parametrize("op1, v1, op2, v2, result",
-                         [("define", "/path1", "define", "/path2", "/path1"),
-                          ("define", "/path1", "append", "/path2", "/path1"),
-                          ("define", "/path1", "prepend", "/path2", "/path1"),
-                          ("define", "/path1", "unset", "", "/path1"),
-                          ("append", "/path1", "define", "/path2", "/path2:/path1"),
-                          ("append", "/path1", "append", "/path2", "MyVar:/path2:/path1"),
-                          ("append", "/path1", "prepend", "/path2", "/path2:MyVar:/path1"),
-                          ("append", "/path1", "unset", "", "/path1"),
-                          ("prepend", "/path1", "define", "/path2", "/path1:/path2"),
-                          ("prepend", "/path1", "append", "/path2", "/path1:MyVar:/path2"),
-                          ("prepend", "/path1", "prepend", "/path2", "/path1:/path2:MyVar"),
-                          ("prepend", "/path1", "unset", "", "/path1"),
-                          ("unset", "", "define", "/path2", ""),
-                          ("unset", "", "append", "/path2", ""),
-                          ("unset", "", "prepend", "/path2", ""),
-                          ("unset", "", "unset", "", ""),
-                          ])
+@pytest.mark.parametrize(
+    "op1, v1, op2, v2, result",
+    [
+        ("define", "/path1", "define", "/path2", "/path1"),
+        ("define", "/path1", "append", "/path2", "/path1"),
+        ("define", "/path1", "prepend", "/path2", "/path1"),
+        ("define", "/path1", "unset", "", "/path1"),
+        ("append", "/path1", "define", "/path2", "/path2:/path1"),
+        ("append", "/path1", "append", "/path2", "MyVar:/path2:/path1"),
+        ("append", "/path1", "prepend", "/path2", "/path2:MyVar:/path1"),
+        ("append", "/path1", "unset", "", "/path1"),
+        ("prepend", "/path1", "define", "/path2", "/path1:/path2"),
+        ("prepend", "/path1", "append", "/path2", "/path1:MyVar:/path2"),
+        ("prepend", "/path1", "prepend", "/path2", "/path1:/path2:MyVar"),
+        ("prepend", "/path1", "unset", "", "/path1"),
+        ("unset", "", "define", "/path2", ""),
+        ("unset", "", "append", "/path2", ""),
+        ("unset", "", "prepend", "/path2", ""),
+        ("unset", "", "unset", "", ""),
+    ],
+)
 def test_compose_path_combinations(op1, v1, op2, v2, result):
     env = Environment()
     if op1 != "unset":
-        getattr(env, op1+"_path")("MyVar", v1)
+        getattr(env, op1 + "_path")("MyVar", v1)
     else:
         env.unset("MyVar")
     env2 = Environment()
     if op2 != "unset":
-        getattr(env2, op2+"_path")("MyVar", v2)
+        getattr(env2, op2 + "_path")("MyVar", v2)
     else:
         env2.unset("MyVar")
     env.compose_env(env2)
@@ -163,20 +171,24 @@ def test_profile():
     profile_env = ProfileEnvironment.loads(myprofile)
     env = profile_env.get_profile_env("", is_consumer=True)
     env = env.vars(ConanFileMock())
-    with environment_update({"MyVar1": "$MyVar1",
-                             "MyVar2": "$MyVar2",
-                             "MyVar3": "$MyVar3",
-                             "MyVar4": "$MyVar4"}):
+    with environment_update(
+        {
+            "MyVar1": "$MyVar1",
+            "MyVar2": "$MyVar2",
+            "MyVar3": "$MyVar3",
+            "MyVar4": "$MyVar4",
+        }
+    ):
         assert env.get("MyVar1") == "MyValue1"
-        assert env.get("MyVar2", "$MyVar2") == '$MyVar2 MyValue2 MyValue2_2'
-        assert env.get("MyVar3", "$MyVar3") == 'MyValue3 $MyVar3'
+        assert env.get("MyVar2", "$MyVar2") == "$MyVar2 MyValue2 MyValue2_2"
+        assert env.get("MyVar3", "$MyVar3") == "MyValue3 $MyVar3"
         assert env.get("MyVar4") == ""
-        assert env.get("MyVar5") == ''
+        assert env.get("MyVar5") == ""
 
         env = profile_env.get_profile_env(RecipeReference.loads("mypkg1/1.0"))
         env = env.vars(ConanFileMock())
         assert env.get("MyVar1") == "MyValue1"
-        assert env.get("MyVar2", "$MyVar2") == 'MyValue2'
+        assert env.get("MyVar2", "$MyVar2") == "MyValue2"
 
 
 @pytest.fixture
@@ -198,8 +210,9 @@ def envvars():
 
 
 def check_command_output(cmd, prevenv):
-    result, _ = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 env=prevenv, shell=True).communicate()
+    result, _ = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prevenv, shell=True
+    ).communicate()
     out = result.decode()
 
     assert "MyVar=MyValueB!!" in out
@@ -222,7 +235,9 @@ def test_windows_case_insensitive_bat(envvars):
     prevenv = {
         "MYVAR2": "OldValue2",
     }
-    prevenv.update(dict(os.environ.copy()))  # Necessary from Python 3.12, for SYSTEMROOT var
+    prevenv.update(
+        dict(os.environ.copy())
+    )  # Necessary from Python 3.12, for SYSTEMROOT var
 
     with chdir(temp_folder()):
         envvars.save_bat("test.bat")
@@ -330,7 +345,6 @@ def test_public_access():
 
 
 class TestProfileEnvRoundTrip:
-
     def test_define(self):
         myprofile = textwrap.dedent("""
             # define
@@ -501,14 +515,14 @@ def test_custom_placeholder():
     env = Environment()
     env.append_path("MyVar", "MyValue")
     env = env.vars(ConanFileMock())
-    assert env.get("MyVar", variable_reference="$penv{{{name}}}") == \
-           f"$penv{{MyVar}}:MyValue"
+    assert (
+        env.get("MyVar", variable_reference="$penv{{{name}}}") == "$penv{MyVar}:MyValue"
+    )
     items = {k: v for k, v in env.items(variable_reference="$penv{{{name}}}")}
-    assert items == {"MyVar": f"$penv{{MyVar}}:MyValue"}
+    assert items == {"MyVar": "$penv{MyVar}:MyValue"}
 
 
 class TestProfileSeparators:
-
     def test_define(self):
         myprofile = "MyPath1 = (sep=@)/my/path1"
         env = ProfileEnvironment.loads(myprofile).get_profile_env(ref="")

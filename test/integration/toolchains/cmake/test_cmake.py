@@ -37,15 +37,19 @@ def test_configure_args():
     assert "-testok" in client.out
 
 
-@pytest.mark.parametrize("argument, output_args", [
-    ("'target'", "--target target"),
-    ("['target']", "--target target"),
-    ("['target1', 'target2']", "--target target1 target2"),
-])
+@pytest.mark.parametrize(
+    "argument, output_args",
+    [
+        ("'target'", "--target target"),
+        ("['target']", "--target target"),
+        ("['target1', 'target2']", "--target target1 target2"),
+    ],
+)
 def test_multiple_targets(argument, output_args):
     client = TestClient()
 
-    conanfile_template = Template(textwrap.dedent("""
+    conanfile_template = Template(
+        textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.cmake import CMake
         class Pkg(ConanFile):
@@ -59,7 +63,8 @@ def test_multiple_targets(argument, output_args):
 
             def run(self, *args, **kwargs):
                 self.output.info("MYRUN: {}".format(*args))
-            """))
+            """)
+    )
     conanfile = conanfile_template.substitute(argument=argument)
     client.save({"conanfile.py": conanfile})
     client.run("create . ")

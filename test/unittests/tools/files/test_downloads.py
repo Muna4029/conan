@@ -14,23 +14,26 @@ from conan.test.utils.tools import redirect_output, TestRequester
 from conan.internal.util.files import save, load, chdir, mkdir
 
 
-@mock.patch('ftplib.FTP', autospec=True)
+@mock.patch("ftplib.FTP", autospec=True)
 class TestFTP:
-
     def test_ftp_auth(self, ftp_mock):
         ftp_object = ftp_mock.return_value
         filename = "/pub/example/readme2.txt"
         with chdir(temp_folder()):  # To not pollute the project
             ftp_download(None, "test.rebex.net", filename, "demo", "password")
-        ftp_mock.assert_called_with('test.rebex.net')
+        ftp_mock.assert_called_with("test.rebex.net")
         assert ftp_object.login.called
-        ftp_object.cwd.assert_called_with('/pub/example')
+        ftp_object.cwd.assert_called_with("/pub/example")
 
     def test_ftp_invalid_path(self, ftp_mock):
         ftp_object = ftp_mock.return_value
-        ftp_object.cwd.side_effect = Exception("550 The system cannot find the file specified.")
+        ftp_object.cwd.side_effect = Exception(
+            "550 The system cannot find the file specified."
+        )
         with pytest.raises(ConanException) as exc:
-            ftp_download(None, "test.rebex.net", "/path/invalid-file", "demo", "password")
+            ftp_download(
+                None, "test.rebex.net", "/path/invalid-file", "demo", "password"
+            )
         assert "550 The system cannot find the file specified." in str(exc.value)
         assert not os.path.exists("invalid-file")
 
@@ -55,12 +58,24 @@ class TestDownload:
     def test_download(self, _manual):
         conanfile, file_server = _manual
         dest = os.path.join(temp_folder(), "manual.html")
-        download(conanfile, file_server.fake_url + "/manual.html", dest, retry=3, retry_wait=0)
+        download(
+            conanfile,
+            file_server.fake_url + "/manual.html",
+            dest,
+            retry=3,
+            retry_wait=0,
+        )
         content = load(dest)
         assert content == "this is some content"
 
         # Can re-download
-        download(conanfile, file_server.fake_url + "/manual.html", dest, retry=3, retry_wait=0)
+        download(
+            conanfile,
+            file_server.fake_url + "/manual.html",
+            dest,
+            retry=3,
+            retry_wait=0,
+        )
         content = load(dest)
         assert content == "this is some content"
 
@@ -69,8 +84,13 @@ class TestDownload:
         dest = os.path.join(temp_folder(), "manual.html")
         output = RedirectedTestOutput()
         with redirect_output(output):
-            download(conanfile, ["invalid", file_server.fake_url + "/manual.html"], dest,
-                     retry=3, retry_wait=0)
+            download(
+                conanfile,
+                ["invalid", file_server.fake_url + "/manual.html"],
+                dest,
+                retry=3,
+                retry_wait=0,
+            )
         content = load(dest)
         assert content == "this is some content"
         assert "Trying another mirror." in str(output)
@@ -100,7 +120,12 @@ class TestDownload:
         # a "None" token.
         auth = ("None", "None")
         with pytest.raises(AuthenticationException) as exc:
-            download(conanfile, file_server.fake_url + "/basic-auth/manual.html", dest, auth=auth)
+            download(
+                conanfile,
+                file_server.fake_url + "/basic-auth/manual.html",
+                dest,
+                auth=auth,
+            )
         assert "401 Unauthorized" in str(exc.value)
         assert "Bad credentials" in str(exc.value)
 
@@ -108,16 +133,34 @@ class TestDownload:
         conanfile, file_server = _manual
         dest = os.path.join(temp_folder(), "manual.html")
         with pytest.raises(AuthenticationException):
-            download(conanfile, file_server.fake_url + "/basic-auth/manual.html",
-                     dest, auth=("user", "wrong"), retry=0, retry_wait=0)
+            download(
+                conanfile,
+                file_server.fake_url + "/basic-auth/manual.html",
+                dest,
+                auth=("user", "wrong"),
+                retry=0,
+                retry_wait=0,
+            )
 
         # Authorized
-        download(conanfile, file_server.fake_url + "/basic-auth/manual.html", dest,
-                 auth=("user", "password"), retry=0, retry_wait=0)
+        download(
+            conanfile,
+            file_server.fake_url + "/basic-auth/manual.html",
+            dest,
+            auth=("user", "password"),
+            retry=0,
+            retry_wait=0,
+        )
 
         # Authorized using headers
-        download(conanfile, file_server.fake_url + "/basic-auth/manual.html", dest,
-                 headers={"Authorization": "Bearer password"}, retry=0, retry_wait=0)
+        download(
+            conanfile,
+            file_server.fake_url + "/basic-auth/manual.html",
+            dest,
+            headers={"Authorization": "Bearer password"},
+            retry=0,
+            retry_wait=0,
+        )
 
     def test_download_retries_errors(self):
         conanfile = ConanFileMock()
@@ -126,7 +169,9 @@ class TestDownload:
         with pytest.raises(ConanException):
             output = RedirectedTestOutput()
             with redirect_output(output):
-                download(conanfile, "http://fakesomething", "path", retry=2, retry_wait=0.1)
+                download(
+                    conanfile, "http://fakesomething", "path", retry=2, retry_wait=0.1
+                )
         assert str(output).count("Waiting 0.1 seconds to retry...") == 2
 
     def test_download_retries_500_errors(self, _manual):
@@ -134,8 +179,13 @@ class TestDownload:
         with pytest.raises(ConanException):
             output = RedirectedTestOutput()
             with redirect_output(output):
-                download(conanfile, file_server.fake_url + "/internal_error", "path",
-                         retry=2, retry_wait=0.1)
+                download(
+                    conanfile,
+                    file_server.fake_url + "/internal_error",
+                    "path",
+                    retry=2,
+                    retry_wait=0.1,
+                )
         assert str(output).count("Waiting 0.1 seconds to retry...") == 2
 
     def test_download_no_retries_errors(self):
@@ -145,8 +195,13 @@ class TestDownload:
         conanfile._conan_helpers.requester = TestRequester({"file_server": file_server})
         file_path = os.path.join(temp_folder(), "file.txt")
         with pytest.raises(ConanException):
-            download(conanfile, file_server.fake_url + "/manual.html", file_path,
-                     retry=2, retry_wait=0)
+            download(
+                conanfile,
+                file_server.fake_url + "/manual.html",
+                file_path,
+                retry=2,
+                retry_wait=0,
+            )
         assert "Waiting" not in str(conanfile.output)
         assert "retry" not in str(conanfile.output)
 
@@ -177,7 +232,6 @@ class TestDownload:
 
 
 class TestGet:
-
     @pytest.fixture()
     def _my_zip(self):
         tmp_folder = temp_folder()
@@ -186,11 +240,12 @@ class TestGet:
         zipped_file = os.path.join(test_folder, "myfile.txt")
         save(zipped_file, "myfile contents!")
         import tarfile
+
         tar_file = tarfile.open(file_path, "w:gz")
         tar_file.add(test_folder, "test_folder")
         tar_file.add(zipped_file, "test_folder/myfile.txt")
         tar_file.close()
-        assert (os.path.exists(file_path))
+        assert os.path.exists(file_path)
 
         file_server = TestFileServer()
         shutil.copy2(file_path, file_server.store)
@@ -203,15 +258,25 @@ class TestGet:
         conanfile, file_server = _my_zip
         tmp_folder = temp_folder()
         with chdir(tmp_folder):
-            get(conanfile, file_server.fake_url + "/sample.tar.gz", retry=0, retry_wait=0)
+            get(
+                conanfile,
+                file_server.fake_url + "/sample.tar.gz",
+                retry=0,
+                retry_wait=0,
+            )
             assert load("test_folder/myfile.txt") == "myfile contents!"
 
     def test_get_tgz_strip_root(self, _my_zip):
         conanfile, file_server = _my_zip
         tmp_folder = temp_folder()
         with chdir(tmp_folder):
-            get(conanfile, file_server.fake_url + "/sample.tar.gz", retry=0, retry_wait=0,
-                strip_root=True)
+            get(
+                conanfile,
+                file_server.fake_url + "/sample.tar.gz",
+                retry=0,
+                retry_wait=0,
+                strip_root=True,
+            )
             assert load("myfile.txt") == "myfile contents!"
 
 
@@ -221,6 +286,7 @@ class TestGetGz:
         tmp = temp_folder()
         filepath = os.path.join(tmp, "test.txt.gz")
         import gzip
+
         with gzip.open(filepath, "wb") as f:
             f.write(b"hello world zipped!")
 
@@ -236,23 +302,38 @@ class TestGetGz:
         conanfile, file_server = _my_gz
         tmp_folder = temp_folder()
         with chdir(tmp_folder):
-            get(conanfile, file_server.fake_url + "/gz/test.txt.gz", retry=0, retry_wait=0)
+            get(
+                conanfile,
+                file_server.fake_url + "/gz/test.txt.gz",
+                retry=0,
+                retry_wait=0,
+            )
             assert load("test.txt") == "hello world zipped!"
 
     def test_get_gunzip_destination(self, _my_gz):
         conanfile, file_server = _my_gz
         tmp_folder = temp_folder()
         with chdir(tmp_folder):
-            get(conanfile, file_server.fake_url + "/gz/test.txt.gz", destination="myfile.doc",
-                retry=0, retry_wait=0)
+            get(
+                conanfile,
+                file_server.fake_url + "/gz/test.txt.gz",
+                destination="myfile.doc",
+                retry=0,
+                retry_wait=0,
+            )
             assert load("myfile.doc") == "hello world zipped!"
 
     def test_get_gunzip_destination_subfolder(self, _my_gz):
         conanfile, file_server = _my_gz
         tmp_folder = temp_folder()
         with chdir(tmp_folder):
-            get(conanfile, file_server.fake_url + "/gz/test.txt.gz",
-                destination="sub/myfile.doc", retry=0, retry_wait=0)
+            get(
+                conanfile,
+                file_server.fake_url + "/gz/test.txt.gz",
+                destination="sub/myfile.doc",
+                retry=0,
+                retry_wait=0,
+            )
             assert load("sub/myfile.doc") == "hello world zipped!"
 
     def test_get_filename_error(self):

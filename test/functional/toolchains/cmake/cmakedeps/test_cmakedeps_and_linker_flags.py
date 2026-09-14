@@ -52,13 +52,23 @@ def test_shared_link_flags():
     client.run("new cmake_lib -d name=hello -d version=1.0")
     client.save({"conanfile.py": conanfile})
     client.run("create .")
-    host_arch = client.get_default_host_profile().settings['arch']
+    host_arch = client.get_default_host_profile().settings["arch"]
     build_folder = client.created_test_build_folder("hello/1.0")
-    t = os.path.join("test_package", build_folder, "generators",
-                     f"hello-release-{host_arch}-data.cmake")
+    t = os.path.join(
+        "test_package",
+        build_folder,
+        "generators",
+        f"hello-release-{host_arch}-data.cmake",
+    )
     target_data_cmake_content = client.load(t)
-    assert 'set(hello_SHARED_LINK_FLAGS_RELEASE "-z now;-z relro")' in target_data_cmake_content
-    assert 'set(hello_EXE_LINK_FLAGS_RELEASE "-z now;-z relro")' in target_data_cmake_content
+    assert (
+        'set(hello_SHARED_LINK_FLAGS_RELEASE "-z now;-z relro")'
+        in target_data_cmake_content
+    )
+    assert (
+        'set(hello_EXE_LINK_FLAGS_RELEASE "-z now;-z relro")'
+        in target_data_cmake_content
+    )
     assert "hello/1.0: Hello World Release!" in client.out
 
 
@@ -139,8 +149,14 @@ def test_not_mixed_configurations():
     consumer_cpp = gen_function_cpp(name="main", includes=["foo"], calls=["foo"])
     consumer_h = gen_function_h(name="consumer")
 
-    client.save({"conanfile.py": conanfile, "CMakeLists.txt": cmake,
-                 "src/consumer.cpp": consumer_cpp, "src/consumer.h": consumer_h})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "CMakeLists.txt": cmake,
+            "src/consumer.cpp": consumer_cpp,
+            "src/consumer.h": consumer_h,
+        }
+    )
 
     client.run("install . -s build_type=Debug")
     client.run("install . -s build_type=Release")

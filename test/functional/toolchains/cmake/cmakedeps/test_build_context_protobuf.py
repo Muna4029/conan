@@ -119,9 +119,13 @@ def test_build_modules_from_build_context(client):
         deps.build_context_suffix = {"protobuf": "_BUILD"}
     """
 
-    client.save({"conanfile.py": consumer_conanfile.format(cmake_deps_conf),
-                 "CMakeLists.txt": consumer_cmake,
-                 "main.cpp": main})
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile.format(cmake_deps_conf),
+            "CMakeLists.txt": consumer_cmake,
+            "main.cpp": main,
+        }
+    )
 
     client.run("create . --name=app --version=1.0 -pr:b default -pr:h default")
     assert "Library from host context!" in client.out
@@ -148,9 +152,13 @@ def test_build_modules_and_target_from_build_context(client):
         deps.build_context_suffix = {"protobuf": "_BUILD"}
     """
 
-    client.save({"conanfile.py": consumer_conanfile.format(cmake_deps_conf),
-                 "CMakeLists.txt": consumer_cmake,
-                 "main.cpp": main})
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile.format(cmake_deps_conf),
+            "CMakeLists.txt": consumer_cmake,
+            "main.cpp": main,
+        }
+    )
 
     client.run("create . --name=app --version=1.0 -pr:b default -pr:h default")
     assert "Library from build context!" in client.out
@@ -176,9 +184,13 @@ def test_build_modules_from_host_and_target_from_build_context(client):
         deps.build_context_suffix = {"protobuf": "_BUILD"}
     """
 
-    client.save({"conanfile.py": consumer_conanfile.format(cmake_deps_conf),
-                 "CMakeLists.txt": consumer_cmake,
-                 "main.cpp": main})
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile.format(cmake_deps_conf),
+            "CMakeLists.txt": consumer_cmake,
+            "main.cpp": main,
+        }
+    )
 
     client.run("create . --name=app --version=1.0 -pr:b default -pr:h default")
     assert "Library from build context!" in client.out
@@ -206,9 +218,13 @@ def test_build_modules_and_target_from_host_context(client):
         deps.build_context_suffix = {"protobuf": "_BUILD"}
     """
 
-    client.save({"conanfile.py": consumer_conanfile.format(cmake_deps_conf),
-                 "CMakeLists.txt": consumer_cmake,
-                 "main.cpp": main})
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile.format(cmake_deps_conf),
+            "CMakeLists.txt": consumer_cmake,
+            "main.cpp": main,
+        }
+    )
 
     client.run("create . --name=app --version=1.0 -pr:b default -pr:h default")
     assert "Conan: Target declared 'protobuf::protobuf'" in client.out
@@ -221,13 +237,19 @@ def test_exception_when_not_prefix_specified(client):
     cmake_deps_conf = """
         deps.build_context_activated = ["protobuf"]
     """
-    client.save({"conanfile.py": consumer_conanfile.format(cmake_deps_conf),
-                 "main.cpp": main})
+    client.save(
+        {"conanfile.py": consumer_conanfile.format(cmake_deps_conf), "main.cpp": main}
+    )
 
-    client.run("create . --name=app --version=1.0 -pr:b default -pr:h default", assert_error=True)
-    assert "The package 'protobuf' exists both as 'require' and as 'build require'. " \
-           "You need to specify a suffix using the 'build_context_suffix' attribute at the " \
-           "CMakeDeps generator." in client.out
+    client.run(
+        "create . --name=app --version=1.0 -pr:b default -pr:h default",
+        assert_error=True,
+    )
+    assert (
+        "The package 'protobuf' exists both as 'require' and as 'build require'. "
+        "You need to specify a suffix using the 'build_context_suffix' attribute at the "
+        "CMakeDeps generator." in client.out
+    )
 
 
 @pytest.mark.tool("cmake")
@@ -244,9 +266,13 @@ def test_not_activated_not_fail(client):
         target_link_libraries(app protobuf::protobuf)
         """)
 
-    client.save({"conanfile.py": consumer_conanfile.format(""),
-                 "CMakeLists.txt": consumer_cmake,
-                 "main.cpp": main})
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile.format(""),
+            "CMakeLists.txt": consumer_cmake,
+            "main.cpp": main,
+        }
+    )
 
     client.run("create . --name=app --version=1.0 -pr:b default -pr:h default")
     assert "app/1.0: Created package" in client.out

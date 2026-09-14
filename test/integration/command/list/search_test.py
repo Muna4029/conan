@@ -12,7 +12,6 @@ from conan.test.utils.tools import TestClient, TestServer
 
 
 class TestSearch:
-
     @pytest.fixture
     def remotes(self):
         self.servers = OrderedDict()
@@ -26,15 +25,19 @@ class TestSearch:
         self.client = TestClient(servers=self.servers)
 
         self.client.run("search", assert_error=True)
-        assert "error: the following arguments are required: reference" in self.client.out
+        assert (
+            "error: the following arguments are required: reference" in self.client.out
+        )
 
     def test_search_no_matching_recipes(self, remotes):
-        expected_output = ("Connecting to remote 'remote1' anonymously\n"
-                           "Connecting to remote 'remote2' anonymously\n"
-                           "remote1\n"
-                           "  ERROR: Recipe 'whatever' not found\n"
-                           "remote2\n"
-                           "  ERROR: Recipe 'whatever' not found\n")
+        expected_output = (
+            "Connecting to remote 'remote1' anonymously\n"
+            "Connecting to remote 'remote2' anonymously\n"
+            "remote1\n"
+            "  ERROR: Recipe 'whatever' not found\n"
+            "remote2\n"
+            "  ERROR: Recipe 'whatever' not found\n"
+        )
 
         self.client.run("search whatever")
         assert expected_output == self.client.out
@@ -54,7 +57,6 @@ class TestSearch:
 
 
 class TestRemotes:
-
     @pytest.fixture(autouse=True)
     def _setup(self):
         self.servers = OrderedDict()
@@ -73,20 +75,29 @@ class TestRemotes:
                 pass
             """)
 
-        self.client.save({'conanfile.py': conanfile})
+        self.client.save({"conanfile.py": conanfile})
         reference = RecipeReference.loads(str(reference))
-        self.client.run(f"export . --name={reference.name} --version={reference.version} --user={reference.user} --channel={reference.channel}")
+        self.client.run(
+            f"export . --name={reference.name} --version={reference.version} --user={reference.user} --channel={reference.channel}"
+        )
         self.client.run("upload --force -r {} {}".format(remote, reference))
 
-    @pytest.mark.parametrize("exc,output", [
-        (ConanConnectionError("Review your network!"),
-         "ERROR: Review your network!"),
-        (ConanException("Boom!"), "ERROR: Boom!")
-    ])
+    @pytest.mark.parametrize(
+        "exc,output",
+        [
+            (
+                ConanConnectionError("Review your network!"),
+                "ERROR: Review your network!",
+            ),
+            (ConanException("Boom!"), "ERROR: Boom!"),
+        ],
+    )
     def test_search_remote_errors_but_no_raising_exceptions(self, exc, output):
         self._add_remote("remote1")
         self._add_remote("remote2")
-        with patch("conan.api.subapi.search.SearchAPI.recipes", new=Mock(side_effect=exc)):
+        with patch(
+            "conan.api.subapi.search.SearchAPI.recipes", new=Mock(side_effect=exc)
+        ):
             self.client.run("search whatever")
         expected_output = textwrap.dedent(f"""\
         remote1
@@ -109,11 +120,7 @@ class TestRemotes:
 
         self.client.run("search -r {} {}".format(remote_name, "test_recipe"))
 
-        expected_output = (
-            "remote1\n"
-            "  test_recipe\n"
-            "    {}\n".format(recipe_name)
-        )
+        expected_output = "remote1\n  test_recipe\n    {}\n".format(recipe_name)
 
         assert expected_output in self.client.out
 
@@ -176,7 +183,6 @@ class TestRemotes:
         assert expected_output in self.client.out
 
     def test_search_package_found_in_one_remote(self):
-
         remote1 = "remote1"
         remote2 = "remote2"
 

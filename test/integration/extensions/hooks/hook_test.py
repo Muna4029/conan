@@ -75,10 +75,11 @@ def post_package_info(conanfile):
 
 
 class TestHooks:
-
     def test_complete_hook(self):
         c = TestClient()
-        hook_path = os.path.join(c.paths.hooks_path, "complete_hook", "hook_complete.py")
+        hook_path = os.path.join(
+            c.paths.hooks_path, "complete_hook", "hook_complete.py"
+        )
         save(hook_path, complete_hook)
         c.save({"conanfile.py": GenConanfile("pkg", "0.1")})
 
@@ -120,8 +121,7 @@ class TestHooks:
         assert f"pkg/0.1: {hook_msg} post_package_info(): Hello" in c.out
 
     def test_import_hook(self):
-        """ Test that a hook can import another random python file
-        """
+        """Test that a hook can import another random python file"""
         custom_module = textwrap.dedent("""
             def my_printer(output):
                 output.info("my_printer(): CUSTOM MODULE")
@@ -135,35 +135,42 @@ class TestHooks:
             """)
         c = TestClient()
         hook_path = os.path.join(c.paths.hooks_path, "my_hook", "hook_my_hook.py")
-        init_path = os.path.join(c.paths.hooks_path, "my_hook", "custom_module", "__init__.py")
-        custom_path = os.path.join(c.paths.hooks_path, "my_hook", "custom_module", "custom.py")
-        c.save({init_path: "",
+        init_path = os.path.join(
+            c.paths.hooks_path, "my_hook", "custom_module", "__init__.py"
+        )
+        custom_path = os.path.join(
+            c.paths.hooks_path, "my_hook", "custom_module", "custom.py"
+        )
+        c.save(
+            {
+                init_path: "",
                 custom_path: custom_module,
                 hook_path: my_hook,
-                "conanfile.py": GenConanfile("pkg", "1.0")})
+                "conanfile.py": GenConanfile("pkg", "1.0"),
+            }
+        )
 
         c.run("export . ")
-        assert "[HOOK - my_hook/hook_my_hook.py] pre_export(): my_printer(): CUSTOM MODULE" \
-               in c.out
+        assert (
+            "[HOOK - my_hook/hook_my_hook.py] pre_export(): my_printer(): CUSTOM MODULE"
+            in c.out
+        )
 
     def test_hook_raising(self):
-        """ Test output when a hook raises
-        """
+        """Test output when a hook raises"""
         c = TestClient()
         my_hook = textwrap.dedent("""
             def pre_export(conanfile):
                 raise Exception("Boom")
             """)
         hook_path = os.path.join(c.paths.hooks_path, "my_hook", "hook_my_hook.py")
-        c.save({hook_path: my_hook,
-                "conanfile.py": GenConanfile("pkg", "1.0")})
+        c.save({hook_path: my_hook, "conanfile.py": GenConanfile("pkg", "1.0")})
 
         c.run("export . ", assert_error=True)
         assert "ERROR: [HOOK - my_hook/hook_my_hook.py] pre_export(): Boom" in c.out
 
     def test_post_build_fail(self):
-        """ Test the post_build_fail hook
-        """
+        """Test the post_build_fail hook"""
         c = TestClient()
         my_hook = textwrap.dedent("""
            def post_build_fail(conanfile):
@@ -180,12 +187,14 @@ class TestHooks:
         c.save({"conanfile.py": conanfile})
 
         c.run("build . ", assert_error=True)
-        assert "conanfile.py: [HOOK - my_hook/hook_my_hook.py] post_build_fail(): Hello" in c.out
+        assert (
+            "conanfile.py: [HOOK - my_hook/hook_my_hook.py] post_build_fail(): Hello"
+            in c.out
+        )
         assert "ERROR: conanfile.py: Error in build() method, line 5" in c.out
 
     def test_validate_hook(self):
-        """ The validate hooks are executed only if the method is declared in the recipe.
-        """
+        """The validate hooks are executed only if the method is declared in the recipe."""
         c = TestClient()
         hook_path = os.path.join(c.paths.hooks_path, "testing", "hook_complete.py")
         save(hook_path, complete_hook)
@@ -199,14 +208,20 @@ class TestHooks:
         c.save({"conanfile.py": conanfile})
 
         c.run("create . --name=foo --version=0.1.0")
-        assert f"foo/0.1.0: [HOOK - testing/hook_complete.py] pre_validate(): Hello" in c.out
-        assert f"foo/0.1.0: [HOOK - testing/hook_complete.py] post_validate(): Hello" in c.out
+        assert (
+            "foo/0.1.0: [HOOK - testing/hook_complete.py] pre_validate(): Hello"
+            in c.out
+        )
+        assert (
+            "foo/0.1.0: [HOOK - testing/hook_complete.py] post_validate(): Hello"
+            in c.out
+        )
 
 
 @pytest.mark.parametrize("hook_name", ["pre_validate", "post_validate"])
 def test_validate_invalid_configuration(hook_name):
-    """ When raising ConanInvalidConfiguration in the pre_validate and post_validate hooks,
-        it should be forwarded and preserve the same exception type.
+    """When raising ConanInvalidConfiguration in the pre_validate and post_validate hooks,
+    it should be forwarded and preserve the same exception type.
     """
     hook = textwrap.dedent(f"""
         from conan.errors import ConanInvalidConfiguration
@@ -225,10 +240,14 @@ def test_validate_invalid_configuration(hook_name):
     """)
 
     client = TestClient()
-    hook_path = os.path.join(client.paths.hooks_path, "custom_hooks", "hook_pre_validate.py")
-    client.save({"conanfile.py": conanfile,
-                 hook_path: hook})
+    hook_path = os.path.join(
+        client.paths.hooks_path, "custom_hooks", "hook_pre_validate.py"
+    )
+    client.save({"conanfile.py": conanfile, hook_path: hook})
 
     client.run("build . ", assert_error=True)
-    assert f"ERROR: conanfile.py: Invalid ID: Invalid: Invalid configuration in {hook_name} hook" in client.out
+    assert (
+        f"ERROR: conanfile.py: Invalid ID: Invalid: Invalid configuration in {hook_name} hook"
+        in client.out
+    )
     assert "Should not reach this point" not in client.out

@@ -117,9 +117,9 @@ def test_build_modules_custom_script():
         find_package(myfunctions MODULE REQUIRED)
         myfunction()
         """)
-    client.save({"conanfile.py": consumer,
-                 "CMakeLists.txt": cmakelists},
-                clean_first=True)
+    client.save(
+        {"conanfile.py": consumer, "CMakeLists.txt": cmakelists}, clean_first=True
+    )
     client.run("build .")
     assert "Hello myfunction!!!!" in client.out
 
@@ -162,9 +162,13 @@ def test_build_modules_components_is_not_possible():
             message("ROOT MESSAGE:${ARGV${0}}")
         endfunction()
         """)
-    client.save({"conanfile.py": conanfile,
-                 "crypto.cmake": crypto_cmake,
-                 "root.cmake": root_cmake})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "crypto.cmake": crypto_cmake,
+            "root.cmake": root_cmake,
+        }
+    )
     client.run("create .")
 
     consumer = textwrap.dedent("""
@@ -274,17 +278,25 @@ def test_build_modules_custom_script_editable(editable):
         myfunction()
         otherfunc()
         """)
-    c.save({"functions/conanfile.py": conanfile,
+    c.save(
+        {
+            "functions/conanfile.py": conanfile,
             "functions/src/myfunction.cmake": myfunction,
             "app/conanfile.py": consumer,
-            "app/CMakeLists.txt": cmakelists})
+            "app/CMakeLists.txt": cmakelists,
+        }
+    )
 
     if editable:
         c.run("editable add functions")
-        c.run('build functions -c tools.cmake.cmake_layout:build_folder_vars="[\'settings.arch\']"')
+        c.run(
+            "build functions -c tools.cmake.cmake_layout:build_folder_vars=\"['settings.arch']\""
+        )
     else:
         c.run("create functions")
-    c.run('build app -c tools.cmake.cmake_layout:build_folder_vars="[\'settings.arch\']"')
+    c.run(
+        "build app -c tools.cmake.cmake_layout:build_folder_vars=\"['settings.arch']\""
+    )
     assert "Hello myfunction!!!!" in c.out
     assert "Hello contents of text file!!!!" in c.out
 
@@ -361,17 +373,25 @@ def test_build_modules_custom_script_editable_package(editable):
         myfunction()
         otherfunc()
         """)
-    c.save({"functions/conanfile.py": conanfile,
+    c.save(
+        {
+            "functions/conanfile.py": conanfile,
             "functions/src/myfunction.cmake": myfunction,
             "functions/src/vis/my.vis": "contents of text file!!!!",
             "app/conanfile.py": consumer,
-            "app/CMakeLists.txt": cmakelists})
+            "app/CMakeLists.txt": cmakelists,
+        }
+    )
 
     if editable:
         c.run("editable add functions")
-        c.run('build functions -c tools.cmake.cmake_layout:build_folder_vars="[\'settings.arch\']"')
+        c.run(
+            "build functions -c tools.cmake.cmake_layout:build_folder_vars=\"['settings.arch']\""
+        )
     else:
         c.run("create functions -vv")
-    c.run('build app -c tools.cmake.cmake_layout:build_folder_vars="[\'settings.arch\']"')
+    c.run(
+        "build app -c tools.cmake.cmake_layout:build_folder_vars=\"['settings.arch']\""
+    )
     assert "Hello myfunction!!!!" in c.out
     assert "Hello contents of text file!!!!" in c.out

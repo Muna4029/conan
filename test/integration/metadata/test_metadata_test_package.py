@@ -8,7 +8,7 @@ from conan.internal.util.files import save
 
 
 class TestMetadataTestPackage:
-    """ It is possible to store the test_package itself in the recipe metadata and recover it
+    """It is possible to store the test_package itself in the recipe metadata and recover it
     later to execute it
     """
 
@@ -27,8 +27,12 @@ class TestMetadataTestPackage:
             """)
         hook_path = os.path.join(c.paths.hooks_path, "my_hook", "hook_my_hook.py")
         save(hook_path, my_hook)
-        c.save({"conanfile.py": GenConanfile("pkg", "0.1"),
-                "test_package/conanfile.py": GenConanfile().with_test("pass")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile("pkg", "0.1"),
+                "test_package/conanfile.py": GenConanfile().with_test("pass"),
+            }
+        )
         c.run("create .")
         assert "Testing the package" in c.out
 

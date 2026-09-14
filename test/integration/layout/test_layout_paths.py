@@ -19,20 +19,27 @@ def test_editable_layout_paths():
             def layout(self):
                 self.cpp.source.includedirs = ["include"]
             """)
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_settings("build_type", "arch")
-                                                          .with_requires("dep/0.1")
-                                                          .with_generator("CMakeDeps")
-                                                          .with_generator("PkgConfigDeps")
-                                                          .with_generator("XcodeDeps")})
+    c.save(
+        {
+            "dep/conanfile.py": dep,
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1")
+            .with_settings("build_type", "arch")
+            .with_requires("dep/0.1")
+            .with_generator("CMakeDeps")
+            .with_generator("PkgConfigDeps")
+            .with_generator("XcodeDeps"),
+        }
+    )
     c.run("editable add dep")
     c.run("install pkg -s arch=x86_64")
     # It doesn't crash anymore
 
     assert "dep/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709 - Editable" in c.out
-    data = c.load(f"pkg/dep-release-x86_64-data.cmake")
+    data = c.load("pkg/dep-release-x86_64-data.cmake")
 
-    assert 'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")' in data
+    assert (
+        'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")' in data
+    )
     pc = c.load("pkg/dep.pc")
     assert "includedir=${prefix}/include" in pc
     xcode = c.load("pkg/conan_dep_dep_release_x86_64.xcconfig")

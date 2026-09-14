@@ -38,12 +38,17 @@ def test_cpp_info_sources():
     # Check that the hello library builds in test_package
     c.run(f"create . -c tools.cmake.cmakedeps:new={new_value}")
     # Check content of the generated files
-    c.run(f"install --requires=hello/1.0 -g=CMakeConfigDeps "
-          f"-c tools.cmake.cmakedeps:new={new_value}")
+    c.run(
+        f"install --requires=hello/1.0 -g=CMakeConfigDeps "
+        f"-c tools.cmake.cmakedeps:new={new_value}"
+    )
     cmake = c.load("hello-Targets-release.cmake")
     assert "add_library(hello::hello INTERFACE IMPORTED)" in cmake
-    assert "set_property(TARGET hello::hello APPEND PROPERTY INTERFACE_SOURCES\n"\
-           "             $<$<CONFIG:RELEASE>:${hello_PACKAGE_FOLDER_RELEASE}/src/hello.cpp>)" in cmake
+    assert (
+        "set_property(TARGET hello::hello APPEND PROPERTY INTERFACE_SOURCES\n"
+        "             $<$<CONFIG:RELEASE>:${hello_PACKAGE_FOLDER_RELEASE}/src/hello.cpp>)"
+        in cmake
+    )
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="No OS specific test")
@@ -68,24 +73,37 @@ def test_cpp_info_component_sources():
             def package_info(self):
                 self.cpp_info.components["my_comp"].sources = ["src/hello.cpp", "src/other.cpp"]
     """)
-    c.save({
-        "conanfile.py": conanfile,
-        "src/other.cpp": "",
-    })
+    c.save(
+        {
+            "conanfile.py": conanfile,
+            "src/other.cpp": "",
+        }
+    )
 
     # Make test_package link with component's target
-    test_package_cmakelists_path = os.path.join(c.current_folder, "test_package", "CMakeLists.txt")
-    replace_in_file(ConanFileMock(), test_package_cmakelists_path, "hello::hello", "hello::my_comp")
+    test_package_cmakelists_path = os.path.join(
+        c.current_folder, "test_package", "CMakeLists.txt"
+    )
+    replace_in_file(
+        ConanFileMock(), test_package_cmakelists_path, "hello::hello", "hello::my_comp"
+    )
     test_package_cmakelists_content = c.load(test_package_cmakelists_path)
-    assert "target_link_libraries(example hello::my_comp)" in test_package_cmakelists_content
+    assert (
+        "target_link_libraries(example hello::my_comp)"
+        in test_package_cmakelists_content
+    )
     # Check that the hello library builds in test_package
     c.run(f"create . -c tools.cmake.cmakedeps:new={new_value}")
     # Check the content of the generated files
-    c.run(f"install --requires=hello/1.0 -g=CMakeConfigDeps "
-          f"-c tools.cmake.cmakedeps:new={new_value}")
+    c.run(
+        f"install --requires=hello/1.0 -g=CMakeConfigDeps "
+        f"-c tools.cmake.cmakedeps:new={new_value}"
+    )
     cmake = c.load("hello-Targets-release.cmake")
     assert "add_library(hello::hello INTERFACE IMPORTED)" in cmake
     assert "add_library(hello::my_comp INTERFACE IMPORTED)" in cmake
-    assert "set_property(TARGET hello::my_comp APPEND PROPERTY INTERFACE_SOURCES\n"\
-           "             $<$<CONFIG:RELEASE>:${hello_PACKAGE_FOLDER_RELEASE}/src/hello.cpp"\
-           " ${hello_PACKAGE_FOLDER_RELEASE}/src/other.cpp>)" in cmake
+    assert (
+        "set_property(TARGET hello::my_comp APPEND PROPERTY INTERFACE_SOURCES\n"
+        "             $<$<CONFIG:RELEASE>:${hello_PACKAGE_FOLDER_RELEASE}/src/hello.cpp"
+        " ${hello_PACKAGE_FOLDER_RELEASE}/src/other.cpp>)" in cmake
+    )

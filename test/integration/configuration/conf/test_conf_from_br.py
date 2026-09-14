@@ -44,9 +44,10 @@ def test_basic():
         [conf]
         tools.android:ndk_path=MY-SYSTEM-NDK!!!
         """)
-    client.save({"conanfile.py": consumer,
-                 "linux": linux_profile,
-                 "android": android_profile}, clean_first=True)
+    client.save(
+        {"conanfile.py": consumer, "linux": linux_profile, "android": android_profile},
+        clean_first=True,
+    )
 
     client.run("install . -pr=linux")
     assert "conanfile.py: NDK: MY-NDK!!!" in client.out
@@ -93,11 +94,14 @@ def test_basic_conf_through_cli():
         [conf]
         tools.android:ndk_path=MY-SYSTEM-NDK!!!
         """)
-    client.save({"conanfile.py": consumer,
-                 "linux": linux_profile,
-                 "android": android_profile}, clean_first=True)
-    client.run('install . -c:b=tools.android:ndk_path="MY-NDK!!!" '
-               '-c:h=tools.android:ndk_path="MY-SYSTEM-NDK!!!" -pr:b=default -pr:h=android')
+    client.save(
+        {"conanfile.py": consumer, "linux": linux_profile, "android": android_profile},
+        clean_first=True,
+    )
+    client.run(
+        'install . -c:b=tools.android:ndk_path="MY-NDK!!!" '
+        '-c:h=tools.android:ndk_path="MY-SYSTEM-NDK!!!" -pr:b=default -pr:h=android'
+    )
     assert "android_ndk/1.0: NDK build: MY-NDK!!!" in client.out
     assert "conanfile.py: NDK host: MY-SYSTEM-NDK!!!" in client.out
 
@@ -146,7 +150,7 @@ def test_declared_generators_get_conf():
 
 
 def test_propagate_conf_info():
-    """ test we can use the conf_info to propagate information from the dependencies
+    """test we can use the conf_info to propagate information from the dependencies
     to the consumers. The propagation is explicit.
     TO DISCUSS: Should conf be aggregated always from all requires?
     TODO: Backport to Conan 1.X so UserInfo is not longer necessary in 1.X
@@ -202,24 +206,34 @@ def test_conf_transitive_tool():
                 if self.settings_target is not None:
                     self.output.info(f"target: {{self.settings_target.build_type}}")
         """)
-    client.save({"zlib/conanfile.py": conanfile.format(""),
-                 "libbuilder/conanfile.py": conanfile.format("requires='zlib/0.1'"),
-                 "lib/conanfile.py": conanfile.format("tool_requires='libbuilder/0.1'"),
-                 "tool/conanfile.py": conanfile.format("requires='lib/0.1'"),
-                 "app/conanfile.py": conanfile.format("tool_requires='tool/0.1'")})
+    client.save(
+        {
+            "zlib/conanfile.py": conanfile.format(""),
+            "libbuilder/conanfile.py": conanfile.format("requires='zlib/0.1'"),
+            "lib/conanfile.py": conanfile.format("tool_requires='libbuilder/0.1'"),
+            "tool/conanfile.py": conanfile.format("requires='lib/0.1'"),
+            "app/conanfile.py": conanfile.format("tool_requires='tool/0.1'"),
+        }
+    )
     client.run("export zlib --name=zlib")
     client.run("export libbuilder --name=libbuilder")
     client.run("export lib --name=lib")
     client.run("export tool --name=tool")
-    client.run("create app --name=app -s:b build_type=Release -s:h build_type=Debug --build=missing")
+    client.run(
+        "create app --name=app -s:b build_type=Release -s:h build_type=Debug --build=missing"
+    )
     for lib in "zlib", "libbuilder":
         assert f"{lib}/0.1: host: Release" in client.out
         assert f"{lib}/0.1: build: Release" in client.out
-        assert f"{lib}/0.1: target: Release" in client.out  # used to create lib/0.1 that is Release!
+        assert (
+            f"{lib}/0.1: target: Release" in client.out
+        )  # used to create lib/0.1 that is Release!
     for lib in "lib", "tool":
         assert f"{lib}/0.1: host: Release" in client.out
         assert f"{lib}/0.1: build: Release" in client.out
-        assert f"{lib}/0.1: target: Debug" in client.out  # used to create app/0.1 that is Debug!
+        assert (
+            f"{lib}/0.1: target: Debug" in client.out
+        )  # used to create app/0.1 that is Debug!
     assert "app/0.1: host: Debug" in client.out
     assert "app/0.1: build: Release" in client.out
 
@@ -260,20 +274,32 @@ def test_conf_both_build_and_host():
                 self.output.info(f"MYCONF {self.context}: {self.conf.get('user.team:myconf')}")
         """)
 
-    client.save({"myprotobuf/conanfile.py": myprotobuf,
-                 "app/conanfile.py": GenConanfile().with_requires("myprotobuf/0.1")
-                                                   .with_tool_requires("myprotobuf/0.1")},
-                clean_first=True)
-    client.run('export myprotobuf')
-    client.run("install app --build=missing -s:h build_type=Debug -s:b build_type=Release")
+    client.save(
+        {
+            "myprotobuf/conanfile.py": myprotobuf,
+            "app/conanfile.py": GenConanfile()
+            .with_requires("myprotobuf/0.1")
+            .with_tool_requires("myprotobuf/0.1"),
+        },
+        clean_first=True,
+    )
+    client.run("export myprotobuf")
+    client.run(
+        "install app --build=missing -s:h build_type=Debug -s:b build_type=Release"
+    )
     assert "myprotobuf/0.1: MYCONF build: Release" in client.out
     assert "myprotobuf/0.1: MYCONF host: Debug" in client.out
 
 
-@pytest.mark.parametrize("conf", ['define("user.myorg:myconf", self.options.myopt)',
-                                  'define("user.myorg:myconf", self.settings.os)',
-                                  'append("user.myorg:myconf", self.settings.os)',
-                                  'prepend("user.myorg:myconf", self.settings.os)'])
+@pytest.mark.parametrize(
+    "conf",
+    [
+        'define("user.myorg:myconf", self.options.myopt)',
+        'define("user.myorg:myconf", self.settings.os)',
+        'append("user.myorg:myconf", self.settings.os)',
+        'prepend("user.myorg:myconf", self.settings.os)',
+    ],
+)
 def test_error_bad_types(conf):
     c = TestClient(light=True)
     conanfile = textwrap.dedent(f"""
@@ -290,7 +316,7 @@ def test_error_bad_types(conf):
     c.save({"conanfile.py": conanfile})
     c.run("create .", assert_error=True)
     assert "ERROR: tool/0.1: Error in package_info() method, line 10"
-    assert f'self.conf_info.{conf}' in c.out
+    assert f"self.conf_info.{conf}" in c.out
     assert "Invalid 'conf' type, please use Python types (int, str, ...)" in c.out
 
 
@@ -316,7 +342,7 @@ def test_error_missing_colon_define(conf):
 
 def test_error_missing_colon_consume():
     c = TestClient(light=True)
-    conanfile = textwrap.dedent(f"""
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         class Pkg(ConanFile):
             def generate(self):
@@ -324,4 +350,7 @@ def test_error_missing_colon_consume():
         """)
     c.save({"conanfile.py": conanfile})
     c.run("install .", assert_error=True)
-    assert "User conf 'user.myorg.myconf' invalid format, not 'user.org.group:conf'" in c.out
+    assert (
+        "User conf 'user.myorg.myconf' invalid format, not 'user.org.group:conf'"
+        in c.out
+    )

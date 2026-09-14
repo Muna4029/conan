@@ -1,5 +1,4 @@
 import os
-import pytest
 
 from conan.internal.api.uploader import compress_files
 from conan.internal.paths import PACKAGE_TGZ_NAME
@@ -8,7 +7,6 @@ from conan.internal.util.files import save
 
 
 class TestRemoteManager:
-
     def test_compress_files(self):
         folder = temp_folder()
         save(os.path.join(folder, "one_file.txt"), "The contents")

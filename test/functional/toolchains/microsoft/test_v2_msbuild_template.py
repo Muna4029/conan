@@ -14,7 +14,9 @@ def test_msbuild_lib_template():
     client.run("install .")
     client.run("build .")
 
-    assert os.path.isfile(os.path.join(client.current_folder, "x64", "Release", "hello.lib"))
+    assert os.path.isfile(
+        os.path.join(client.current_folder, "x64", "Release", "hello.lib")
+    )
     client.run("export-pkg .")
     package_folder = client.created_layout().package()
     assert os.path.exists(os.path.join(package_folder, "include", "hello.h"))
@@ -42,7 +44,9 @@ def test_msbuild_lib_2022():
     client.run("new msbuild_lib -d name=hello -d version=0.1")
 
     # Create works
-    client.run("create . -s compiler.version=191 -c tools.microsoft.msbuild:vs_version=17")
+    client.run(
+        "create . -s compiler.version=191 -c tools.microsoft.msbuild:vs_version=17"
+    )
     assert "hello/0.1: Hello World Release!" in client.out
     # This is the default compiler.version=191 in conftest
     assert "Activating environment Visual Studio 17" in client.out

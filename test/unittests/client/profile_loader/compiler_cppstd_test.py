@@ -17,7 +17,6 @@ from conan.internal.util.files import save
 
 
 class TestSettingsCppStd:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.cache_folder = temp_folder()
@@ -28,7 +27,8 @@ class TestSettingsCppStd:
     def _save_profile(self, compiler_cppstd=None, filename="default"):
         fullpath = os.path.join(self.home_paths.profiles_path, filename)
 
-        t = Template(textwrap.dedent("""
+        t = Template(
+            textwrap.dedent("""
             [settings]
             os=Macos
             arch=x86_64
@@ -36,7 +36,8 @@ class TestSettingsCppStd:
             {% if compiler_cppstd %}compiler.cppstd={{ compiler_cppstd }}{% endif %}
             compiler.libcxx=libc++
             compiler.version=10.0
-            """))
+            """)
+        )
 
         save(fullpath, t.render(compiler_cppstd=compiler_cppstd))
         return filename
@@ -55,10 +56,14 @@ class TestSettingsCppStd:
             """)
         save(fullpath, t)
         profile_loader = ProfileLoader(self.cache_folder)
-        with pytest.raises(ConanException,
-                                    match="'settings.compiler.cppstd' doesn't exist for 'apple-clang'"):
+        with pytest.raises(
+            ConanException,
+            match="'settings.compiler.cppstd' doesn't exist for 'apple-clang'",
+        ):
             profile = profile_loader.from_cli_args(["default"], None, None, None, None)
-            settings = Settings(yaml.safe_load(default_settings_yml.replace("cppstd", "foobar")))
+            settings = Settings(
+                yaml.safe_load(default_settings_yml.replace("cppstd", "foobar"))
+            )
             profile.process_settings(settings)
 
     def test_no_value(self):
@@ -86,8 +91,11 @@ class TestSettingsCppStd:
     def test_value_invalid(self):
         self._save_profile(compiler_cppstd="13")
         profile_loader = ProfileLoader(self.cache_folder)
-        with pytest.raises(ConanException, match="Invalid setting '13' is not a valid "
-                                                    "'settings.compiler.cppstd' value"):
+        with pytest.raises(
+            ConanException,
+            match="Invalid setting '13' is not a valid "
+            "'settings.compiler.cppstd' value",
+        ):
             r = profile_loader.from_cli_args(["default"], None, None, None, None)
             settings = Settings(yaml.safe_load(default_settings_yml))
             r.process_settings(settings)

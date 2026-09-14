@@ -22,8 +22,13 @@ def create_libs():
     # Upload all created libs to the remote
     tc.run("upload * -c -r=default")
 
-    tc.save({"conanfile.py": GenConanfile("app", "1.0")
-            .with_requires("zlib/1.0", "libcurl/[>=1.0]")})
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("app", "1.0").with_requires(
+                "zlib/1.0", "libcurl/[>=1.0]"
+            )
+        }
+    )
     return tc
 
 
@@ -135,8 +140,13 @@ def test_two_remotes():
     tc.run("remove libcurl/2.0 -c")
     tc.run("remove zlib/2.0 -c")
 
-    tc.save({"conanfile.py": GenConanfile("app", "1.0")
-            .with_requires("zlib/1.0", "libcurl/[>=1.0]")})
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("app", "1.0").with_requires(
+                "zlib/1.0", "libcurl/[>=1.0]"
+            )
+        }
+    )
 
     tc.run("graph outdated . --format=json")
     output = json.loads(tc.stdout)
@@ -164,14 +174,26 @@ def test_duplicated_tool_requires():
     # Upload the created libraries to remote
     tc.run("upload * -c -r=default")
 
-    tc.save({"conanfile.py": GenConanfile("app", "1.0")
-            .with_requires("foo/1.0", "bar/1.0").with_tool_requires("cmake/[<=2.0]")})
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("app", "1.0")
+            .with_requires("foo/1.0", "bar/1.0")
+            .with_tool_requires("cmake/[<=2.0]")
+        }
+    )
 
     tc.run("graph outdated . --format=json")
     output = json.loads(tc.stdout)
 
-    assert sorted(output["cmake"]["current_versions"]) == ["cmake/1.0", "cmake/2.0", "cmake/3.0"]
-    assert sorted(output["cmake"]["version_ranges"]) == ["cmake/[<=2.0]", "cmake/[>=1.0]"]
+    assert sorted(output["cmake"]["current_versions"]) == [
+        "cmake/1.0",
+        "cmake/2.0",
+        "cmake/3.0",
+    ]
+    assert sorted(output["cmake"]["version_ranges"]) == [
+        "cmake/[<=2.0]",
+        "cmake/[>=1.0]",
+    ]
     assert output["cmake"]["latest_remote"]["ref"] == "cmake/3.0"
 
 

@@ -22,8 +22,7 @@ def client():
       MyVar2=MyValue2_1
       """)
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "profile1": profile1})
+    client.save({"conanfile.py": conanfile, "profile1": profile1})
     return client
 
 
@@ -62,10 +61,21 @@ def test_buildenv_package_patterns():
         value = self.buildenv.vars(self).get("my_env_var") or "None"
         self.output.warning("{} ENV:{}".format(self.ref.name, value))
 """
-    client.save({"dep/conanfile.py": str(conanfile) + generate,
-                 "pkg/conanfile.py": str(conanfile.with_requirement("dep/0.1", visible=False)) + generate,
-                 "consumer/conanfile.py": str(conanfile.with_requires("pkg/0.1")
-                .with_settings("os", "build_type", "arch")) + generate})
+    client.save(
+        {
+            "dep/conanfile.py": str(conanfile) + generate,
+            "pkg/conanfile.py": str(
+                conanfile.with_requirement("dep/0.1", visible=False)
+            )
+            + generate,
+            "consumer/conanfile.py": str(
+                conanfile.with_requires("pkg/0.1").with_settings(
+                    "os", "build_type", "arch"
+                )
+            )
+            + generate,
+        }
+    )
 
     client.run("export dep --name=dep --version=0.1")
     client.run("export pkg --name=pkg --version=0.1")

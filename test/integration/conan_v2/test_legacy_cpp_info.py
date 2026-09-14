@@ -33,13 +33,24 @@ def test_legacy_names_filenames():
         """)
     c.save({"conanfile.py": conanfile})
     c.run("create .")
-    for name in ["cpp_info.names", "cpp_info.filenames", "env_info", "user_info", "cpp_info.build_modules"]:
+    for name in [
+        "cpp_info.names",
+        "cpp_info.filenames",
+        "env_info",
+        "user_info",
+        "cpp_info.build_modules",
+    ]:
         assert f"WARN: deprecated:     '{name}' used in: pkg/1.0" in c.out
 
     c.save_home({"global.conf": 'core:skip_warnings=["deprecated"]'})
     c.run("create .")
-    for name in ["cpp_info.names", "cpp_info.filenames", "env_info", "user_info",
-                 "cpp_info.build_modules"]:
+    for name in [
+        "cpp_info.names",
+        "cpp_info.filenames",
+        "env_info",
+        "user_info",
+        "cpp_info.build_modules",
+    ]:
         assert f"'{name}' used in: pkg/1.0" not in c.out
 
 
@@ -52,8 +63,12 @@ class TestLegacy1XRecipes:
                 name = "pkg"
                 version = "1.0"
             """)
-        c.save({"pkg/conanfile.py": conanfile,
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("pkg/1.0")})
+        c.save(
+            {
+                "pkg/conanfile.py": conanfile,
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("pkg/1.0"),
+            }
+        )
         # With EDITABLE, we can emulate errors without exporting
         c.run("export pkg")
         layout = c.get_latest_ref_layout(RecipeReference.loads("pkg/1.0"))
@@ -64,4 +79,3 @@ class TestLegacy1XRecipes:
         c.run("install app", assert_error=True)
         assert "Recipe 'pkg/1.0' seems broken." in c.out
         assert "It is possible that this recipe is not Conan 2.0 ready" in c.out
-

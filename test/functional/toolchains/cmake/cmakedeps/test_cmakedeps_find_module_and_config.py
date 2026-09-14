@@ -64,10 +64,14 @@ def client():
                                                                  "mi_dependencia_namespace::mi_crispin_target")
         """)
 
-    t.save({"conanfile.py": conanfile,
+    t.save(
+        {
+            "conanfile.py": conanfile,
             "mydep.cpp": cpp,
             "mydep.h": h,
-            "CMakeLists.txt": cmake})
+            "CMakeLists.txt": cmake,
+        }
+    )
 
     t.run("create .")
     return t
@@ -101,21 +105,40 @@ def test_reuse_with_modules_and_config(client):
     """
 
     # test config
-    conanfile = GenConanfile().with_name("myapp")\
-        .with_cmake_build().with_exports_sources("*.cpp", "*.txt").with_require("mydep/1.0")
-    client.save({"conanfile.py": conanfile,
-                 "main.cpp": cpp,
-                 "CMakeLists.txt": cmake.format(cmake_exe_config)})
+    conanfile = (
+        GenConanfile()
+        .with_name("myapp")
+        .with_cmake_build()
+        .with_exports_sources("*.cpp", "*.txt")
+        .with_require("mydep/1.0")
+    )
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": cpp,
+            "CMakeLists.txt": cmake.format(cmake_exe_config),
+        }
+    )
 
     client.run("install .")
     client.run("build .")
 
     # test modules
-    conanfile = GenConanfile().with_name("myapp")\
-        .with_cmake_build().with_exports_sources("*.cpp", "*.txt").with_require("mydep/1.0")
-    client.save({"conanfile.py": conanfile,
-                 "main.cpp": cpp,
-                 "CMakeLists.txt": cmake.format(cmake_exe_module)}, clean_first=True)
+    conanfile = (
+        GenConanfile()
+        .with_name("myapp")
+        .with_cmake_build()
+        .with_exports_sources("*.cpp", "*.txt")
+        .with_require("mydep/1.0")
+    )
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": cpp,
+            "CMakeLists.txt": cmake.format(cmake_exe_module),
+        },
+        clean_first=True,
+    )
 
     client.run("install .")
     client.run("build .")
@@ -127,12 +150,14 @@ find_modes = [
     ("config", "config", ""),
     ("module", "module", ""),
     (None, "both", ""),
-    (None, "both", "MODULE")
+    (None, "both", "MODULE"),
 ]
 
 
 @pytest.mark.tool("cmake")
-@pytest.mark.parametrize("find_mode_PKGA, find_mode_PKGB, find_mode_consumer", find_modes)
+@pytest.mark.parametrize(
+    "find_mode_PKGA, find_mode_PKGB, find_mode_consumer", find_modes
+)
 def test_transitive_modules_found(find_mode_PKGA, find_mode_PKGB, find_mode_consumer):
     """
     related to https://github.com/conan-io/conan/issues/10224
@@ -186,11 +211,24 @@ def test_transitive_modules_found(find_mode_PKGA, find_mode_PKGB, find_mode_cons
         message("MYPKGB_DEFINITIONS: ${{MYPKGB_DEFINITIONS}}")
         """)
 
-    client.save({"pkgb.py": conan_pkg.format(requires='requires="pkga/1.0"', filename='MYPKGB', module_filename='MYPKGB',
-                                             mode=find_mode_PKGB),
-                 "pkga.py": conan_pkg.format(requires='', filename='MYPKGA', module_filename='unicorns', mode=find_mode_PKGA),
-                 "consumer.py": consumer,
-                 "CMakeLists.txt": cmakelist.format(find_mode=find_mode_consumer)})
+    client.save(
+        {
+            "pkgb.py": conan_pkg.format(
+                requires='requires="pkga/1.0"',
+                filename="MYPKGB",
+                module_filename="MYPKGB",
+                mode=find_mode_PKGB,
+            ),
+            "pkga.py": conan_pkg.format(
+                requires="",
+                filename="MYPKGA",
+                module_filename="unicorns",
+                mode=find_mode_PKGA,
+            ),
+            "consumer.py": consumer,
+            "CMakeLists.txt": cmakelist.format(find_mode=find_mode_consumer),
+        }
+    )
 
     client.run("create pkga.py --name=pkga --version=1.0")
     client.run("create pkgb.py --name=pkgb --version=1.0")
@@ -203,13 +241,17 @@ def test_transitive_modules_found(find_mode_PKGA, find_mode_PKGB, find_mode_cons
     # The MYPKG_LIBRARIES contains the target for the current package, but the target is linked
     # with the dependencies also:
     assert "MYPKGB_LIBRARIES: pkgb::pkgb" in client.out
-    assert "MYPKGB_LINKED_LIBRARIES: '$<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;pkgb_DEPS_TARGET'" in client.out
-    assert "MYPKGB_DEPS_LIBRARIES: '$<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;" \
-           "$<$<CONFIG:Release>:pkga::pkga>'" in client.out
+    assert (
+        "MYPKGB_LINKED_LIBRARIES: '$<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;pkgb_DEPS_TARGET'"
+        in client.out
+    )
+    assert (
+        "MYPKGB_DEPS_LIBRARIES: '$<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;"
+        "$<$<CONFIG:Release>:pkga::pkga>'" in client.out
+    )
 
     assert "MYPKGB_DEFINITIONS: -DDEFINE_MYPKGB" in client.out
     assert "Conan: Target declared 'pkga::pkga'"
 
     if find_mode_PKGA == "module":
         assert 'Found unicorns: 1.0 (found version "1.0")' in client.out
-

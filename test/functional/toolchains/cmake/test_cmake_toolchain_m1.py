@@ -15,25 +15,33 @@ from conan.test.utils.tools import TestClient
 def test_m1(op_system):
     os_version = "os.version=12.0" if op_system == "iOS" else ""
     os_sdk = "" if op_system == "Macos" else "os.sdk=iphoneos"
-    profile = textwrap.dedent("""
+    profile = textwrap.dedent(
+        """
         include(default)
         [settings]
         os={}
         {}
         {}
         arch=armv8
-    """.format(op_system, os_sdk, os_version))
+    """.format(op_system, os_sdk, os_version)
+    )
 
     client = TestClient(path_with_spaces=False)
     client.save({"m1": profile}, clean_first=True)
     client.run("new cmake_lib -d name=hello -d version=0.1")
-    client.run("create . --profile:build=default --profile:host=m1 -tf=\"\"")
+    client.run('create . --profile:build=default --profile:host=m1 -tf=""')
 
     main = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
-    custom_content = 'message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}") \n' \
-                     'message("CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}") \n'
-    cmakelists = gen_cmakelists(find_package=["hello"], appname="main", appsources=["main.cpp"],
-                                custom_content=custom_content)
+    custom_content = (
+        'message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}") \n'
+        'message("CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}") \n'
+    )
+    cmakelists = gen_cmakelists(
+        find_package=["hello"],
+        appname="main",
+        appsources=["main.cpp"],
+        custom_content=custom_content,
+    )
 
     conanfile = textwrap.dedent("""
         from conan import ConanFile
@@ -54,16 +62,24 @@ def test_m1(op_system):
                 cmake.build()
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "CMakeLists.txt": cmakelists,
-                 "main.cpp": main,
-                 "m1": profile}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "CMakeLists.txt": cmakelists,
+            "main.cpp": main,
+            "m1": profile,
+        },
+        clean_first=True,
+    )
     client.run("build . --profile:build=default --profile:host=m1")
-    system_name = 'Darwin' if op_system == 'Macos' else 'iOS'
+    system_name = "Darwin" if op_system == "Macos" else "iOS"
     assert "CMAKE_SYSTEM_NAME: {}".format(system_name) in client.out
     assert "CMAKE_SYSTEM_PROCESSOR: arm64" in client.out
-    main_path = "./build/Release/main.app/main" if op_system == "iOS" \
+    main_path = (
+        "./build/Release/main.app/main"
+        if op_system == "iOS"
         else "./build/Release/main"
+    )
     client.run_command("lipo -info {}".format(main_path))
     assert "Non-fat file" in client.out
     assert "is architecture: arm64" in client.out

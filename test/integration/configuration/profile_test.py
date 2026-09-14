@@ -41,7 +41,6 @@ def create_profile(folder, name, settings=None, package_settings=None, options=N
 
 
 class ProfileTest(unittest.TestCase):
-
     def setUp(self):
         self.client = TestClient()
 
@@ -57,47 +56,56 @@ class ProfileTest(unittest.TestCase):
         self.client.save({CONANFILE: conanfile_scope_env})
         self.client.run("export . --user=lasote --channel=stable")
 
-        profile = '''
+        profile = """
         [settings
-        '''
+        """
         clang_profile_path = os.path.join(self.client.paths.profiles_path, "clang")
         save(clang_profile_path, profile)
-        self.client.run("install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
-                        assert_error=True)
+        self.client.run(
+            "install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
+            assert_error=True,
+        )
         self.assertIn("Error reading 'clang' profile", self.client.out)
         self.assertIn("Bad syntax", self.client.out)
 
-        profile = '''
+        profile = """
         [settings]
         [invented]
-        '''
+        """
         save(clang_profile_path, profile)
-        self.client.run("install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
-                        assert_error=True)
+        self.client.run(
+            "install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
+            assert_error=True,
+        )
         self.assertIn("Unrecognized field 'invented'", self.client.out)
         self.assertIn("Error reading 'clang' profile", self.client.out)
 
-        profile = '''
+        profile = """
         [settings]
         as
-        '''
+        """
         save(clang_profile_path, profile)
-        self.client.run("install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
-                        assert_error=True)
-        self.assertIn("Error reading 'clang' profile: Invalid setting line 'as'",
-                      self.client.out)
+        self.client.run(
+            "install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
+            assert_error=True,
+        )
+        self.assertIn(
+            "Error reading 'clang' profile: Invalid setting line 'as'", self.client.out
+        )
 
-        profile = '''
+        profile = """
         [settings]
         os =   a value
-        '''
+        """
         save(clang_profile_path, profile)
-        self.client.run("install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
-                        assert_error=True)
+        self.client.run(
+            "install --requires=hello0/0.1@lasote/stable --build missing -pr clang",
+            assert_error=True,
+        )
         # stripped "a value"
         self.assertIn("'a value' is not a valid 'settings.os'", self.client.out)
 
-    @parameterized.expand([("", ), ("./local_profiles/", ), (None, )])
+    @parameterized.expand([("",), ("./local_profiles/",), (None,)])
     def test_install_with_missing_profile(self, path):
         if path is None:
             # Not good practice to introduce temp_folder() in the expand because it randomize
@@ -111,13 +119,21 @@ class ProfileTest(unittest.TestCase):
     @pytest.mark.skipif(platform.system() != "Windows", reason="Windows profiles")
     def test_install_profile_settings(self):
         # Create a profile and use it
-        profile_settings = OrderedDict([("compiler", "msvc"),
-                                        ("compiler.version", "191"),
-                                        ("compiler.runtime", "dynamic"),
-                                        ("arch", "x86")])
+        profile_settings = OrderedDict(
+            [
+                ("compiler", "msvc"),
+                ("compiler.version", "191"),
+                ("compiler.runtime", "dynamic"),
+                ("arch", "x86"),
+            ]
+        )
 
-        create_profile(self.client.paths.profiles_path, "vs_12_86",
-                       settings=profile_settings, package_settings={})
+        create_profile(
+            self.client.paths.profiles_path,
+            "vs_12_86",
+            settings=profile_settings,
+            package_settings={},
+        )
 
         self.client.save({"conanfile.py": conanfile_scope_env})
         self.client.run("export . --user=lasote --channel=stable")
@@ -127,7 +143,9 @@ class ProfileTest(unittest.TestCase):
             self.assertIn("%s=%s" % (setting, value), info)
 
         # Try to override some settings in install command
-        self.client.run("install . --build missing -pr vs_12_86 -s compiler.version=191")
+        self.client.run(
+            "install . --build missing -pr vs_12_86 -s compiler.version=191"
+        )
         info = self.client.out
         for setting, value in profile_settings.items():
             if setting != "compiler.version":
@@ -141,36 +159,49 @@ class ProfileTest(unittest.TestCase):
         tmp_settings["compiler.libcxx"] = "libstdc++11"
         tmp_settings["compiler.version"] = "4.8"
         package_settings = {"hello0/*": tmp_settings}
-        create_profile(self.client.paths.profiles_path,
-                       "vs_12_86_hello0_gcc", settings=profile_settings,
-                       package_settings=package_settings)
+        create_profile(
+            self.client.paths.profiles_path,
+            "vs_12_86_hello0_gcc",
+            settings=profile_settings,
+            package_settings=package_settings,
+        )
         # Try to override some settings in install command
-        self.client.run("install . --build missing -pr vs_12_86_hello0_gcc -s compiler.version=191")
+        self.client.run(
+            "install . --build missing -pr vs_12_86_hello0_gcc -s compiler.version=191"
+        )
         info = self.client.out
         self.assertIn("compiler=gcc", info)
         self.assertIn("compiler.libcxx=libstdc++11", info)
 
         # If other package is specified compiler is not modified
         package_settings = {"NoExistsRecipe": tmp_settings}
-        create_profile(self.client.paths.profiles_path,
-                       "vs_12_86_hello0_gcc", settings=profile_settings,
-                       package_settings=package_settings)
+        create_profile(
+            self.client.paths.profiles_path,
+            "vs_12_86_hello0_gcc",
+            settings=profile_settings,
+            package_settings=package_settings,
+        )
 
         # Mix command line package settings with profile
         package_settings = {"hello0/*": tmp_settings}
-        create_profile(self.client.paths.profiles_path, "vs_12_86_hello0_gcc",
-                       settings=profile_settings, package_settings=package_settings)
+        create_profile(
+            self.client.paths.profiles_path,
+            "vs_12_86_hello0_gcc",
+            settings=profile_settings,
+            package_settings=package_settings,
+        )
 
         # Try to override some settings in install command
-        self.client.run("install . --build missing -pr vs_12_86_hello0_gcc"
-                        " -s compiler.version=191 -s hello0/*:compiler.libcxx=libstdc++")
+        self.client.run(
+            "install . --build missing -pr vs_12_86_hello0_gcc"
+            " -s compiler.version=191 -s hello0/*:compiler.libcxx=libstdc++"
+        )
         info = self.client.out
         self.assertIn("compiler=gcc", info)
         self.assertNotIn("compiler.libcxx=libstdc++11", info)
         self.assertIn("compiler.libcxx=libstdc++", info)
 
     def test_install_profile_package_settings(self):
-
         conanfile = textwrap.dedent("""
             from conan import ConanFile
             class HelloConan(ConanFile):
@@ -184,11 +215,15 @@ class ProfileTest(unittest.TestCase):
         self.client.save({"conanfile.py": conanfile})
 
         # Create a profile and use it
-        profile_settings = OrderedDict([("os", "Windows"),
-                                        ("compiler", "msvc"),
-                                        ("compiler.version", "191"),
-                                        ("compiler.runtime", "dynamic"),
-                                        ("arch", "x86")])
+        profile_settings = OrderedDict(
+            [
+                ("os", "Windows"),
+                ("compiler", "msvc"),
+                ("compiler.version", "191"),
+                ("compiler.runtime", "dynamic"),
+                ("arch", "x86"),
+            ]
+        )
 
         # Use package settings in profile
         tmp_settings = OrderedDict()
@@ -196,9 +231,12 @@ class ProfileTest(unittest.TestCase):
         tmp_settings["compiler.libcxx"] = "libstdc++11"
         tmp_settings["compiler.version"] = "4.8"
         package_settings = {"*@lasote/*": tmp_settings}
-        _create_profile(self.client.paths.profiles_path,
-                        "myprofile", settings=profile_settings,
-                        package_settings=package_settings)
+        _create_profile(
+            self.client.paths.profiles_path,
+            "myprofile",
+            settings=profile_settings,
+            package_settings=package_settings,
+        )
         # Try to override some settings in install command
         self.client.run("install . --user=lasote --channel=testing -pr myprofile")
         info = self.client.out
@@ -206,9 +244,12 @@ class ProfileTest(unittest.TestCase):
         self.assertIn("(hello0/0.1@lasote/testing): 4.8", info)
 
         package_settings = {"*@other/*": tmp_settings}
-        _create_profile(self.client.paths.profiles_path,
-                        "myprofile", settings=profile_settings,
-                        package_settings=package_settings)
+        _create_profile(
+            self.client.paths.profiles_path,
+            "myprofile",
+            settings=profile_settings,
+            package_settings=package_settings,
+        )
         # Try to override some settings in install command
         self.client.run("install . --user=lasote --channel=testing -pr myprofile")
         info = self.client.out
@@ -233,21 +274,29 @@ class ProfileTest(unittest.TestCase):
             mypkg/0.1@user/channel:os=FreeBSD
             """)
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "profile": profile})
+        client.save({"conanfile.py": conanfile, "profile": profile})
 
-        client.run("create . --name=mypkg --version=0.1 --user=user --channel=channel -pr=profile")
+        client.run(
+            "create . --name=mypkg --version=0.1 --user=user --channel=channel -pr=profile"
+        )
         assert "mypkg/0.1@user/channel: SETTINGS! os=FreeBSD!!" in client.out
         client.run("create . --name=mypkg --version=0.1 -pr=profile")
         assert "mypkg/0.1: SETTINGS! os=Linux!!" in client.out
 
     def test_install_profile_options(self):
-        create_profile(self.client.paths.profiles_path, "vs_12_86",
-                       options={"hello0*:language": 1,
-                                "hello0*:static": False})
+        create_profile(
+            self.client.paths.profiles_path,
+            "vs_12_86",
+            options={"hello0*:language": 1, "hello0*:static": False},
+        )
 
-        self.client.save({"conanfile.py": GenConanfile("hello0", "1").with_option("language", [1, 2])
-                          .with_option("static", [True, False])})
+        self.client.save(
+            {
+                "conanfile.py": GenConanfile("hello0", "1")
+                .with_option("language", [1, 2])
+                .with_option("static", [True, False])
+            }
+        )
         self.client.run("install . --build missing -pr vs_12_86")
         info = self.client.out
         self.assertIn("language=1", info)
@@ -256,8 +305,12 @@ class ProfileTest(unittest.TestCase):
     def test_scopes_env(self):
         # Create a profile and use it
         c = TestClient()
-        c.save({"profile": "include(default)\n[buildenv]\nCXX=/path/tomy/g++",
-                "conanfile.py": conanfile_scope_env})
+        c.save(
+            {
+                "profile": "include(default)\n[buildenv]\nCXX=/path/tomy/g++",
+                "conanfile.py": conanfile_scope_env,
+            }
+        )
 
         c.run("build . -pr=profile")
         assert "CXX=/path/tomy/g++" in c.out
@@ -267,10 +320,9 @@ class ProfileTest(unittest.TestCase):
         assert os.environ.get("CXX", None) != "/path/tomy/g++"
 
     def test_info_with_profiles(self):
-
         self.client.run("remove '*' -c")
         # Create a simple recipe to require
-        winreq_conanfile = '''
+        winreq_conanfile = """
 from conan import ConanFile
 
 class winrequireDefaultNameConan(ConanFile):
@@ -278,14 +330,14 @@ class winrequireDefaultNameConan(ConanFile):
     version = "0.1"
     settings = "os", "compiler", "arch", "build_type"
 
-'''
+"""
 
         files = {"conanfile.py": winreq_conanfile}
         self.client.save(files)
         self.client.run("export . --user=lasote --channel=stable")
 
         # Now require the first recipe depending on OS=windows
-        conanfile = '''from conan import ConanFile
+        conanfile = """from conan import ConanFile
 import os
 
 class DefaultNameConan(ConanFile):
@@ -297,31 +349,39 @@ class DefaultNameConan(ConanFile):
         if self.settings.os == "Windows":
             self.requires("winrequire/0.1@lasote/stable")
 
-'''
+"""
         files = {"conanfile.py": conanfile}
         self.client.save(files)
         self.client.run("export . --user=lasote --channel=stable")
 
         # Create a profile that doesn't activate the require
-        create_profile(self.client.paths.profiles_path, "scopes_env",
-                       settings={"os": "Linux"})
+        create_profile(
+            self.client.paths.profiles_path, "scopes_env", settings={"os": "Linux"}
+        )
 
         # Install with the previous profile
-        self.client.run("graph info --requires=hello/0.1@lasote/stable --profile scopes_env")
-        self.assertNotIn('''Requires:
-                winrequire/0.1@lasote/stable''', self.client.out)
+        self.client.run(
+            "graph info --requires=hello/0.1@lasote/stable --profile scopes_env"
+        )
+        self.assertNotIn(
+            """Requires:
+                winrequire/0.1@lasote/stable""",
+            self.client.out,
+        )
 
         # Create a profile that activate the require
-        create_profile(self.client.paths.profiles_path, "scopes_env",
-                       settings={"os": "Windows"})
+        create_profile(
+            self.client.paths.profiles_path, "scopes_env", settings={"os": "Windows"}
+        )
 
         # Install with the previous profile
-        self.client.run("graph info --requires=hello/0.1@lasote/stable --profile scopes_env")
-        self.assertIn(' winrequire/0.1@lasote/stable', self.client.out)
+        self.client.run(
+            "graph info --requires=hello/0.1@lasote/stable --profile scopes_env"
+        )
+        self.assertIn(" winrequire/0.1@lasote/stable", self.client.out)
 
 
 class ProfileAggregationTest(unittest.TestCase):
-
     profile1 = dedent("""
     [settings]
     os=Windows
@@ -361,20 +421,29 @@ class ProfileAggregationTest(unittest.TestCase):
 
     def setUp(self):
         self.client = TestClient()
-        self.client.save({CONANFILE: self.conanfile,
-                          "profile1": self.profile1, "profile2": self.profile2})
+        self.client.save(
+            {
+                CONANFILE: self.conanfile,
+                "profile1": self.profile1,
+                "profile2": self.profile2,
+            }
+        )
         self._pkg_lib_10_id = "9b7f1e80c96289e8d9a3e7ded02830525090d5d4"
 
     def test_info(self):
         # The latest declared profile has priority
-        self.client.run("create . --name=lib --version=1.0 --user=user --channel=channel --profile profile1 -pr profile2")
+        self.client.run(
+            "create . --name=lib --version=1.0 --user=user --channel=channel --profile profile1 -pr profile2"
+        )
 
         self.client.save({CONANFILE: self.consumer})
         self.client.run("graph info . --profile profile1 --profile profile2")
         self.assertIn(self._pkg_lib_10_id, self.client.out)
 
     def test_export_pkg(self):
-        self.client.run("export-pkg . --name=lib --version=1.0 --user=user --channel=channel -pr profile1 -pr profile2")
+        self.client.run(
+            "export-pkg . --name=lib --version=1.0 --user=user --channel=channel -pr profile1 -pr profile2"
+        )
         # ID for the expected settings applied: x86, Visual Studio 15,...
         self.assertIn(self._pkg_lib_10_id, self.client.out)
 
@@ -395,22 +464,27 @@ class ProfileAggregationTest(unittest.TestCase):
             """)
 
         self.client.save({"profile1": profile1, "profile2": profile2})
-        self.client.run("create . --name=lib --version=1.0 --profile profile2 -pr profile1")
-        self.assertIn(dedent("""\
+        self.client.run(
+            "create . --name=lib --version=1.0 --profile profile2 -pr profile1"
+        )
+        self.assertIn(
+            dedent("""\
                              [settings]
                              arch=x86_64
                              compiler=msvc
                              compiler.runtime=dynamic
                              compiler.runtime_type=Release
                              compiler.version=191
-                             os=Windows"""), self.client.out)
+                             os=Windows"""),
+            self.client.out,
+        )
 
 
 def test_profile_from_cache_path():
-    """ When passing relative folder/profile as profile file, it MUST be used
-        conan install . -pr=profiles/default
-        /tmp/profiles/default MUST be consumed as target profile
-        https://github.com/conan-io/conan/pull/8685
+    """When passing relative folder/profile as profile file, it MUST be used
+    conan install . -pr=profiles/default
+    /tmp/profiles/default MUST be consumed as target profile
+    https://github.com/conan-io/conan/pull/8685
     """
     client = TestClient()
     path = os.path.join(client.paths.profiles_path, "android", "profile1")
@@ -421,38 +495,40 @@ def test_profile_from_cache_path():
 
 
 def test_profile_from_relative_pardir():
-    """ When passing relative ../path as profile file, it MUST be used
-        conan install . -pr=../profiles/default
-        /tmp/profiles/default MUST be consumed as target profile
+    """When passing relative ../path as profile file, it MUST be used
+    conan install . -pr=../profiles/default
+    /tmp/profiles/default MUST be consumed as target profile
     """
     client = TestClient()
-    client.save({"profiles/default": "[settings]\nos=AIX",
-                 "current/conanfile.txt": ""})
+    client.save({"profiles/default": "[settings]\nos=AIX", "current/conanfile.txt": ""})
     with client.chdir("current"):
         client.run("install . -pr=../profiles/default")
     assert "os=AIX" in client.out
 
 
 def test_profile_from_relative_dotdir():
-    """ When passing relative ./path as profile file, it MUST be used
-        conan install . -pr=./profiles/default
-        /tmp/profiles/default MUST be consumed as target profile
+    """When passing relative ./path as profile file, it MUST be used
+    conan install . -pr=./profiles/default
+    /tmp/profiles/default MUST be consumed as target profile
     """
     client = TestClient()
-    client.save({os.path.join("profiles", "default"): "[settings]\nos=AIX",
-                 os.path.join("current", "conanfile.txt"): ""})
+    client.save(
+        {
+            os.path.join("profiles", "default"): "[settings]\nos=AIX",
+            os.path.join("current", "conanfile.txt"): "",
+        }
+    )
     client.run("install ./current -pr=./profiles/default")
     assert "os=AIX" in client.out
 
 
 def test_profile_from_temp_absolute_path():
-    """ When passing absolute path as profile file, it MUST be used
-        conan install . -pr=/tmp/profiles/default
-        /tmp/profiles/default MUST be consumed as target profile
+    """When passing absolute path as profile file, it MUST be used
+    conan install . -pr=/tmp/profiles/default
+    /tmp/profiles/default MUST be consumed as target profile
     """
     client = TestClient()
-    client.save({"profiles/default": "[settings]\nos=AIX",
-                 "current/conanfile.txt": ""})
+    client.save({"profiles/default": "[settings]\nos=AIX", "current/conanfile.txt": ""})
     profile_path = os.path.join(client.current_folder, "profiles", "default")
     recipe_path = os.path.join(client.current_folder, "current", "conanfile.txt")
     client.run('install "{}" -pr="{}"'.format(recipe_path, profile_path))
@@ -461,8 +537,12 @@ def test_profile_from_temp_absolute_path():
 
 def test_consumer_specific_settings():
     client = TestClient()
-    dep = str(GenConanfile().with_settings("build_type").with_option("shared", [True, False])
-              .with_default_option("shared", False))
+    dep = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_option("shared", [True, False])
+        .with_default_option("shared", False)
+    )
     configure = """
     def configure(self):
         self.output.warning("I'm {} and my build type is {}".format(self.name,
@@ -472,10 +552,17 @@ def test_consumer_specific_settings():
     dep += configure
     client.save({"conanfile.py": dep})
     client.run("create . --name=dep --version=1.0")
-    client.run("create . --name=dep --version=1.0 -s build_type=Debug -o dep*:shared=True")
+    client.run(
+        "create . --name=dep --version=1.0 -s build_type=Debug -o dep*:shared=True"
+    )
 
-    consumer = str(GenConanfile().with_settings("build_type").with_requires("dep/1.0")
-                   .with_option("shared", [True, False]).with_default_option("shared", False))
+    consumer = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_requires("dep/1.0")
+        .with_option("shared", [True, False])
+        .with_default_option("shared", False)
+    )
     consumer += configure
     client.save({"conanfile.py": consumer})
 
@@ -501,10 +588,15 @@ def test_consumer_specific_settings():
     assert "I'm None and my shared is True" in client.out
 
     # Now use a conanfile.txt
-    client.save({"conanfile.txt": textwrap.dedent("""
+    client.save(
+        {
+            "conanfile.txt": textwrap.dedent("""
             [requires]
             dep/1.0
-    """)}, clean_first=True)
+    """)
+        },
+        clean_first=True,
+    )
 
     # Regular install with release
     client.run("install . -s build_type=Release")
@@ -523,12 +615,17 @@ def test_consumer_specific_settings():
         # Verify the cmake toolchain takes Debug
         assert "I'm dep and my shared is False" in client.out
         presets = json.loads(client.load("CMakePresets.json"))
-        assert presets["configurePresets"][0]["cacheVariables"]['CMAKE_BUILD_TYPE'] == "Debug"
+        assert (
+            presets["configurePresets"][0]["cacheVariables"]["CMAKE_BUILD_TYPE"]
+            == "Debug"
+        )
 
 
 def test_create_and_priority_of_consumer_specific_setting():
     client = TestClient()
-    conanfile = str(GenConanfile().with_settings("build_type").with_name("foo").with_version("1.0"))
+    conanfile = str(
+        GenConanfile().with_settings("build_type").with_name("foo").with_version("1.0")
+    )
     configure = """
     def configure(self):
         self.output.warning("I'm {} and my build type is {}".format(self.name,
@@ -571,13 +668,19 @@ def test_package_consumer_is_only_the_tested_one():
             def test(self):
                 pass
         """)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "1.0"),
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_option("myoption", [1, 2]),
-            "pkg/test_package/conanfile.py": test})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "1.0"),
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_option(
+                "myoption", [1, 2]
+            ),
+            "pkg/test_package/conanfile.py": test,
+        }
+    )
     c.run("create dep")
     c.run("create pkg -o &:myoption=1")
     # This would crash if myoption is applied to dep
-    assert 'pkg/0.1 (test package): Running test()' in c.out
+    assert "pkg/0.1 (test package): Running test()" in c.out
 
 
 def test_consumer_specific_settings_from_profile():
@@ -604,8 +707,9 @@ def test_consumer_invalid_profile_multiple_groups():
     Issue related: https://github.com/conan-io/conan/issues/16448
     """
     client = TestClient()
-    conanfile = GenConanfile(name="hello", version="1.0").with_settings("os", "arch",
-                                                                        "build_type", "compiler")
+    conanfile = GenConanfile(name="hello", version="1.0").with_settings(
+        "os", "arch", "build_type", "compiler"
+    )
     prof1 = textwrap.dedent("""\
     [settings]
     arch=x86_64
@@ -628,20 +732,26 @@ def test_consumer_invalid_profile_multiple_groups():
     [conf]
     # Another one
     """)
-    client.save({
-        "conanfile.py": conanfile,
-        "myprofs/myprofile": prof1
-    })
-    client.run("build . --profile:host myprofs/myprofile -g CMakeToolchain",
-               assert_error=True)
-    assert ("ERROR: Error reading 'myprofs/myprofile' profile: ConfigParser: "
-            "Duplicated section: [settings]") in client.out
+    client.save({"conanfile.py": conanfile, "myprofs/myprofile": prof1})
+    client.run(
+        "build . --profile:host myprofs/myprofile -g CMakeToolchain", assert_error=True
+    )
+    assert (
+        "ERROR: Error reading 'myprofs/myprofile' profile: ConfigParser: "
+        "Duplicated section: [settings]"
+    ) in client.out
+
 
 def test_compose_numeric_values_scoped_pkg():
     tc = TestClient(light=True)
-    tc.save({"conanfile.py": GenConanfile("hello", "0.1")
-                .with_package("self.output.info('user.var.value: ' + str(self.conf.get('user.var:value')))"),
-             "profile": """[conf]\nuser.var:value=8.1\nhello/*:user.var:value=10\n"""})
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("hello", "0.1").with_package(
+                "self.output.info('user.var.value: ' + str(self.conf.get('user.var:value')))"
+            ),
+            "profile": """[conf]\nuser.var:value=8.1\nhello/*:user.var:value=10\n""",
+        }
+    )
 
     tc.run("create . -pr=profile")
     assert "user.var.value: 10" in tc.out

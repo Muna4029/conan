@@ -2,7 +2,6 @@ from conan.internal.model.cpp_info import CppInfo
 
 
 class TestCppInfoComponents:
-
     def test_components_set(self):
         cpp_info = CppInfo(set_defaults=True)
         cpp_info.components["liba"].libs = ["liba"]
@@ -14,12 +13,14 @@ class TestCppInfoComponents:
         assert cpp_info.components["libc"].libs == ["thelibc"]
 
         import pytest
+
         with pytest.raises(AttributeError):
             cpp_info.required_components = ["liba::liba"]
 
     def test_no_components_inside_components(self):
         cpp_info = CppInfo()
         import pytest
+
         with pytest.raises(AttributeError):
             _ = cpp_info.components["libb"].components
 
@@ -67,13 +68,22 @@ class TestCppInfoComponents:
         info.components["Crypto"].bindirs.append("another_other_bin")
         info.components["Crypto"].resdirs.extend(["another_res"])
         info.components["Crypto"].resdirs.append("another_other_res")
-        assert ["different_include", "another_include", "another_other_include"] == \
-                         info.components["Crypto"].includedirs
-        assert ["different_lib", "another_lib", "another_other_lib"] == \
-                         info.components["Crypto"].libdirs
-        assert ["different_build", "another_build", "another_other_build"] == \
-                         info.components["Crypto"].builddirs
-        assert ["different_bin", "another_bin", "another_other_bin"] == \
-                         info.components["Crypto"].bindirs
-        assert ["different_res", "another_res", "another_other_res"] == \
-                         info.components["Crypto"].resdirs
+        assert [
+            "different_include",
+            "another_include",
+            "another_other_include",
+        ] == info.components["Crypto"].includedirs
+        assert ["different_lib", "another_lib", "another_other_lib"] == info.components[
+            "Crypto"
+        ].libdirs
+        assert [
+            "different_build",
+            "another_build",
+            "another_other_build",
+        ] == info.components["Crypto"].builddirs
+        assert ["different_bin", "another_bin", "another_other_bin"] == info.components[
+            "Crypto"
+        ].bindirs
+        assert ["different_res", "another_res", "another_other_res"] == info.components[
+            "Crypto"
+        ].resdirs

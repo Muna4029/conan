@@ -8,7 +8,7 @@ from pytest import raises
 def test_tools_android_abi():
     settings_linux = MockSettings({"os": "Linux", "arch": "foo"})
 
-    for (arch, expected) in [
+    for arch, expected in [
         ("armv5el", "armeabi"),
         ("armv5hf", "armeabi"),
         ("armv5", "armeabi"),

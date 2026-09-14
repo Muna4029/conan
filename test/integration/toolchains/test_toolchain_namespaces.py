@@ -8,7 +8,8 @@ from conan.test.utils.tools import TestClient
 def test_autotools_namespace():
     client = TestClient()
     namespace = "somename"
-    conanfile = textwrap.dedent("""
+    conanfile = textwrap.dedent(
+        """
             from conan import ConanFile
             from conan.tools.gnu import AutotoolsToolchain, Autotools
 
@@ -23,13 +24,19 @@ def test_autotools_namespace():
                     autotools = Autotools(self, namespace='{0}')
                     self.output.info(autotools._configure_args)
                     self.output.info(autotools._make_args)
-            """.format(namespace))
+            """.format(namespace)
+    )
 
     client.save({"conanfile.py": conanfile})
     client.run("install .")
-    assert os.path.isfile(os.path.join(client.current_folder,
-                                       "{}_{}".format(namespace, CONAN_TOOLCHAIN_ARGS_FILE)))
-    content = load_toolchain_args(generators_folder=client.current_folder, namespace=namespace)
+    assert os.path.isfile(
+        os.path.join(
+            client.current_folder, "{}_{}".format(namespace, CONAN_TOOLCHAIN_ARGS_FILE)
+        )
+    )
+    content = load_toolchain_args(
+        generators_folder=client.current_folder, namespace=namespace
+    )
     at_configure_args = content.get("configure_args")
     at_make_args = content.get("make_args")
     client.run("build .")

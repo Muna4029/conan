@@ -18,8 +18,7 @@ def test_profile_template():
         os = {{ {"Darwin": "Macos"}.get(platform.system(), platform.system()) }}
         build_type = {{ os.getenv("MY_BUILD_TYPE") }}
         """)
-    client.save({"conanfile.py": GenConanfile(),
-                 "profile1": tpl})
+    client.save({"conanfile.py": GenConanfile(), "profile1": tpl})
     with environment_update({"MY_BUILD_TYPE": "Debug"}):
         client.run("install . -pr=profile1")
 
@@ -35,8 +34,7 @@ def test_profile_template_variables():
         [settings]
         os = {{ a }}
         """)
-    client.save({"conanfile.py": GenConanfile(),
-                 "profile1": tpl})
+    client.save({"conanfile.py": GenConanfile(), "profile1": tpl})
     client.run("install . -pr=profile1")
     assert "os=FreeBSD" in client.out
 
@@ -51,9 +49,9 @@ def test_profile_template_import():
     tpl2 = textwrap.dedent("""
         {% set a = "FreeBSD" %}
         """)
-    client.save({"conanfile.py": GenConanfile(),
-                 "profile1": tpl1,
-                 "profile_vars": tpl2})
+    client.save(
+        {"conanfile.py": GenConanfile(), "profile1": tpl1, "profile_vars": tpl2}
+    )
     client.run("install . -pr=profile1")
     assert "os=FreeBSD" in client.out
 
@@ -69,8 +67,9 @@ def test_profile_template_import_sibling():
     tpl2 = textwrap.dedent("""
         {% set a = "FreeBSD" %}
         """)
-    client.save_home({"profiles/sub1/profile1": tpl1,
-                      "profiles/sub2/profile_vars": tpl2})
+    client.save_home(
+        {"profiles/sub1/profile1": tpl1, "profiles/sub2/profile_vars": tpl2}
+    )
     client.save({"conanfile.py": GenConanfile()})
     client.run("install . -pr=sub1/profile1")
     assert "os=FreeBSD" in client.out
@@ -86,9 +85,9 @@ def test_profile_template_include():
         [settings]
         os = {{ a }}
         """)
-    client.save({"conanfile.py": GenConanfile(),
-                 "profile1": tpl1,
-                 "profile_vars": tpl2})
+    client.save(
+        {"conanfile.py": GenConanfile(), "profile1": tpl1, "profile_vars": tpl2}
+    )
     client.run("install . -pr=profile1")
     assert "os=FreeBSD" in client.out
 
@@ -104,8 +103,9 @@ def test_profile_template_include_sibling():
         [settings]
         os = {{ a }}
         """)
-    client.save_home({"profiles/sub1/profile1": tpl1,
-                      "profiles/sub2/profile_vars": tpl2})
+    client.save_home(
+        {"profiles/sub1/profile1": tpl1, "profiles/sub2/profile_vars": tpl2}
+    )
     client.save({"conanfile.py": GenConanfile()})
     client.run("install . -pr=sub1/profile1")
     assert "os=FreeBSD" in client.out
@@ -123,8 +123,7 @@ def test_profile_template_include_from_cache():
         os = {{ a }}
         """)
     client.save_home({"profiles/sub2/profile_vars": tpl2})
-    client.save({"conanfile.py": GenConanfile(),
-                 "sub1/profile1": tpl1})
+    client.save({"conanfile.py": GenConanfile(), "sub1/profile1": tpl1})
     client.run("install . -pr=sub1/profile1")
     assert "os=FreeBSD" in client.out
 
@@ -143,9 +142,13 @@ def test_profile_template_profile_dir():
                 content = load(self, self.conf.get("user.toolchain:mydir"))
                 self.output.info("CONTENT: {}".format(content))
         """)
-    client.save({"conanfile.py": conanfile,
-                 "anysubfolder/profile1": tpl1,
-                 "anysubfolder/toolchain.cmake": "MyToolchainCMake!!!"})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "anysubfolder/profile1": tpl1,
+            "anysubfolder/toolchain.cmake": "MyToolchainCMake!!!",
+        }
+    )
     client.run("install . -pr=anysubfolder/profile1")
     assert "conanfile.py: CONTENT: MyToolchainCMake!!!" in client.out
 
@@ -170,8 +173,7 @@ def test_profile_version():
         *:myoption2={{conan_version<13 and conan_version>1.0}}
         """)
 
-    client.save({"conanfile.py": GenConanfile(),
-                 "profile1.jinja": tpl1})
+    client.save({"conanfile.py": GenConanfile(), "profile1.jinja": tpl1})
     client.run("install . -pr=profile1.jinja")
     assert f"*:myoption={conan_version}" in client.out
     assert "*:myoption2=True" in client.out
@@ -179,7 +181,7 @@ def test_profile_version():
 
 def test_profile_template_profile_name():
     """
-        The property profile_name should be parsed as the profile file name when rendering profiles
+    The property profile_name should be parsed as the profile file name when rendering profiles
     """
     client = TestClient()
     tpl1 = textwrap.dedent("""
@@ -204,12 +206,16 @@ def test_profile_template_profile_name():
             def configure(self):
                 self.output.info("PROFILE NAME: {}".format(self.conf.get("user.profile:name")))
         """)
-    client.save({"conanfile.py": conanfile,
-                 "profile_folder/foobar": tpl1,
-                 "another_folder/foo.profile": tpl1,
-                 "include_folder/include_default": tpl2,
-                 os.path.join(client.paths.profiles_path, "baz"): tpl1,
-                 os.path.join(client.paths.profiles_path, "default"): default})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "profile_folder/foobar": tpl1,
+            "another_folder/foo.profile": tpl1,
+            "include_folder/include_default": tpl2,
+            os.path.join(client.paths.profiles_path, "baz"): tpl1,
+            os.path.join(client.paths.profiles_path, "default"): default,
+        }
+    )
 
     # show only file name as profile name
     client.run("install . -pr=profile_folder/foobar")
@@ -234,8 +240,7 @@ def test_profile_template_profile_name():
 
 class TestProfileDetectAPI:
     def test_profile_detect_os_arch(self):
-        """ testing OS & ARCH just to test the UX and interface
-        """
+        """testing OS & ARCH just to test the UX and interface"""
         client = TestClient()
         tpl1 = textwrap.dedent("""
             [settings]
@@ -246,8 +251,8 @@ class TestProfileDetectAPI:
         client.save({"profile1": tpl1})
         client.run("profile show -pr=profile1 --context=host")
         pr = client.get_default_host_profile()
-        the_os = pr.settings['os']
-        arch = pr.settings['arch']
+        the_os = pr.settings["os"]
+        arch = pr.settings["arch"]
         expected = textwrap.dedent(f"""\
             [settings]
             arch={arch}
@@ -264,7 +269,10 @@ class TestProfileDetectAPI:
 
         client.save({"profile1": tpl1})
         client.run("profile show -pr=profile1", assert_error=True)
-        assert "No version provided to 'detect_api.default_compiler_version()' for None compiler" in client.out
+        assert (
+            "No version provided to 'detect_api.default_compiler_version()' for None compiler"
+            in client.out
+        )
 
 
 def test_profile_jinja_error():
@@ -274,19 +282,27 @@ def test_profile_jinja_error():
             {# comment that triggers the error #}
             'smth'
         ] %}""")
-    c.save({"profile1": profile,
+    c.save(
+        {
+            "profile1": profile,
             "profile2": "include(profile1)",
             "profile3": "include(profile2)",
-            "conanfile.txt": ""})
+            "conanfile.txt": "",
+        }
+    )
     c.run("profile show -pr=profile1", assert_error=True)
     assert "ERROR: Error while rendering the profile template file" in c.out
     c.run("profile show -pr=profile2", assert_error=True)
-    assert "ERROR: Error reading 'profile2' profile: Error while " \
-           "rendering the profile template file " in c.out
+    assert (
+        "ERROR: Error reading 'profile2' profile: Error while "
+        "rendering the profile template file " in c.out
+    )
     assert "unexpected char '#' at 21" in c.out
     c.run("profile show -pr=profile3", assert_error=True)
-    assert "ERROR: Error reading 'profile3' profile: Error reading 'profile2' profile: Error while " \
-           "rendering the profile template file " in c.out
+    assert (
+        "ERROR: Error reading 'profile3' profile: Error reading 'profile2' profile: Error while "
+        "rendering the profile template file " in c.out
+    )
     assert "unexpected char '#' at 21" in c.out
 
     # Also install messages
@@ -295,12 +311,16 @@ def test_profile_jinja_error():
     assert "unexpected char '#' at 21" in c.out
 
     c.run("install . -pr=profile2", assert_error=True)
-    assert "ERROR: Error reading 'profile2' profile: Error while " \
-           "rendering the profile template file " in c.out
+    assert (
+        "ERROR: Error reading 'profile2' profile: Error while "
+        "rendering the profile template file " in c.out
+    )
     assert "unexpected char '#' at 21" in c.out
     c.run("install . -pr=profile3", assert_error=True)
-    assert "ERROR: Error reading 'profile3' profile: Error reading 'profile2' profile: Error while " \
-           "rendering the profile template file " in c.out
+    assert (
+        "ERROR: Error reading 'profile3' profile: Error reading 'profile2' profile: Error while "
+        "rendering the profile template file " in c.out
+    )
     assert "unexpected char '#' at 21" in c.out
 
 
@@ -334,8 +354,7 @@ def test_profile_macro_per_package():
                 self.output.info(f"arch={self.settings.arch}!!")
                 self.output.info(f"user.conf:key={value}!!!!")
         """)
-    client.save({"conanfile.py": conanfile,
-                 "profile1": tpl1})
+    client.save({"conanfile.py": conanfile, "profile1": tpl1})
     client.run("install . -pr=profile1")
     assert "conanfile.py (mypkg/0.1): user.conf:key=2!!!!" in client.out
     assert "conanfile.py (mypkg/0.1): os=Windows!!" in client.out
@@ -344,7 +363,7 @@ def test_profile_macro_per_package():
 
 def test_profile_jinja_context():
     """
-        Test the ``context=build/host`` injection
+    Test the ``context=build/host`` injection
     """
     c = TestClient()
     tpl1 = textwrap.dedent("""
@@ -373,15 +392,18 @@ def test_profile_jinja_context():
         {% endif %}
         """)
 
-    c.save({"common": tpl1,
-            "base": tpl2})
+    c.save({"common": tpl1, "base": tpl2})
 
     c.run("profile show -pr:a=base --format=json")
     profiles = json.loads(c.stdout)
-    assert profiles["host"]["conf"] == {"user.profile:common": "myhost",
-                                        "user.profile:base": "myhost"}
-    assert profiles["build"]["conf"] == {"user.profile:common": "mybuild",
-                                         "user.profile:base": "mybuild"}
+    assert profiles["host"]["conf"] == {
+        "user.profile:common": "myhost",
+        "user.profile:base": "myhost",
+    }
+    assert profiles["build"]["conf"] == {
+        "user.profile:common": "mybuild",
+        "user.profile:base": "mybuild",
+    }
 
     # Now lets test when profile is neither build/host, like when used in ``conan list``
     c.save({"conanfile.py": GenConanfile("pkg", "0.1").with_settings("os", "arch")})

@@ -13,17 +13,17 @@ from conan.test.utils.env import environment_update
 
 
 def test_missing_subarguments():
-    """ config MUST run  with a subcommand. Otherwise, it MUST exits with error.
-    """
+    """config MUST run  with a subcommand. Otherwise, it MUST exits with error."""
     client = TestClient()
     client.run("config", assert_error=True)
     assert "ERROR: Exiting with code: 2" in client.out
 
 
 class TestConfigHome:
-    """ The test framework cannot test the CONAN_HOME env-var because it is not using it
+    """The test framework cannot test the CONAN_HOME env-var because it is not using it
     (it will break tests for maintainers that have the env-var defined)
     """
+
     def test_config_home_default(self):
         client = TestClient()
         client.run("config home")
@@ -59,7 +59,7 @@ def test_config_list():
 
 def test_config_install():
     tc = TestClient()
-    tc.save({'config/foo': ''})
+    tc.save({"config/foo": ""})
     # This should not fail (insecure flag exists)
     tc.run("config install config --insecure")
     assert "foo" in os.listdir(tc.cache_folder)
@@ -79,21 +79,23 @@ def test_config_install_conanignore():
     !b/c/important_file
     !b/c/important_folder/*
     """)
-    tc.save({
-        'config_folder/.conanignore': conanignore,
-        'config_folder/a/test': '',
-        'config_folder/abracadabra': '',
-        'config_folder/b/bison': '',
-        'config_folder/b/a/test2': '',
-        'config_folder/b/c/helmet': '',
-        'config_folder/b/c/important_file': '',
-        'config_folder/b/c/important_folder/contents': '',
-        'config_folder/d/prix': '',
-        'config_folder/d/foo/bar': '',
-        'config_folder/foo': '',
-        'config_folder/tests/tester': '',
-        'config_folder/other_tests/tester2': ''
-    })
+    tc.save(
+        {
+            "config_folder/.conanignore": conanignore,
+            "config_folder/a/test": "",
+            "config_folder/abracadabra": "",
+            "config_folder/b/bison": "",
+            "config_folder/b/a/test2": "",
+            "config_folder/b/c/helmet": "",
+            "config_folder/b/c/important_file": "",
+            "config_folder/b/c/important_folder/contents": "",
+            "config_folder/d/prix": "",
+            "config_folder/d/foo/bar": "",
+            "config_folder/foo": "",
+            "config_folder/tests/tester": "",
+            "config_folder/other_tests/tester2": "",
+        }
+    )
 
     def _assert_config_exists(path):
         assert os.path.exists(os.path.join(tc.cache_folder, path))
@@ -101,7 +103,7 @@ def test_config_install_conanignore():
     def _assert_config_not_exists(path):
         assert not os.path.exists(os.path.join(tc.cache_folder, path))
 
-    tc.run('config install config_folder')
+    tc.run("config install config_folder")
 
     _assert_config_not_exists(".conanignore")
 
@@ -138,13 +140,15 @@ def test_config_install_conanignore_ignore_all_allow_specific_workflow():
     # We can even include the conanignore that we skip by default!
     !.conanignore
     """)
-    tc.save({
-        'config_folder/.conanignore': conanignore,
-        'config_folder/a/test': '',
-        'config_folder/abracadabra': '',
-        'config_folder/important_folder/contents': '',
-        'config_folder/important_file': '',
-    })
+    tc.save(
+        {
+            "config_folder/.conanignore": conanignore,
+            "config_folder/a/test": "",
+            "config_folder/abracadabra": "",
+            "config_folder/important_folder/contents": "",
+            "config_folder/important_file": "",
+        }
+    )
 
     def _assert_config_exists(path):
         assert os.path.exists(os.path.join(tc.cache_folder, path))
@@ -152,7 +156,7 @@ def test_config_install_conanignore_ignore_all_allow_specific_workflow():
     def _assert_config_not_exists(path):
         assert not os.path.exists(os.path.join(tc.cache_folder, path))
 
-    tc.run('config install config_folder')
+    tc.run("config install config_folder")
 
     _assert_config_exists(".conanignore")
 
@@ -176,9 +180,13 @@ def test_config_install_conanignore_walk_directories(has_conanignore, folder):
 
     tc.run(f"config install config_folder {folder_arg}")
     if has_conanignore:
-        assert not os.path.exists(os.path.join(tc.cache_folder, "myfolder", "subfolder", "item.py"))
+        assert not os.path.exists(
+            os.path.join(tc.cache_folder, "myfolder", "subfolder", "item.py")
+        )
     else:
-        assert os.path.exists(os.path.join(tc.cache_folder, "myfolder", "subfolder", "item.py"))
+        assert os.path.exists(
+            os.path.join(tc.cache_folder, "myfolder", "subfolder", "item.py")
+        )
 
 
 def test_config_show():
@@ -227,13 +235,20 @@ def test_config_show():
 @pytest.mark.parametrize("storage_path", [None, "p", "../foo"])
 def test_config_clean(storage_path):
     tc = TestClient(light=True)
-    absolut_storage_path = os.path.abspath(os.path.join(tc.current_folder, storage_path)) if storage_path else os.path.join(tc.cache_folder, "p")
+    absolut_storage_path = (
+        os.path.abspath(os.path.join(tc.current_folder, storage_path))
+        if storage_path
+        else os.path.join(tc.cache_folder, "p")
+    )
 
     storage = f"core.cache:storage_path={storage_path}" if storage_path else ""
-    tc.save_home({"global.conf": f"core.upload:retry=7\n{storage}",
-                  "extensions/compatibility/mycomp.py": "",
-                  "extensions/commands/cmd_foo.py": "",
-                  })
+    tc.save_home(
+        {
+            "global.conf": f"core.upload:retry=7\n{storage}",
+            "extensions/compatibility/mycomp.py": "",
+            "extensions/commands/cmd_foo.py": "",
+        }
+    )
 
     tc.run("profile detect --name=foo")
     tc.run("remote add bar http://fakeurl")
@@ -251,7 +266,9 @@ def test_config_clean(storage_path):
     tc.run("config show core.upload:retry")
     assert "7" not in tc.out
     assert os.path.exists(os.path.join(tc.cache_folder, "extensions"))
-    assert not os.path.exists(os.path.join(tc.cache_folder, "extensions", "compatibility", "mycomp.py"))
+    assert not os.path.exists(
+        os.path.join(tc.cache_folder, "extensions", "compatibility", "mycomp.py")
+    )
     assert os.path.exists(absolut_storage_path)
     # This will error because the call to clean will remove the profiles
     tc.run("create .", assert_error=True)
@@ -279,7 +296,9 @@ def test_config_reinit():
 
 def test_config_reinit_core_conf():
     tc = TestClient(light=True)
-    tc.save_home({"extensions/commands/cmd_foo.py": textwrap.dedent("""
+    tc.save_home(
+        {
+            "extensions/commands/cmd_foo.py": textwrap.dedent("""
         import json
         from conan.cli.command import conan_command
         from conan.api.output import ConanOutput
@@ -289,6 +308,8 @@ def test_config_reinit_core_conf():
             ''' Foo '''
             parser.parse_args(*args)
             ConanOutput().info(f"Retry: {conan_api.config.global_conf.get('core.upload:retry', check_type=int)}")
-    """)})
+    """)
+        }
+    )
     tc.run("foo -cc core.upload:retry=7")
     assert "Retry: 7" in tc.out

@@ -10,7 +10,7 @@ new_value = "will_break_next"
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
 def test_package_framework_needs_location():
-    conanfile = textwrap.dedent(f"""
+    conanfile = textwrap.dedent("""
     import os
     from conan import ConanFile
 
@@ -36,9 +36,11 @@ def test_package_framework_needs_location():
             self.requires(self.tested_reference_str)
     """)
     client = TestClient()
-    client.save({
-        'test_package/conanfile.py': test_conanfile,
-        'conanfile.py': conanfile
-    })
+    client.save(
+        {"test_package/conanfile.py": test_conanfile, "conanfile.py": conanfile}
+    )
     client.run(f"create . -c tools.cmake.cmakedeps:new={new_value}", assert_error=True)
-    assert "Error in generator 'CMakeConfigDeps': cpp_info.location missing for framework MyFramework" in client.out
+    assert (
+        "Error in generator 'CMakeConfigDeps': cpp_info.location missing for framework MyFramework"
+        in client.out
+    )

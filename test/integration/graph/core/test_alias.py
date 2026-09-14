@@ -5,7 +5,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestAlias(GraphManagerTest):
-
     def test_basic(self):
         # app -> liba/latest -(alias)-> liba/0.1
         self.recipe_cache("liba/0.1")
@@ -41,8 +40,9 @@ class TestAlias(GraphManagerTest):
 
         # node, include, link, build, run
         # It seems they are in link order
-        _check_transitive(app, [(libb, True, True, False, False),
-                                (liba, True, True, False, False)])
+        _check_transitive(
+            app, [(libb, True, True, False, False), (liba, True, True, False, False)]
+        )
         _check_transitive(libb, [(liba, True, True, False, False)])
 
     def test_two_alias_diamond(self):
@@ -69,8 +69,9 @@ class TestAlias(GraphManagerTest):
 
         # node, include, link, build, run
         # Seems reverse order
-        _check_transitive(app, [(libb, True, True, False, False),
-                                (liba, True, True, False, False)])
+        _check_transitive(
+            app, [(libb, True, True, False, False), (liba, True, True, False, False)]
+        )
         _check_transitive(libb, [(liba, True, True, False, False)])
 
     def test_full_two_branches_diamond(self):
@@ -100,9 +101,14 @@ class TestAlias(GraphManagerTest):
         self._check_node(app, "app/0.1", deps=[libb, libc])
 
         # node, include, link, build, run
-        _check_transitive(app, [(libb, True, True, False, False),
-                                (libc, True, True, False, False),
-                                (liba, True, True, False, False)])
+        _check_transitive(
+            app,
+            [
+                (libb, True, True, False, False),
+                (libc, True, True, False, False),
+                (liba, True, True, False, False),
+            ],
+        )
         _check_transitive(libb, [(liba, True, True, False, False)])
 
     def test_alias_bug(self):
@@ -129,9 +135,14 @@ class TestAlias(GraphManagerTest):
         self._check_node(app, "app/0.1", deps=[libb, libc])
 
         # node, include, link, build, run
-        _check_transitive(app, [(libb, True, True, False, False),
-                                (libc, True, True, False, False),
-                                (liba, True, True, False, False)])
+        _check_transitive(
+            app,
+            [
+                (libb, True, True, False, False),
+                (libc, True, True, False, False),
+                (liba, True, True, False, False),
+            ],
+        )
         _check_transitive(libb, [(liba, True, True, False, False)])
 
     def test_alias_tansitive(self):
@@ -157,7 +168,6 @@ class TestAlias(GraphManagerTest):
 
 
 class AliasBuildRequiresTest(GraphManagerTest):
-
     def test_non_conflicting_alias(self):
         # https://github.com/conan-io/conan/issues/5468
         # libc ----> libb -------------------> liba/0.1
@@ -166,7 +176,9 @@ class AliasBuildRequiresTest(GraphManagerTest):
         self.recipe_cache("liba/0.2")
         self.alias_cache("liba/latest", "liba/0.2")
         self.recipe_cache("libb/0.1", ["liba/0.1"])
-        consumer = self.recipe_consumer("app/0.1", ["libb/0.1"], build_requires=["liba/(latest)"])
+        consumer = self.recipe_consumer(
+            "app/0.1", ["libb/0.1"], build_requires=["liba/(latest)"]
+        )
 
         deps_graph = self.build_consumer(consumer)
 
@@ -190,19 +202,27 @@ def test_mixing_aliases_and_fix_versions():
 
     client.save({"conanfile.py": GenConanfile("ca", "1.0")})
     client.run("create . ")
-    client.alias("ca/latest@",  "ca/1.0@")
+    client.alias("ca/latest@", "ca/1.0@")
 
     client.save({"conanfile.py": GenConanfile("cb", "1.0").with_requirement("ca/1.0@")})
     client.run("create . --name=cb --version=1.0")
-    client.alias("cb/latest@",  "cb/1.0@")
+    client.alias("cb/latest@", "cb/1.0@")
 
-    client.save({"conanfile.py": GenConanfile("cc", "1.0")
-                .with_requirement("cb/(latest)")
-                .with_requirement("ca/(latest)")})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("cc", "1.0")
+            .with_requirement("cb/(latest)")
+            .with_requirement("ca/(latest)")
+        }
+    )
     client.run("create . ")
-    client.alias("cc/latest@",  "cc/1.0@")
+    client.alias("cc/latest@", "cc/1.0@")
 
-    client.save({"conanfile.py": GenConanfile("cd", "1.0")
-                .with_requirement("cb/(latest)")
-                .with_requirement("cc/(latest)")})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("cd", "1.0")
+            .with_requirement("cb/(latest)")
+            .with_requirement("cc/(latest)")
+        }
+    )
     client.run("create . ")

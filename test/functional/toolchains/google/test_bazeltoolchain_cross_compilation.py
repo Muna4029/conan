@@ -62,18 +62,19 @@ def test_bazel_simple_cross_compilation():
     """)
     client = TestClient(path_with_spaces=False)
     bazel_root_dir = temp_folder(path_with_spaces=False).replace("\\", "/")
-    client.save({
-        "profile": profile,
-        "profile_host": profile_host,
-        "conanfile.py": conanfile,
-        "WORKSPACE": "",
-        ".bazelrc": f"startup --output_user_root={bazel_root_dir}",
-        "main/BUILD": BUILD,
-        "main/myapp.cpp": gen_function_cpp(name="myapp"),
-        "main/myapp.h": gen_function_h(name="myapp"),
-
-    })
+    client.save(
+        {
+            "profile": profile,
+            "profile_host": profile_host,
+            "conanfile.py": conanfile,
+            "WORKSPACE": "",
+            ".bazelrc": f"startup --output_user_root={bazel_root_dir}",
+            "main/BUILD": BUILD,
+            "main/myapp.cpp": gen_function_cpp(name="myapp"),
+            "main/myapp.h": gen_function_h(name="myapp"),
+        }
+    )
     client.run("build . -pr:h profile_host -pr:b profile")
     libmyapp = os.path.join(client.current_folder, "bazel-bin", "main", "libmyapp.a")
-    client.run_command(f'otool -hv {libmyapp}')
+    client.run_command(f"otool -hv {libmyapp}")
     assert "ARM64" in client.out

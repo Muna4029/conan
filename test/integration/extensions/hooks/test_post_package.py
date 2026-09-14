@@ -8,8 +8,7 @@ from conan.internal.util.files import save
 
 
 def test_post_package():
-    """ Test that 'post_package' hook is called before computing the manifest
-    """
+    """Test that 'post_package' hook is called before computing the manifest"""
     t = TestClient()
     complete_hook = textwrap.dedent("""\
         import os
@@ -19,7 +18,7 @@ def test_post_package():
         """)
     hook_path = os.path.join(t.paths.hooks_path, "complete_hook", "hook_complete.py")
     save(hook_path, complete_hook)
-    t.save({'conanfile.py': GenConanfile("pkg", "0.1")})
+    t.save({"conanfile.py": GenConanfile("pkg", "0.1")})
     t.run("create .")
     pref_layout = t.created_layout()
     manifest = FileTreeManifest.load(pref_layout.package())

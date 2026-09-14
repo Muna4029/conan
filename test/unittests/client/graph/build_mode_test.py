@@ -14,15 +14,21 @@ def conanfile():
 
 def test_skip_package(conanfile):
     build_mode = BuildMode(["!zlib/*", "other*"])
-    assert not build_mode.forced(conanfile, RecipeReference.loads("zlib/1.2.11#23423423"))
+    assert not build_mode.forced(
+        conanfile, RecipeReference.loads("zlib/1.2.11#23423423")
+    )
     assert build_mode.forced(conanfile, RecipeReference.loads("other/1.2"))
 
     build_mode = BuildMode(["!zlib/*", "*"])
-    assert not build_mode.forced(conanfile, RecipeReference.loads("zlib/1.2.11#23423423"))
+    assert not build_mode.forced(
+        conanfile, RecipeReference.loads("zlib/1.2.11#23423423")
+    )
     assert build_mode.forced(conanfile, RecipeReference.loads("other/1.2"))
 
     build_mode = BuildMode(["!zlib/*"])
-    assert not build_mode.forced(conanfile, RecipeReference.loads("zlib/1.2.11#23423423"))
+    assert not build_mode.forced(
+        conanfile, RecipeReference.loads("zlib/1.2.11#23423423")
+    )
     assert not build_mode.forced(conanfile, RecipeReference.loads("other/1.2"))
 
 
@@ -45,8 +51,11 @@ def test_valid_params():
 
 def test_invalid_configuration():
     for mode in ["missing", "cascade"]:
-        with pytest.raises(ConanException, match=r"--build=never not compatible "
-                                                 r"with other options"):
+        with pytest.raises(
+            ConanException,
+            match=r"--build=never not compatible "
+            r"with other options",
+        ):
             BuildMode([mode, "never"])
 
 

@@ -18,9 +18,15 @@ def test_required_conan_version():
         """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)"
+        in client.out
+    )
     client.run("source . ", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)"
+        in client.out
+    )
 
     with mock.patch("conan.__version__", "101.0"):
         client.run("export . --name=pkg --version=1.0")
@@ -29,7 +35,10 @@ def test_required_conan_version():
         client.run("export . --name=pkg --version=1.0")
 
     client.run("install --requires=pkg/1.0@", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)"
+        in client.out
+    )
 
 
 def test_required_conan_version_with_loading_issues():
@@ -45,7 +54,10 @@ def test_required_conan_version_with_loading_issues():
                 """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)"
+        in client.out
+    )
 
     # Assigning required_conan_version without spaces
     conanfile = textwrap.dedent("""
@@ -58,7 +70,10 @@ def test_required_conan_version_with_loading_issues():
                         """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=100.0)"
+        in client.out
+    )
 
     # If the range is correct, everything works, of course
     conanfile = textwrap.dedent("""
@@ -90,7 +105,10 @@ def test_comment_after_required_conan_version():
                 """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=10.0)" in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=10.0)"
+        in client.out
+    )
 
 
 def test_commented_out_required_conan_version():
@@ -108,7 +126,10 @@ def test_commented_out_required_conan_version():
                 """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=10.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=1.0)" not in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=1.0)"
+        not in client.out
+    )
 
     client = TestClient()
     conanfile = textwrap.dedent("""
@@ -120,12 +141,15 @@ def test_commented_out_required_conan_version():
                 """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>=10.0)" not in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>=10.0)"
+        not in client.out
+    )
 
 
 def test_required_conan_version_invalid_syntax():
-    """ required_conan_version used to warn of mismatching versions if spaces were present,
-     but now we have a nicer error"""
+    """required_conan_version used to warn of mismatching versions if spaces were present,
+    but now we have a nicer error"""
     # https://github.com/conan-io/conan/issues/12692
     client = TestClient()
     conanfile = textwrap.dedent("""
@@ -135,5 +159,8 @@ def test_required_conan_version_invalid_syntax():
                     pass""")
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=pkg --version=1.0", assert_error=True)
-    assert f"Current Conan version ({__version__}) does not satisfy the defined one (>= 1.0)" not in client.out
+    assert (
+        f"Current Conan version ({__version__}) does not satisfy the defined one (>= 1.0)"
+        not in client.out
+    )
     assert 'Error parsing version range ">="' in client.out

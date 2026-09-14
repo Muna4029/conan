@@ -14,17 +14,15 @@ class HelloConan(ConanFile):
 
 
 class MyRequester(TestRequester):
-
     def get(self, _, **kwargs):
         print("TIMEOUT: {}".format(kwargs.get("timeout", "NOT SPECIFIED")))
         resp = Response()
         resp.status_code = 200
-        resp._content = b''
+        resp._content = b""
         return resp
 
 
 class TestRequester:
-
     def test_requester_timeout(self):
         client = TestClient(requester_class=MyRequester)
         client.save_home({"global.conf": "core.net.http:timeout=4.3"})

@@ -9,7 +9,6 @@ from conan.internal.util.files import load, save
 
 
 class TestSettings:
-
     def _get_conaninfo(self, reference, client):
         ref = client.cache.get_latest_recipe_reference(RecipeReference.loads(reference))
         pkg_ids = client.cache.get_package_references(ref)
@@ -30,7 +29,10 @@ class Pkg(ConanFile):
     settings = "os", "compiler"
 """
         client.save({"conanfile.py": conanfile})
-        client.run("create . --name=pkg --version=0.1 --user=lasote --channel=testing", assert_error=True)
+        client.run(
+            "create . --name=pkg --version=0.1 --user=lasote --channel=testing",
+            assert_error=True,
+        )
         assert "ERROR: settings.yml: null setting can't have subsettings" in client.out
 
     def test_settings_constraint_error_type(self):
@@ -43,7 +45,9 @@ class Test(ConanFile):
     """
         client = TestClient()
         client.save({"conanfile.py": conanfile})
-        client.run("create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux")
+        client.run(
+            "create . --name=pkg --version=0.1 --user=user --channel=testing -s os=Linux"
+        )
         assert "pkg/0.1@user/testing: OS!!: Linux" in client.out
 
     def test_settings_as_a_str(self):
@@ -117,6 +121,7 @@ class SayConan(ConanFile):
         assert "'settings.invalid' doesn't exist" in client.out
 
         # Test wrong values in conanfile
+
     def test_invalid_settings4(self):
         content = """
 from conan import ConanFile
@@ -129,13 +134,18 @@ class SayConan(ConanFile):
         client = TestClient()
         client.save({CONANFILE: content})
         client.run("create . -s os=ChromeOS --build missing", assert_error=True)
-        assert "ERROR: Invalid setting 'ChromeOS' is not a valid 'settings.os' value." in client.out
-        assert "Possible values are ['Windows', 'WindowsStore', 'WindowsCE', 'Linux'" in client.out
+        assert (
+            "ERROR: Invalid setting 'ChromeOS' is not a valid 'settings.os' value."
+            in client.out
+        )
+        assert (
+            "Possible values are ['Windows', 'WindowsStore', 'WindowsCE', 'Linux'"
+            in client.out
+        )
 
         # Now add new settings to config and try again
         config = load(client.paths.settings_path)
-        config = config.replace("Windows:",
-                                "Windows:\n    ChromeOS:\n")
+        config = config.replace("Windows:", "Windows:\n    ChromeOS:\n")
 
         save(client.paths.settings_path, config)
         client.run("create . -s os=ChromeOS --build missing")

@@ -39,26 +39,29 @@ class TestRename:
             os.makedirs(os.path.join(sub_space_dir, "middir"))
             os.makedirs(os.path.join(sub_space_dir, "middir", "deepdir"))
 
-        client.save({os.path.join(sub_space_dir, "1.txt"): "",
-                     os.path.join(sub_space_dir, "1.pdb"): "",
-                     os.path.join(sub_space_dir, "1.pdb1"): "",
-                     os.path.join(sub_space_dir, "dir.pdb", "2.txt"): "",
-                     os.path.join(sub_space_dir, "dir.pdb", "2.pdb"): "",
-                     os.path.join(sub_space_dir, "dir.pdb", "2.pdb1"): "",
-                     os.path.join(sub_space_dir, "middir", "3.txt"): "",
-                     os.path.join(sub_space_dir, "middir", "3.pdb"): "",
-                     os.path.join(sub_space_dir, "middir", "3.pdb1"): "",
-                     os.path.join(sub_space_dir, "middir", "deepdir", "4.txt"): "",
-                     os.path.join(sub_space_dir, "middir", "deepdir", "4.pdb"): "",
-                     os.path.join(sub_space_dir, "middir", "deepdir", "4.pdb1"): ""
-                    })
+        client.save(
+            {
+                os.path.join(sub_space_dir, "1.txt"): "",
+                os.path.join(sub_space_dir, "1.pdb"): "",
+                os.path.join(sub_space_dir, "1.pdb1"): "",
+                os.path.join(sub_space_dir, "dir.pdb", "2.txt"): "",
+                os.path.join(sub_space_dir, "dir.pdb", "2.pdb"): "",
+                os.path.join(sub_space_dir, "dir.pdb", "2.pdb1"): "",
+                os.path.join(sub_space_dir, "middir", "3.txt"): "",
+                os.path.join(sub_space_dir, "middir", "3.pdb"): "",
+                os.path.join(sub_space_dir, "middir", "3.pdb1"): "",
+                os.path.join(sub_space_dir, "middir", "deepdir", "4.txt"): "",
+                os.path.join(sub_space_dir, "middir", "deepdir", "4.pdb"): "",
+                os.path.join(sub_space_dir, "middir", "deepdir", "4.pdb1"): "",
+            }
+        )
         self.verify_dir(os.path.join(tmpdir, sub_space_dir))
 
         with chdir(tmpdir):
             rename(None, sub_space_dir, "dst dir")
             self.verify_dir(os.path.join(tmpdir, "dst dir"))
 
-            rename(None,"dst dir", "subdir")
+            rename(None, "dst dir", "subdir")
             self.verify_dir(os.path.join(tmpdir, "subdir"))
 
             rename(None, os.path.join("subdir", "1.txt"), "t.txt")

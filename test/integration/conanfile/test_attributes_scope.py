@@ -4,7 +4,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestAttributesScope:
-
     def test_cppinfo_not_in_package_id(self):
         # self.cpp_info is not available in 'package_id'
         t = TestClient()
@@ -16,8 +15,8 @@ class TestAttributesScope:
                 def package_id(self):
                     self.cpp_info.libs = ["A"]
         """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version", assert_error=True)
         assert "'self.cpp_info' access in 'package_id()' method is forbidden" in t.out
 
     def test_settings_not_in_package_id(self):
@@ -31,8 +30,8 @@ class TestAttributesScope:
                    def package_id(self):
                        self.settings
            """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version", assert_error=True)
         assert "'self.settings' access in 'package_id()' method is forbidden" in t.out
 
     def test_options_not_in_package_id(self):
@@ -46,8 +45,8 @@ class TestAttributesScope:
                    def package_id(self):
                        self.options
            """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version", assert_error=True)
         assert "'self.options' access in 'package_id()' method is forbidden" in t.out
 
     def test_info_not_in_package_info(self):
@@ -60,8 +59,8 @@ class TestAttributesScope:
                    def package_info(self):
                        self.info
            """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version", assert_error=True)
         assert "'self.info' access in 'package_info()' method is forbidden" in t.out
 
     def test_info_not_in_package(self):
@@ -75,8 +74,8 @@ class TestAttributesScope:
                 def package(self):
                     self.info.clear()
         """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version -s os=Linux', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version -s os=Linux", assert_error=True)
         assert "'self.info' access in 'package()' method is forbidden" in t.out
 
     def test_no_settings(self):
@@ -91,8 +90,8 @@ class TestAttributesScope:
                 def source(self):
                     self.settings.os
         """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version -s os=Linux', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run("create . --name=name --version=version -s os=Linux", assert_error=True)
         assert "'self.settings' access in 'source()' method is forbidden" in t.out
 
     def test_no_options(self):
@@ -107,6 +106,8 @@ class TestAttributesScope:
                 def source(self):
                     self.options.shared
         """)
-        t.save({'conanfile.py': conanfile})
-        t.run('create . --name=name --version=version -o shared=False', assert_error=True)
+        t.save({"conanfile.py": conanfile})
+        t.run(
+            "create . --name=name --version=version -o shared=False", assert_error=True
+        )
         assert "'self.options' access in 'source()' method is forbidden" in t.out

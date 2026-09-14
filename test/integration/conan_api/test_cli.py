@@ -11,7 +11,7 @@ from conan.test.utils.tools import redirect_output
 
 
 def test_cli():
-    """ make sure the CLi can be reused
+    """make sure the CLi can be reused
     https://github.com/conan-io/conan/issues/14044
     """
     folder = temp_folder()

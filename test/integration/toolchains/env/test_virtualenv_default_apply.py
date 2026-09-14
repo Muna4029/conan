@@ -26,9 +26,11 @@ def client():
 @pytest.mark.parametrize("default_virtualenv", [True, False, None])
 @pytest.mark.parametrize("cli_value", [None, "false"])
 def test_virtualenv_deactivated(client, scope, default_virtualenv, cli_value):
-    format_str = {True: f"virtual{scope}env = True",
-                  False: f"virtual{scope}env = False",
-                  None: ""}[default_virtualenv]
+    format_str = {
+        True: f"virtual{scope}env = True",
+        False: f"virtual{scope}env = False",
+        None: "",
+    }[default_virtualenv]
     conanfile = textwrap.dedent("""
     from conan import ConanFile
 
@@ -48,18 +50,24 @@ def test_virtualenv_deactivated(client, scope, default_virtualenv, cli_value):
 
     exists_file = os.path.exists(filepath)
 
-    should_exist = cli_value != "false" and (default_virtualenv is None or default_virtualenv)
+    should_exist = cli_value != "false" and (
+        default_virtualenv is None or default_virtualenv
+    )
 
     if should_exist:
-        assert exists_file, f"File {filename} should exist in {os.listdir(client.current_folder)}"
+        assert exists_file, (
+            f"File {filename} should exist in {os.listdir(client.current_folder)}"
+        )
         assert "Foo" in client.load(filepath)
     else:
-        assert not exists_file, f"File {filename} should not exist in {os.listdir(client.current_folder)}"
+        assert not exists_file, (
+            f"File {filename} should not exist in {os.listdir(client.current_folder)}"
+        )
 
 
 def test_virtualrunenv_not_applied(client):
     """By default the VirtualRunEnv is not added to the list, otherwise when declaring
-       generators = "VirtualBuildEnv", "VirtualRunEnv" will be always added"""
+    generators = "VirtualBuildEnv", "VirtualRunEnv" will be always added"""
     conanfile = textwrap.dedent("""
     from conan import ConanFile
     import platform
@@ -73,8 +81,9 @@ def test_virtualrunenv_not_applied(client):
     client.save({"conanfile.py": conanfile})
     client.run("install . ")
     extension = "bat" if platform.system() == "Windows" else "sh"
-    exists_file = os.path.exists(os.path.join(client.current_folder,
-                                              "conanrun.{}".format(extension)))
+    exists_file = os.path.exists(
+        os.path.join(client.current_folder, "conanrun.{}".format(extension))
+    )
     assert exists_file
 
     global_env = client.load("conanbuild.{}".format(extension))
@@ -84,7 +93,7 @@ def test_virtualrunenv_not_applied(client):
 @pytest.mark.parametrize("explicit_declare", [True, False, None])
 def test_virtualrunenv_explicit_declare(client, explicit_declare):
     """By default the VirtualRunEnv is not added to the list, otherwise when declaring
-       generators = "VirtualBuildEnv", "VirtualRunEnv" will be always added"""
+    generators = "VirtualBuildEnv", "VirtualRunEnv" will be always added"""
     conanfile = textwrap.dedent("""
     from conan import ConanFile
     from conan.tools.env import VirtualRunEnv
@@ -96,15 +105,16 @@ def test_virtualrunenv_explicit_declare(client, explicit_declare):
         def generate(self):
             VirtualRunEnv(self).generate({})
 
-    """).format({True: "scope='build'",
-                 False: "scope='run'",
-                 None: ""}.get(explicit_declare))
+    """).format(
+        {True: "scope='build'", False: "scope='run'", None: ""}.get(explicit_declare)
+    )
 
     client.save({"conanfile.py": conanfile})
     client.run("install . ")
     extension = "bat" if platform.system() == "Windows" else "sh"
-    exists_file = os.path.exists(os.path.join(client.current_folder,
-                                              "conanbuild.{}".format(extension)))
+    exists_file = os.path.exists(
+        os.path.join(client.current_folder, "conanbuild.{}".format(extension))
+    )
     assert exists_file
 
     global_env = client.load("conanbuild.{}".format(extension))

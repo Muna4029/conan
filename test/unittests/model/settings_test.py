@@ -11,7 +11,6 @@ def undefined_value(v):
 
 
 class TestSettingsLoads:
-
     def test_none_value(self):
         yml = "os: [null, Windows]"
         settings = Settings.loads(yml)
@@ -64,9 +63,14 @@ class TestSettingsLoads:
         assert settings.os == "Windows"
         assert "os=Windows\nos.version=2" == settings.dumps()
         settings.os = "Ubuntu"
-        with pytest.raises(ConanException, match="'settings.os.version' value not defined"):
+        with pytest.raises(
+            ConanException, match="'settings.os.version' value not defined"
+        ):
             settings.validate()
-        with pytest.raises(ConanException, match="Invalid setting '3' is not a valid 'settings.os.version'"):
+        with pytest.raises(
+            ConanException,
+            match="Invalid setting '3' is not a valid 'settings.os.version'",
+        ):
             settings.os.version = 3
         settings.os.version = "20.04"
         assert "os=Ubuntu\nos.version=20.04" == settings.dumps()
@@ -114,24 +118,31 @@ class TestSettingsLoads:
         subsystem: [null, cygwin]
     Windows:
 """
-        with pytest.raises(ConanException, match="settings.yml: null setting can't have subsettings"):
+        with pytest.raises(
+            ConanException, match="settings.yml: null setting can't have subsettings"
+        ):
             Settings.loads(yml)
 
 
 class TestSettings:
-
     @pytest.fixture(autouse=True)
     def setup(self):
-        data = {"compiler": {
-                            "Visual Studio": {
-                                             "version": ["10", "11", "12"],
-                                             "runtime": ["MD", "MT"]},
-                            "gcc": {
-                                   "version": ["4.8", "4.9"],
-                                   "arch": {"x86": {"speed": ["A", "B"]},
-                                            "x64": {"speed": ["C", "D"]}}}
-                                   },
-                "os": ["Windows", "Linux"]}
+        data = {
+            "compiler": {
+                "Visual Studio": {
+                    "version": ["10", "11", "12"],
+                    "runtime": ["MD", "MT"],
+                },
+                "gcc": {
+                    "version": ["4.8", "4.9"],
+                    "arch": {
+                        "x86": {"speed": ["A", "B"]},
+                        "x64": {"speed": ["C", "D"]},
+                    },
+                },
+            },
+            "os": ["Windows", "Linux"],
+        }
         self.sut = Settings(data)
 
     def test_in_contains(self):
@@ -227,12 +238,18 @@ compiler:
         version: ['4.8', '4.9']
 os: [Windows, Linux]
 """)
-        settings.update_values([('compiler', 'msvc'),
-                                ('compiler.version', '10'),
-                                ('compiler.version.arch', '32')])
-        assert settings.values_list == [('compiler', 'msvc'),
-                          ('compiler.version', '10'),
-                          ('compiler.version.arch', '32')]
+        settings.update_values(
+            [
+                ("compiler", "msvc"),
+                ("compiler.version", "10"),
+                ("compiler.version.arch", "32"),
+            ]
+        )
+        assert settings.values_list == [
+            ("compiler", "msvc"),
+            ("compiler.version", "10"),
+            ("compiler.version.arch", "32"),
+        ]
 
         settings.compiler.version = "10"
         settings.compiler.version.arch = "32"
@@ -241,9 +258,11 @@ os: [Windows, Linux]
         settings.compiler.version = "12"
         settings.compiler.version.arch = "64"
 
-        assert settings.values_list == [('compiler', 'msvc'),
-                          ('compiler.version', '12'),
-                          ('compiler.version.arch', '64')]
+        assert settings.values_list == [
+            ("compiler", "msvc"),
+            ("compiler.version", "12"),
+            ("compiler.version.arch", "64"),
+        ]
 
     def test_set_value(self):
         self.sut.update_values([("compiler", "Visual Studio")])
@@ -264,7 +283,9 @@ os: [Windows, Linux]
         self.sut.constrained(s2)
         with pytest.raises(ConanException) as cm:
             self.sut.compiler
-        assert str(cm.value) == str(undefined_field("settings", "compiler", ["os"], "settings"))
+        assert str(cm.value) == str(
+            undefined_field("settings", "compiler", ["os"], "settings")
+        )
         self.sut.os = "Windows"
         self.sut.os = "Linux"
 
@@ -272,7 +293,9 @@ os: [Windows, Linux]
         s2 = ["os2"]
         with pytest.raises(ConanException) as cm:
             self.sut.constrained(s2)
-        assert str(cm.value) == str(undefined_field("settings", "os2", ["compiler", "os"], "settings"))
+        assert str(cm.value) == str(
+            undefined_field("settings", "os2", ["compiler", "os"], "settings")
+        )
 
     def test_constraint6(self):
         s2 = {"os", "compiler"}
@@ -280,14 +303,19 @@ os: [Windows, Linux]
         self.sut.compiler = "Visual Studio"
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.arch
-        assert str(cm.value) == str(undefined_field("settings.compiler", "arch",
-                                                                ['runtime', 'version'], "Visual Studio"))
+        assert str(cm.value) == str(
+            undefined_field(
+                "settings.compiler", "arch", ["runtime", "version"], "Visual Studio"
+            )
+        )
         self.sut.os = "Windows"
         self.sut.compiler.version = "11"
         self.sut.compiler.version = "12"
 
     def test_validate(self):
-        with pytest.raises(ConanException, match=str(undefined_value("settings.compiler"))):
+        with pytest.raises(
+            ConanException, match=str(undefined_value("settings.compiler"))
+        ):
             self.sut.validate()
 
         self.sut.compiler = "gcc"
@@ -308,11 +336,13 @@ os: [Windows, Linux]
 
         self.sut.os = "Windows"
         self.sut.validate()
-        assert self.sut.values_list == [("compiler", "gcc"),
-                                                ("compiler.arch", "x86"),
-                                                ("compiler.arch.speed", "A"),
-                                                ("compiler.version", "4.8"),
-                                                ("os", "Windows")]
+        assert self.sut.values_list == [
+            ("compiler", "gcc"),
+            ("compiler.arch", "x86"),
+            ("compiler.arch.speed", "A"),
+            ("compiler.version", "4.8"),
+            ("os", "Windows"),
+        ]
 
     def test_validate2(self):
         self.sut.os = "Windows"
@@ -327,24 +357,30 @@ os: [Windows, Linux]
         self.sut.compiler.version = "10"
         self.sut.validate()
 
-        assert self.sut.values_list == [("compiler", "Visual Studio"),
-                                                ("compiler.runtime", "MD"),
-                                                ("compiler.version", "10"),
-                                                ("os", "Windows")]
+        assert self.sut.values_list == [
+            ("compiler", "Visual Studio"),
+            ("compiler.runtime", "MD"),
+            ("compiler.version", "10"),
+            ("os", "Windows"),
+        ]
 
     def test_basic(self):
         s = Settings({"os": ["Windows", "Linux"]})
         s.os = "Windows"
         with pytest.raises(ConanException) as cm:
             self.sut.compiler = "kk"
-        assert str(cm.value) == bad_value_msg("settings.compiler", "kk", ['Visual Studio', 'gcc'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler", "kk", ["Visual Studio", "gcc"]
+        )
 
     def test_my(self):
         assert self.sut.compiler == None
 
         with pytest.raises(ConanException) as cm:
             self.sut.compiler = "kk"
-        assert str(cm.value) == bad_value_msg("settings.compiler", "kk", ['Visual Studio', 'gcc'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler", "kk", ["Visual Studio", "gcc"]
+        )
 
         self.sut.compiler = "Visual Studio"
         assert str(self.sut.compiler) == "Visual Studio"
@@ -352,14 +388,19 @@ os: [Windows, Linux]
 
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.kk
-        assert str(cm.value) == str(undefined_field("settings.compiler", "kk", ['runtime', 'version'],
-                                             "Visual Studio"))
+        assert str(cm.value) == str(
+            undefined_field(
+                "settings.compiler", "kk", ["runtime", "version"], "Visual Studio"
+            )
+        )
 
         assert self.sut.compiler.version == None
 
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.version = "123"
-        assert str(cm.value) == bad_value_msg("settings.compiler.version", "123", ['10', '11', '12'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler.version", "123", ["10", "11", "12"]
+        )
 
         self.sut.compiler.version = "12"
         assert self.sut.compiler.version == "12"
@@ -367,7 +408,9 @@ os: [Windows, Linux]
 
         with pytest.raises(ConanException) as cm:
             assert self.sut.compiler == "kk"
-        assert str(cm.value) == bad_value_msg("settings.compiler", "kk", ['Visual Studio', 'gcc'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler", "kk", ["Visual Studio", "gcc"]
+        )
 
         assert not (self.sut.compiler == "gcc")
         assert self.sut.compiler == "Visual Studio"
@@ -377,13 +420,18 @@ os: [Windows, Linux]
 
         with pytest.raises(ConanException) as cm:
             assert self.sut.compiler.version == "13"
-        assert str(cm.value) == bad_value_msg("settings.compiler.version", "13", ['10', '11', '12'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler.version", "13", ["10", "11", "12"]
+        )
 
         self.sut.compiler = "gcc"
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.runtime
-        assert str(cm.value) == str(undefined_field("settings.compiler", "runtime", "['arch', 'version']",
-                                             "gcc"))
+        assert str(cm.value) == str(
+            undefined_field(
+                "settings.compiler", "runtime", "['arch', 'version']", "gcc"
+            )
+        )
 
         self.sut.compiler.arch = "x86"
         self.sut.compiler.arch.speed = "A"
@@ -391,7 +439,9 @@ os: [Windows, Linux]
 
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.arch.speed = "D"
-        assert str(cm.value) == bad_value_msg("settings.compiler.arch.speed", "D", ['A', 'B'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler.arch.speed", "D", ["A", "B"]
+        )
 
         self.sut.compiler.arch = "x64"
         self.sut.compiler.arch.speed = "C"
@@ -399,7 +449,9 @@ os: [Windows, Linux]
 
         with pytest.raises(ConanException) as cm:
             self.sut.compiler.arch.speed = "A"
-        assert str(cm.value) == bad_value_msg("settings.compiler.arch.speed", "A", ['C', 'D'])
+        assert str(cm.value) == bad_value_msg(
+            "settings.compiler.arch.speed", "A", ["C", "D"]
+        )
 
         self.sut.compiler.arch.speed = "D"
         assert self.sut.compiler.arch.speed == "D"
@@ -409,8 +461,23 @@ def test_possible_values():
     settings = Settings.loads(default_settings_yml)
     settings.compiler = "gcc"
     sot = settings.compiler.cppstd.possible_values()
-    assert sot == [None, '98', 'gnu98', '11', 'gnu11', '14', 'gnu14', '17', 'gnu17', '20',
-                   'gnu20', '23', 'gnu23', '26', 'gnu26']
+    assert sot == [
+        None,
+        "98",
+        "gnu98",
+        "11",
+        "gnu11",
+        "14",
+        "gnu14",
+        "17",
+        "gnu17",
+        "20",
+        "gnu20",
+        "23",
+        "gnu23",
+        "26",
+        "gnu26",
+    ]
 
     # We cannot access the child definition of a non declared setting
     with pytest.raises(Exception) as e:
@@ -472,10 +539,10 @@ def test_set_value_non_existing_values():
         "compiler": {
             "gcc": {
                 "version": ["4.8", "4.9"],
-                "arch": {"x86": {"speed": ["A", "B"]},
-                         "x64": {"speed": ["C", "D"]}}}
+                "arch": {"x86": {"speed": ["A", "B"]}, "x64": {"speed": ["C", "D"]}},
+            }
         },
-        "os": ["Windows", "Linux"]
+        "os": ["Windows", "Linux"],
     }
     settings = Settings(data)
     with pytest.raises(ConanException) as cm:

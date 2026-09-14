@@ -7,12 +7,15 @@ from conan.test.assets.cmake import gen_cmakelists
 from conan.test.assets.sources import gen_function_h, gen_function_cpp
 
 
-def docker_skip(test_image='ubuntu:22.04'):
+def docker_skip(test_image="ubuntu:22.04"):
     try:
         try:
             docker_client = docker.from_env()
         except:
-            docker_client = docker.DockerClient(base_url=f'unix://{os.path.expanduser("~")}/.rd/docker.sock', version='auto') # Rancher
+            docker_client = docker.DockerClient(
+                base_url=f"unix://{os.path.expanduser('~')}/.rd/docker.sock",
+                version="auto",
+            )  # Rancher
         if test_image:
             docker_client.images.pull(test_image)
     except docker.errors.DockerException:
@@ -26,6 +29,7 @@ def docker_skip(test_image='ubuntu:22.04'):
 
 def conan_base_path():
     import conans
+
     return os.path.dirname(os.path.dirname(conans.__file__))
 
 
@@ -43,9 +47,9 @@ def test_create_docker_runner_cache_shared():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -87,9 +91,9 @@ def test_create_docker_runner_cache_shared_profile_from_cache():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -116,7 +120,10 @@ def test_create_docker_runner_cache_shared_profile_from_cache():
     remove=True
     """)
 
-    client.save({"default_host": profile_host, "default_build": profile_build}, path=client.paths.profiles_path)
+    client.save(
+        {"default_host": profile_host, "default_build": profile_build},
+        path=client.paths.profiles_path,
+    )
     client.run("new cmake_lib -d name=pkg -d version=0.2")
     client.run("create . -pr:h default_host -pr:b default_build")
 
@@ -131,9 +138,9 @@ def test_create_docker_runner_cache_shared_profile_folder():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -161,12 +168,16 @@ def test_create_docker_runner_cache_shared_profile_folder():
     """)
 
     client.save({"build": profile_build})
-    client.save({"docker_default": profile_host}, path = os.path.join(client.cache_folder, "profiles"))
+    client.save(
+        {"docker_default": profile_host},
+        path=os.path.join(client.cache_folder, "profiles"),
+    )
     client.run("new cmake_lib -d name=pkg -d version=0.2")
     client.run("create . -pr:h docker_default -pr:b build")
 
     assert "[100%] Built target example" in client.out
     assert "Removing container" in client.out
+
 
 @pytest.mark.docker_runner
 @pytest.mark.skipif(docker_skip(), reason="Only docker running")
@@ -175,9 +186,9 @@ def test_create_docker_runner_dockerfile_folder_path():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -222,20 +233,32 @@ def test_create_docker_runner_dockerfile_folder_path():
     remove=True
     """)
 
-    client.save({"host_copy": profile_host_copy, "host_clean": profile_host_clean, "build": profile_build})
+    client.save(
+        {
+            "host_copy": profile_host_copy,
+            "host_clean": profile_host_clean,
+            "build": profile_build,
+        }
+    )
     client.run("new cmake_lib -d name=pkg -d version=0.2")
     client.run("create . -pr:h host_copy -pr:b build")
 
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
     client.run("create . -pr:h host_clean -pr:b build")
 
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
 
@@ -246,9 +269,9 @@ def test_create_docker_runner_profile_default_folder():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -273,15 +296,24 @@ def test_create_docker_runner_profile_default_folder():
     cache=copy
     remove=True
     """)
-    client.save({"host_from_profile": profile_host}, path = os.path.join(client.cache_folder, "profiles"))
-    client.save({"build_from_profile": profile_build}, path = os.path.join(client.cache_folder, "profiles"))
+    client.save(
+        {"host_from_profile": profile_host},
+        path=os.path.join(client.cache_folder, "profiles"),
+    )
+    client.save(
+        {"build_from_profile": profile_build},
+        path=os.path.join(client.cache_folder, "profiles"),
+    )
     client.run("new cmake_lib -d name=pkg -d version=0.2")
     client.run("create . -pr:h host_from_profile -pr:b build_from_profile")
 
     assert "Container conan-runner-docker running" in client.out
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
 
@@ -292,9 +324,9 @@ def test_create_docker_runner_dockerfile_file_path():
     Tests the ``conan create . ``
     """
     client = TestClient()
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -326,7 +358,10 @@ def test_create_docker_runner_dockerfile_file_path():
     assert "Container conan-runner-docker running" in client.out
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
 
@@ -363,14 +398,19 @@ def test_create_docker_runner_with_ninja(build_type, shared):
     """)
 
     client = TestClient(path_with_spaces=False)
-    client.save({'conanfile.py': conanfile,
-                "CMakeLists.txt": gen_cmakelists(libsources=["hello.cpp"],
-                                                appsources=["main.cpp"],
-                                                install=True),
-                "hello.h": gen_function_h(name="hello"),
-                "hello.cpp": gen_function_cpp(name="hello", includes=["hello"]),
-                "main.cpp": gen_function_cpp(name="main", includes=["hello"],
-                                            calls=["hello"])})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "CMakeLists.txt": gen_cmakelists(
+                libsources=["hello.cpp"], appsources=["main.cpp"], install=True
+            ),
+            "hello.h": gen_function_h(name="hello"),
+            "hello.cpp": gen_function_cpp(name="hello", includes=["hello"]),
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["hello"], calls=["hello"]
+            ),
+        }
+    )
     profile = textwrap.dedent(f"""\
     [settings]
     arch={{{{ detect_api.detect_arch() }}}}
@@ -389,11 +429,18 @@ def test_create_docker_runner_with_ninja(build_type, shared):
     remove=True
     """)
     client.save({"profile": profile})
-    settings = "-s os=Linux -s build_type={} -o hello/*:shared={}".format(build_type, shared)
+    settings = "-s os=Linux -s build_type={} -o hello/*:shared={}".format(
+        build_type, shared
+    )
     # create should also work
-    client.run("create . --name=hello --version=1.0 {} -pr:h=profile -pr:b=profile".format(settings))
+    client.run(
+        "create . --name=hello --version=1.0 {} -pr:h=profile -pr:b=profile".format(
+            settings
+        )
+    )
     assert 'cmake -G "Ninja"' in client.out
     assert "main: {}!".format(build_type) in client.out
+
 
 @pytest.mark.docker_runner
 @pytest.mark.skipif(docker_skip(), reason="Only docker running")
@@ -412,10 +459,9 @@ def test_create_docker_runner_from_configfile():
         """)
     client.save({"configfile.yaml": configfile})
 
-
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -434,7 +480,7 @@ def test_create_docker_runner_from_configfile():
     os=Linux
     [runner]
     type=docker
-    configfile={os.path.join(client.current_folder, 'configfile.yaml')}
+    configfile={os.path.join(client.current_folder, "configfile.yaml")}
     cache=copy
     remove=True
     """)
@@ -446,7 +492,10 @@ def test_create_docker_runner_from_configfile():
     assert "Container my-custom-conan-runner-container running" in client.out
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
 
@@ -475,10 +524,9 @@ def test_create_docker_runner_from_configfile_with_args():
         """)
     client.save({"configfile.yaml": configfile})
 
-
-    profile_build = textwrap.dedent(f"""\
+    profile_build = textwrap.dedent("""\
     [settings]
-    arch={{{{ detect_api.detect_arch() }}}}
+    arch={{ detect_api.detect_arch() }}
     build_type=Release
     compiler=gcc
     compiler.cppstd=gnu17
@@ -497,7 +545,7 @@ def test_create_docker_runner_from_configfile_with_args():
     os=Linux
     [runner]
     type=docker
-    configfile={os.path.join(client.current_folder, 'configfile.yaml')}
+    configfile={os.path.join(client.current_folder, "configfile.yaml")}
     cache=copy
     remove=True
     """)
@@ -509,10 +557,14 @@ def test_create_docker_runner_from_configfile_with_args():
     assert "command/dockerfiles/Dockerfile_args" in client.out
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
     docker_client.networks.get("my-network").remove()
+
 
 @pytest.mark.docker_runner
 @pytest.mark.skipif(docker_skip(), reason="Only docker running")
@@ -547,7 +599,10 @@ def test_create_docker_runner_default_build_profile():
     assert "Copying default profile" in client.out
     assert "Restore: pkg/0.2" in client.out
     assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe" in client.out
-    assert "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata" in client.out
+    assert (
+        "Restore: pkg/0.2:8631cf963dbbb4d7a378a64a6fd1dc57558bc2fe metadata"
+        in client.out
+    )
     assert "Removing container" in client.out
 
 
@@ -634,11 +689,15 @@ def test_create_docker_runner_in_subfolder():
         remove=True
         """)
 
-    client.save({"conan/conanfile.py": conanfile,
-                "conan/host": profile_host,
-                "include/hello.h": header,
-                "src/hello.cpp": source,
-                "CMakeLists.txt": cmakelist})
+    client.save(
+        {
+            "conan/conanfile.py": conanfile,
+            "conan/host": profile_host,
+            "include/hello.h": header,
+            "src/hello.cpp": source,
+            "CMakeLists.txt": cmakelist,
+        }
+    )
 
     with client.chdir("conan"):
         client.run("create . -pr:h host -vverbose")

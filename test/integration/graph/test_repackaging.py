@@ -9,9 +9,13 @@ def test_repackage():
     # consumer -> repackager -> liba
     #                  \------> libb
     client = TestClient(light=True)
-    client.save({"conanfile.py": GenConanfile().with_package_file("liba.txt", "HelloA!")})
+    client.save(
+        {"conanfile.py": GenConanfile().with_package_file("liba.txt", "HelloA!")}
+    )
     client.run("create . --name=liba --version=1.0")
-    client.save({"conanfile.py": GenConanfile().with_package_file("libb.txt", "HelloB!")})
+    client.save(
+        {"conanfile.py": GenConanfile().with_package_file("libb.txt", "HelloB!")}
+    )
     client.run("create . --name=libb --version=1.0 ")
 
     conanfile = textwrap.dedent("""
@@ -33,7 +37,10 @@ def test_repackage():
     client.save({"conanfile.py": conanfile})
     client.run("create . --name=repackager --version=1.0")
 
-    client.save({"conanfile.py": GenConanfile().with_requires("repackager/1.0")}, clean_first=True)
+    client.save(
+        {"conanfile.py": GenConanfile().with_requires("repackager/1.0")},
+        clean_first=True,
+    )
     client.run("install .")
     assert re.search(r"Skipped binaries(\s*)liba/1.0, libb/1.0", client.out)
     assert "repackager/1.0: Already installed!" in client.out
@@ -41,7 +48,13 @@ def test_repackage():
 
 def test_repackage_library_self():
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("liba", "1.0").with_package_file("a.txt", "A1.0!")})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("liba", "1.0").with_package_file(
+                "a.txt", "A1.0!"
+            )
+        }
+    )
     c.run("create .")
 
     conanfile = textwrap.dedent("""
@@ -87,8 +100,16 @@ def test_repackage_library_self_infinite_loop():
 
 def test_repackage_library_self_multiple():
     c = TestClient()
-    c.save({"1/conanfile.py": GenConanfile("liba", "1.0").with_package_file("a1.txt", "A1.0!"),
-            "2/conanfile.py": GenConanfile("liba", "2.0").with_package_file("a2.txt", "A2.0!")})
+    c.save(
+        {
+            "1/conanfile.py": GenConanfile("liba", "1.0").with_package_file(
+                "a1.txt", "A1.0!"
+            ),
+            "2/conanfile.py": GenConanfile("liba", "2.0").with_package_file(
+                "a2.txt", "A2.0!"
+            ),
+        }
+    )
     c.run("create 1")
     c.run("create 2")
 
@@ -121,8 +142,14 @@ def test_repackage_library_self_multiple():
 
 def test_repackage_library_self_transitive():
     c = TestClient()
-    c.save({"a/conanfile.py": GenConanfile("liba", "1.0").with_package_file("a1.txt", "A1.0!"),
-            "b/conanfile.py": GenConanfile("libb", "1.0").with_requires("liba/1.0")})
+    c.save(
+        {
+            "a/conanfile.py": GenConanfile("liba", "1.0").with_package_file(
+                "a1.txt", "A1.0!"
+            ),
+            "b/conanfile.py": GenConanfile("libb", "1.0").with_requires("liba/1.0"),
+        }
+    )
     c.run("create a")
     c.run("create b")
 

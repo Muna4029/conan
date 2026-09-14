@@ -8,7 +8,7 @@ from conan.test.utils.test_files import temp_folder
 from conan.internal.util.config_parser import TextINIParse
 from conan.internal.util.files import save
 
-fileconfig = '''
+fileconfig = """
 [server]
 jwt_secret: mysecret
 jwt_expire_minutes: 121
@@ -29,15 +29,14 @@ openssl/2.0.1@lasote/testing: pepe
 [users]
 lasote: defaultpass
 pepe: pepepass
-'''
+"""
 
 
 class TestServerConf:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.file_path = temp_folder()
-        server_conf = os.path.join(self.file_path, '.conan_server/server.conf')
+        server_conf = os.path.join(self.file_path, ".conan_server/server.conf")
         self.storage_path = os.path.join(self.file_path, "storage")
         save(server_conf, fileconfig % self.storage_path)
         self.environ = {}
@@ -78,8 +77,10 @@ text=value
         assert config.ssl_enabled
         assert config.port == 9220
         assert config.write_permissions == [("openssl/2.0.1@lasote/testing", "pepe")]
-        assert config.read_permissions == [("*/*@*/*", "*"),
-                                                    ("openssl/2.0.1@lasote/testing", "pepe")]
+        assert config.read_permissions == [
+            ("*/*@*/*", "*"),
+            ("openssl/2.0.1@lasote/testing", "pepe"),
+        ]
         assert config.users == {"lasote": "defaultpass", "pepe": "pepepass"}
         assert config.host_name == "localhost"
         assert config.public_port == 12345
@@ -97,14 +98,16 @@ text=value
         self.environ["CONAN_SERVER_PUBLIC_PORT"] = "33333"
 
         config = ConanServerConfigParser(self.file_path, environment=self.environ)
-        assert config.jwt_secret ==  "newkey"
+        assert config.jwt_secret == "newkey"
         assert config.jwt_expire_time == timedelta(minutes=123)
         assert config.disk_storage_path == tmp_storage
         assert not config.ssl_enabled
         assert config.port == 1233
         assert config.write_permissions == [("openssl/2.0.1@lasote/testing", "pepe")]
-        assert config.read_permissions == [("*/*@*/*", "*"),
-                                                    ("openssl/2.0.1@lasote/testing", "pepe")]
+        assert config.read_permissions == [
+            ("*/*@*/*", "*"),
+            ("openssl/2.0.1@lasote/testing", "pepe"),
+        ]
         assert config.users == {"lasote": "lasotepass", "pepe2": "pepepass2"}
         assert config.host_name == "remotehost"
         assert config.public_port == 33333

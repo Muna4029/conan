@@ -12,10 +12,14 @@ from conan.test.utils.test_files import temp_folder
 @pytest.fixture(scope="module")
 def conanfile():
     c = ConanFile("")
-    c.settings = Settings({"os": ["Windows"],
-                           "compiler": {"gcc": {"libcxx": ["libstdc++"]}},
-                           "build_type": ["Release"],
-                           "arch": ["x86"]})
+    c.settings = Settings(
+        {
+            "os": ["Windows"],
+            "compiler": {"gcc": {"libcxx": ["libstdc++"]}},
+            "build_type": ["Release"],
+            "arch": ["x86"],
+        }
+    )
     c.settings.build_type = "Release"
     c.settings.arch = "x86"
     c.settings.compiler = "gcc"
@@ -33,7 +37,7 @@ def test_cmake_cmake_program(conanfile):
     mycmake = "C:\\mycmake.exe"
     conanfile.conf.define("tools.cmake:cmake_program", mycmake)
 
-    with mock.patch("platform.system", mock.MagicMock(return_value='Windows')):
+    with mock.patch("platform.system", mock.MagicMock(return_value="Windows")):
         write_cmake_presets(conanfile, "the_toolchain.cmake", "MinGW Makefiles", {})
 
     cmake = CMake(conanfile)
@@ -48,7 +52,7 @@ def test_cmake_make_program(conanfile):
     conanfile.folders.set_base_source(temp_folder())
     conanfile.conf.define("tools.gnu:make_program", "C:\\mymake.exe")
 
-    with mock.patch("platform.system", mock.MagicMock(return_value='Windows')):
+    with mock.patch("platform.system", mock.MagicMock(return_value="Windows")):
         write_cmake_presets(conanfile, "the_toolchain.cmake", "MinGW Makefiles", {})
 
     cmake = CMake(conanfile)

@@ -13,8 +13,10 @@ def test_reuse_uploaded_tgz():
 
     # UPLOAD A PACKAGE
     ref = RecipeReference.loads("hello0/0.1@user/stable")
-    files = {"conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
-             "another_export_file.lib": "to compress"}
+    files = {
+        "conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
+        "another_export_file.lib": "to compress",
+    }
     client.save(files)
     client.run("create . --user=user --channel=stable")
     client.run("upload %s -r default" % str(ref))
@@ -27,8 +29,10 @@ def test_reuse_downloaded_tgz():
     # and reupload them. It needs to compress it again, not tgz is kept
     client = TestClient(default_server_user=True)
     # UPLOAD A PACKAGE
-    files = {"conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
-             "another_export_file.lib": "to compress"}
+    files = {
+        "conanfile.py": GenConanfile("hello0", "0.1").with_exports("*"),
+        "another_export_file.lib": "to compress",
+    }
     client.save(files)
     client.run("create . --user=user --channel=stable")
     client.run("upload hello0/0.1@user/stable -r default")
@@ -48,10 +52,12 @@ def test_reuse_downloaded_tgz():
 def test_upload_only_tgz_if_needed():
     client = TestClient(default_server_user=True)
     ref = RecipeReference.loads("hello0/0.1@user/stable")
-    conanfile = GenConanfile("hello0", "0.1").with_exports("*").with_package_file("lib/file.lib",
-                                                                                  "File")
-    client.save({"conanfile.py": conanfile,
-                 "file.txt": "contents"})
+    conanfile = (
+        GenConanfile("hello0", "0.1")
+        .with_exports("*")
+        .with_package_file("lib/file.lib", "File")
+    )
+    client.save({"conanfile.py": conanfile, "file.txt": "contents"})
     client.run("create . --user=user --channel=stable")
 
     # Upload conans

@@ -14,8 +14,7 @@ _path_chars = "päthñç$"
 
 @pytest.fixture(scope="module")
 def client_with_special_chars():
-    """ the path with special characters is creating a conanbuild.bat that fails
-    """
+    """the path with special characters is creating a conanbuild.bat that fails"""
     cache_folder = os.path.join(temp_folder(), _path_chars)
     current_folder = os.path.join(temp_folder(), _path_chars)
     c = TestClient(cache_folder, current_folder)
@@ -57,8 +56,10 @@ def client_with_special_chars():
     return c
 
 
-@pytest.mark.skipif(platform.system() == "Linux" and sys.version_info.minor <= 6,
-                    reason="It is failing in CI in python3.6 Linux docker image")
+@pytest.mark.skipif(
+    platform.system() == "Linux" and sys.version_info.minor <= 6,
+    reason="It is failing in CI in python3.6 Linux docker image",
+)
 def test_reuse_buildenv(client_with_special_chars):
     c = client_with_special_chars
     # Need the 2 profile to work correctly buildenv

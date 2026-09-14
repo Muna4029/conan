@@ -32,25 +32,31 @@ conanfile_py = textwrap.dedent("""
 @pytest.mark.skipif(platform.system() != "Windows", reason="msbuild requires Windows")
 class MSBuildIntelTestCase:
     def test_use_msbuild_toolchain(self):
-        self.t.save({'profile': self.profile})
+        self.t.save({"profile": self.profile})
         self.t.run("new hello/0.1 -s")
         self.t.run("create . --name=hello --version=0.1 -pr:h=profile")
 
         app = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
 
         # Prepare the actual consumer package
-        self.t.save({"conanfile.py": conanfile_py,
-                     "MyProject.sln": sln_file,
-                     "MyApp/MyApp.vcxproj": myapp_vcxproj,
-                     "MyApp/MyApp.cpp": app,
-                     'profile': self.profile},
-                    clean_first=True)
+        self.t.save(
+            {
+                "conanfile.py": conanfile_py,
+                "MyProject.sln": sln_file,
+                "MyApp/MyApp.vcxproj": myapp_vcxproj,
+                "MyApp/MyApp.cpp": app,
+                "profile": self.profile,
+            },
+            clean_first=True,
+        )
 
         # Build in the cache
         self.t.run("install . -pr:h=profile -of=conan")
 
-        self.assertIn("conanfile.py: MSBuildToolchain created conan_toolchain_release_x64.props",
-                      self.t.out)
+        self.assertIn(
+            "conanfile.py: MSBuildToolchain created conan_toolchain_release_x64.props",
+            self.t.out,
+        )
 
         self.t.run("build . -bf=conan")
         self.assertIn("Visual Studio 2017", self.t.out)
@@ -68,8 +74,10 @@ class MSBuildIntelTestCase:
         # Build locally
         os.unlink(os.path.join(self.t.current_folder, exe))
 
-        cmd = vcvars + ' && msbuild "MyProject.sln" /p:Configuration=Release ' \
-                       '/p:Platform=x64 /p:PlatformToolset="Intel C++ Compiler 19.1"'
+        cmd = (
+            vcvars + ' && msbuild "MyProject.sln" /p:Configuration=Release '
+            '/p:Platform=x64 /p:PlatformToolset="Intel C++ Compiler 19.1"'
+        )
 
         self.t.run_command(cmd)
         self.assertIn("Visual Studio 2017", self.t.out)

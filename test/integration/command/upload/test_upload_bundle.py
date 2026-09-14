@@ -7,8 +7,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_upload_bundle():
-    """ Test how a custom command can create an upload bundle and print it
-    """
+    """Test how a custom command can create an upload bundle and print it"""
     c = TestClient(default_server_user=True)
     mycommand = textwrap.dedent("""
         import json
@@ -45,12 +44,16 @@ def test_upload_bundle():
             cli_out_write(json.dumps(package_list.serialize(), indent=4))
         """)
 
-    command_file_path = os.path.join(c.cache_folder, 'extensions',
-                                     'commands', 'cmd_upload_bundle.py')
+    command_file_path = os.path.join(
+        c.cache_folder, "extensions", "commands", "cmd_upload_bundle.py"
+    )
     c.save({command_file_path: mycommand})
     c.save({"conanfile.py": GenConanfile("pkg", "0.1")})
     c.run("create .")
     c.run('upload-bundle "*" -r=default', redirect_stdout="mybundle.json")
     bundle = c.load("mybundle.json")
     bundle = json.loads(bundle)
-    assert bundle["pkg/0.1"]["revisions"]["485dad6cb11e2fa99d9afbe44a57a164"]["upload"] is True
+    assert (
+        bundle["pkg/0.1"]["revisions"]["485dad6cb11e2fa99d9afbe44a57a164"]["upload"]
+        is True
+    )

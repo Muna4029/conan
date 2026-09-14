@@ -58,7 +58,6 @@ def client():
 @pytest.mark.tool("xcodebuild")
 @pytest.mark.tool("xcodegen")
 def test_project_xcodebuild(client):
-
     conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
@@ -84,14 +83,21 @@ def test_project_xcodebuild(client):
                 self.cpp_info.bindirs = ["bin"]
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "test_package/conanfile.py": test,
-                 "app/main.cpp": main,
-                 "project.yml": xcode_project}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "test_package/conanfile.py": test,
+            "app/main.cpp": main,
+            "project.yml": xcode_project,
+        },
+        clean_first=True,
+    )
     client.run("install . --build=missing")
     client.run("install . -s build_type=Debug --build=missing")
     client.run_command("xcodegen generate")
-    client.run("create . --build=missing -c tools.build:verbosity=verbose -c tools.compilation:verbosity=verbose")
+    client.run(
+        "create . --build=missing -c tools.build:verbosity=verbose -c tools.compilation:verbosity=verbose"
+    )
     assert "xcodebuild: error: invalid option" not in client.out
     assert "hello/0.1: Hello World Release!" in client.out
     assert "App Release!" in client.out
@@ -105,7 +111,6 @@ def test_project_xcodebuild(client):
 @pytest.mark.tool("xcodegen")
 @pytest.mark.skip(reason="Different sdks not installed in CI")
 def test_xcodebuild_test_different_sdk(client):
-
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.apple import XcodeBuild
@@ -122,17 +127,22 @@ def test_xcodebuild_test_different_sdk(client):
                 self.run("otool -l build/Release/app")
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "app/main.cpp": main,
-                 "project.yml": xcode_project}, clean_first=True)
+    client.save(
+        {"conanfile.py": conanfile, "app/main.cpp": main, "project.yml": xcode_project},
+        clean_first=True,
+    )
     client.run("install . --build=missing")
     client.run("install . -s build_type=Debug --build=missing")
     client.run_command("xcodegen generate")
-    client.run("create . --build=missing -s os.sdk=macosx -s os.sdk_version=10.15 "
-               "-c tools.apple:sdk_path='/Applications/Xcode11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk'")
+    client.run(
+        "create . --build=missing -s os.sdk=macosx -s os.sdk_version=10.15 "
+        "-c tools.apple:sdk_path='/Applications/Xcode11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk'"
+    )
     assert "sdk 10.15.6" in client.out
-    client.run("create . --build=missing -s os.sdk_version=11.3 "
-               "-c tools.apple:sdk_path='/Applications/Xcode12.5.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk'")
+    client.run(
+        "create . --build=missing -s os.sdk_version=11.3 "
+        "-c tools.apple:sdk_path='/Applications/Xcode12.5.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk'"
+    )
     assert "sdk 11.3" in client.out
 
 
@@ -140,7 +150,6 @@ def test_xcodebuild_test_different_sdk(client):
 @pytest.mark.tool("xcodebuild")
 @pytest.mark.tool("xcodegen")
 def test_missing_sdk(client):
-
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.apple import XcodeBuild
@@ -156,11 +165,15 @@ def test_missing_sdk(client):
                 xcode.build("app.xcodeproj")
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "app/main.cpp": main,
-                 "project.yml": xcode_project}, clean_first=True)
+    client.save(
+        {"conanfile.py": conanfile, "app/main.cpp": main, "project.yml": xcode_project},
+        clean_first=True,
+    )
     client.run("install . --build=missing")
     client.run("install . -s build_type=Debug --build=missing")
     client.run_command("xcodegen generate")
-    client.run("create . --build=missing -s os.sdk=macosx -s os.sdk_version=12.0 "
-               "-c tools.apple:sdk_path=notexistingsdk", assert_error=True)
+    client.run(
+        "create . --build=missing -s os.sdk=macosx -s os.sdk_version=12.0 "
+        "-c tools.apple:sdk_path=notexistingsdk",
+        assert_error=True,
+    )

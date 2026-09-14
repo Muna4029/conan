@@ -8,7 +8,6 @@ from conan.internal.util.files import save, load
 
 
 class TestMetadataCommands:
-
     @pytest.fixture
     def create_conan_pkg(self):
         client = TestClient(default_server_user=True)
@@ -33,7 +32,10 @@ class TestMetadataCommands:
         # Now upload everything
         c.run("upload * -c -r=default")
         assert "pkg/0.1: Recipe metadata: 1 files" in c.out
-        assert "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files" in c.out
+        assert (
+            "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files"
+            in c.out
+        )
 
         # Add new files to the metadata
         self.save_metadata_file(c, "pkg/0.1", "mylogs2.txt")
@@ -42,18 +44,23 @@ class TestMetadataCommands:
         # adding the new metadata logs files
         c.run("upload * -c -r=default --metadata=*")
         assert "pkg/0.1: Recipe metadata: 2 files" in c.out
-        assert "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 2 files" in c.out
+        assert (
+            "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 2 files"
+            in c.out
+        )
 
         c.run("remove * -c")
         c.run("install --requires=pkg/0.1")  # wont install metadata by default
         c.run("cache path pkg/0.1 --folder=metadata", assert_error=True)
         assert "'metadata' folder does not exist for the reference pkg/0.1" in c.out
         c.run(f"cache path pkg/0.1:{pid} --folder=metadata", assert_error=True)
-        assert f"'metadata' folder does not exist for the reference pkg/0.1:{pid}" in c.out
+        assert (
+            f"'metadata' folder does not exist for the reference pkg/0.1:{pid}" in c.out
+        )
 
         # Forcing the download of the metadata of cache-existing things with the "download" command
         c.run("download pkg/0.1 -r=default --metadata=*")
-        c.run(f"cache path pkg/0.1 --folder=metadata")
+        c.run("cache path pkg/0.1 --folder=metadata")
         metadata_path = str(c.stdout).strip()
         c.run(f"cache path pkg/0.1:{pid} --folder=metadata")
         pkg_metadata_path = str(c.stdout).strip()
@@ -90,7 +97,7 @@ class TestMetadataCommands:
         assert "mylogs2!!!!" in content
 
     def test_folder_exist(self, create_conan_pkg):
-        """ so we can cp -R to the metadata folder, having to create the folder in the cache
+        """so we can cp -R to the metadata folder, having to create the folder in the cache
         is weird
         """
         c, _ = create_conan_pkg
@@ -102,7 +109,7 @@ class TestMetadataCommands:
         assert os.path.isdir(pkg_metadata_path)
 
     def test_direct_download_redownload(self, create_conan_pkg):
-        """ When we directly download things, without "conan install" first, it is also able
+        """When we directly download things, without "conan install" first, it is also able
         to fetch the requested metadata
 
         Also, re-downloading same thing shouldn't fail
@@ -116,7 +123,10 @@ class TestMetadataCommands:
         # Now upload everything
         c.run("upload * -c -r=default")
         assert "pkg/0.1: Recipe metadata: 1 files" in c.out
-        assert "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files" in c.out
+        assert (
+            "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files"
+            in c.out
+        )
 
         c.run("remove * -c")
 
@@ -125,18 +135,21 @@ class TestMetadataCommands:
         assert os.path.isfile(os.path.join(metadata_path, "logs", "mylogs.txt"))
         c.run(f"cache path pkg/0.1:{pid} --folder=metadata")
         pkg_metadata_path = str(c.stdout).strip()
-        assert os.path.isfile(os.path.join(pkg_metadata_path, "logs", "mybuildlogs.txt"))
+        assert os.path.isfile(
+            os.path.join(pkg_metadata_path, "logs", "mybuildlogs.txt")
+        )
 
         # Re-download shouldn't fail
         c.run("download pkg/0.1 -r=default --metadata=*")
         assert os.path.isfile(os.path.join(metadata_path, "logs", "mylogs.txt"))
         c.run(f"cache path pkg/0.1:{pid} --folder=metadata")
         pkg_metadata_path = str(c.stdout).strip()
-        assert os.path.isfile(os.path.join(pkg_metadata_path, "logs", "mybuildlogs.txt"))
+        assert os.path.isfile(
+            os.path.join(pkg_metadata_path, "logs", "mybuildlogs.txt")
+        )
 
     def test_no_download_cached(self, create_conan_pkg):
-        """ as the metadata can change, no checksum, no revision, cannot be cached
-        """
+        """as the metadata can change, no checksum, no revision, cannot be cached"""
         c, pid = create_conan_pkg
 
         # Add some metadata
@@ -146,7 +159,10 @@ class TestMetadataCommands:
         # Now upload everything
         c.run("upload * -c -r=default")
         assert "pkg/0.1: Recipe metadata: 1 files" in c.out
-        assert "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files" in c.out
+        assert (
+            "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files"
+            in c.out
+        )
 
         c2 = TestClient(servers=c.servers)
         tmp_folder = temp_folder()
@@ -161,7 +177,9 @@ class TestMetadataCommands:
         assert "pkg/0.1!!!!" in mylogs
         c2.run(f"cache path pkg/0.1:{pid} --folder=metadata")
         c2_pkg_metadata_path = str(c2.stdout).strip()
-        mybuildlogs = load(os.path.join(c2_pkg_metadata_path, "logs", "mybuildlogs.txt"))
+        mybuildlogs = load(
+            os.path.join(c2_pkg_metadata_path, "logs", "mybuildlogs.txt")
+        )
         assert f"pkg/0.1:{pid}!!!!" in mybuildlogs
 
         # Now the other client will update the metadata
@@ -169,14 +187,19 @@ class TestMetadataCommands:
         save(mypkgfile, "mybuildlogs2!!!!")
         c.run("upload * -c -r=default --metadata=*")
         assert "pkg/0.1: Recipe metadata: 1 files" in c.out
-        assert "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files" in c.out
+        assert (
+            "pkg/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709: Package metadata: 1 files"
+            in c.out
+        )
 
         # re-download of metadata in c2
         c2.run("remove * -c")  # to make sure the download cache works
         c2.run("download pkg/0.1 -r=default --metadata=*")
         mylogs = load(os.path.join(c2_metadata_path, "logs", "mylogs.txt"))
         assert "mylogs2!!!!" in mylogs
-        mybuildlogs = load(os.path.join(c2_pkg_metadata_path, "logs", "mybuildlogs.txt"))
+        mybuildlogs = load(
+            os.path.join(c2_pkg_metadata_path, "logs", "mybuildlogs.txt")
+        )
         assert "mybuildlogs2!!!!" in mybuildlogs
 
     def test_upload_ignored_metadata(self, create_conan_pkg):
@@ -200,6 +223,11 @@ class TestMetadataCommands:
         client.save({"conanfile.py": GenConanfile("pkg", "0.1")})
         client.run("export .")
 
-        client.run('upload * --confirm --remote=default --metadata="" --metadata="logs/*"',
-                   assert_error=True)
-        assert "ERROR: Empty string and patterns can not be mixed for metadata." in client.out
+        client.run(
+            'upload * --confirm --remote=default --metadata="" --metadata="logs/*"',
+            assert_error=True,
+        )
+        assert (
+            "ERROR: Empty string and patterns can not be mixed for metadata."
+            in client.out
+        )

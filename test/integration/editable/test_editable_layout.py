@@ -6,8 +6,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_editable_folders_root():
-    """ Editables with self.folders.root = ".." should work too
-    """
+    """Editables with self.folders.root = ".." should work too"""
     c = TestClient()
     pkg = textwrap.dedent("""
         from conan import ConanFile
@@ -36,8 +35,7 @@ def test_editable_folders_root():
                 pkg_libdir = self.dependencies["pkg"].cpp_info.libdir
                 self.output.info(f"PKG LIBDIR {pkg_libdir}")
         """)
-    c.save({"libs/pkg/conanfile.py": pkg,
-            "conanfile.py": app})
+    c.save({"libs/pkg/conanfile.py": pkg, "conanfile.py": app})
 
     c.run("editable add libs/pkg")
     c.run("install . --build=editable")
@@ -48,8 +46,7 @@ def test_editable_folders_root():
 
 
 def test_editable_folders_sibiling_root():
-    """ Editables with self.folders.root = ".." should work too for sibling folders
-    """
+    """Editables with self.folders.root = ".." should work too for sibling folders"""
     c = TestClient()
     pkg = textwrap.dedent("""
         from conan import ConanFile
@@ -78,8 +75,7 @@ def test_editable_folders_sibiling_root():
                 pkg_libdir = self.dependencies["pkg"].cpp_info.libdir
                 self.output.info(f"PKG LIBDIR {pkg_libdir}")
         """)
-    c.save({"pkg/conanfile.py": pkg,
-            "app/conanfile.py": app})
+    c.save({"pkg/conanfile.py": pkg, "app/conanfile.py": app})
 
     c.run("editable add pkg")
     c.run("install app --build=editable")
@@ -92,22 +88,30 @@ def test_editable_folders_sibiling_root():
 def test_editable_matching_folder_names():
     # https://github.com/conan-io/conan/issues/14091
     client = TestClient()
-    client.save({"hello-say/conanfile.py": GenConanfile("say", "0.1"),
-                 "hello/conanfile.py": GenConanfile("hello", "0.1").with_settings("build_type")
-                                                                   .with_require("say/0.1")})
+    client.save(
+        {
+            "hello-say/conanfile.py": GenConanfile("say", "0.1"),
+            "hello/conanfile.py": GenConanfile("hello", "0.1")
+            .with_settings("build_type")
+            .with_require("say/0.1"),
+        }
+    )
     client.run("editable add hello-say")
     client.run("build hello-say")
     client.run("install hello -g CMakeDeps -s:b os=Linux")
     data = client.load("hello/say-release-data.cmake")
-    hello_say_folder = os.path.join(client.current_folder, "hello-say").replace("\\", "/")
+    hello_say_folder = os.path.join(client.current_folder, "hello-say").replace(
+        "\\", "/"
+    )
     assert f'set(say_PACKAGE_FOLDER_RELEASE "{hello_say_folder}")' in data
     env = client.load("hello/conanbuildenv-release.sh")
-    assert "$script_folder/deactivate_conanbuildenv-release.sh" in env.replace("\\", "/")
+    assert "$script_folder/deactivate_conanbuildenv-release.sh" in env.replace(
+        "\\", "/"
+    )
 
 
 def test_install_editable_build_folder_vars():
-    """ Make sure that the consumer generates the editable files following build_folder_vars
-    """
+    """Make sure that the consumer generates the editable files following build_folder_vars"""
     c = TestClient()
     profile = textwrap.dedent("""
         [settings]
@@ -140,11 +144,11 @@ def test_install_editable_build_folder_vars():
             def layout(self):
                 cmake_layout(self)
             """)
-    c.save({"lib/conanfile.py": lib,
-            "app/conanfile.py": app,
-            "profile": profile})
+    c.save({"lib/conanfile.py": lib, "app/conanfile.py": app, "profile": profile})
     c.run("editable add lib")
     c.run("build lib -pr=profile")
     c.run("install app -pr=profile --build=editable")
-    path = os.path.join(c.current_folder, "lib", "build", "windows-x86_64", "Release", "generators")
+    path = os.path.join(
+        c.current_folder, "lib", "build", "windows-x86_64", "Release", "generators"
+    )
     assert f"lib/0.1: Writing generators to {path}" in c.out

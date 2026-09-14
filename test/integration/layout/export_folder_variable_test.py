@@ -4,9 +4,8 @@ from conan.test.utils.tools import TestClient
 
 
 class TestExportFoldersAvailability:
-
     def test_export_sources_folder_availability_local_methods(self):
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
 
@@ -33,7 +32,7 @@ class TestExportFoldersAvailability:
             def package(self):
                 assert os.path.exists(self.export_sources_folder)
 
-        ''')
+        """)
         client = TestClient()
         client.save({"conanfile.py": conanfile})
 
@@ -43,7 +42,7 @@ class TestExportFoldersAvailability:
         client.run("build .")
 
     def test_export_folder_availability_local_methods(self):
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
 
@@ -71,7 +70,7 @@ class TestExportFoldersAvailability:
             def package(self):
                 assert os.path.exists(self.export_sources_folder)
 
-        ''')
+        """)
         client = TestClient()
         client.save({"conanfile.py": conanfile})
 
@@ -81,7 +80,7 @@ class TestExportFoldersAvailability:
         client.run("build .")
 
     def test_export_folder_availability_create(self):
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
 
@@ -109,13 +108,13 @@ class TestExportFoldersAvailability:
             def package(self):
                 assert self.export_folder is None
 
-        ''')
+        """)
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("create . --name foo --version 1.0")
 
     def test_export_sources_folder_availability_create(self):
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
 
@@ -142,7 +141,7 @@ class TestExportFoldersAvailability:
             def package(self):
                 assert os.path.exists(self.export_sources_folder)
 
-        ''')
+        """)
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("create . --name foo --version 1.0")

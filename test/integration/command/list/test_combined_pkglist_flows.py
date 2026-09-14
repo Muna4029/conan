@@ -8,16 +8,17 @@ from conan.test.utils.tools import TestClient, TestServer
 
 
 class TestListUpload:
-    refs = ["zli/1.0.0#f034dc90894493961d92dd32a9ee3b78",
-            "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb"]
+    refs = [
+        "zli/1.0.0#f034dc90894493961d92dd32a9ee3b78",
+        "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb",
+    ]
 
     @pytest.fixture()
     def client(self):
         c = TestClient(default_server_user=True, light=True)
-        c.save({
-            "zlib.py": GenConanfile("zlib"),
-            "zli.py": GenConanfile("zli", "1.0.0")
-        })
+        c.save(
+            {"zlib.py": GenConanfile("zlib"), "zli.py": GenConanfile("zli", "1.0.0")}
+        )
         c.run("create zli.py")
         c.run("create zlib.py --version=1.0.0 --user=user --channel=channel")
         return c
@@ -39,24 +40,36 @@ class TestListUpload:
         assert str(client.out).count("Uploading package") == 2
 
     def test_list_upload_empty_list(self, client):
-        client.run(f"install --requires=zlib/1.0.0@user/channel -f json",
-                   redirect_stdout="install_graph.json")
+        client.run(
+            "install --requires=zlib/1.0.0@user/channel -f json",
+            redirect_stdout="install_graph.json",
+        )
 
         # Generate an empty pkglist.json
-        client.run(f"list --format=json --graph=install_graph.json --graph-binaries=bogus",
-                   redirect_stdout="pkglist.json")
+        client.run(
+            "list --format=json --graph=install_graph.json --graph-binaries=bogus",
+            redirect_stdout="pkglist.json",
+        )
 
         # No binaries should be uploaded since the pkglist is empty, but the command
         # should not error
         client.run("upload --list=pkglist.json -r=default")
-        assert "No packages were uploaded because the package list is empty." in client.out
+        assert (
+            "No packages were uploaded because the package list is empty." in client.out
+        )
 
 
 class TestGraphCreatedUpload:
     def test_create_upload(self):
         c = TestClient(default_server_user=True, light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+            }
+        )
         c.run("create zlib")
         c.run("create app --format=json", redirect_stdout="graph.json")
         c.run("list --graph=graph.json --format=json", redirect_stdout="pkglist.json")
@@ -84,45 +97,72 @@ class TestCreateGraphToPkgList:
 
     def test_graph_pkg_list_only_built(self):
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")
-                                                              .with_settings("os")
-                                                              .with_shared_option(False)})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "app/conanfile.py": GenConanfile("app", "1.0")
+                .with_requires("zlib/1.0")
+                .with_settings("os")
+                .with_shared_option(False),
+            }
+        )
         c.run("create zlib")
         c.run("create app --format=json -s os=Linux", redirect_stdout="graph.json")
         c.run("list --graph=graph.json --graph-binaries=build --format=json")
         pkglist = json.loads(c.stdout)["Local Cache"]
         assert len(pkglist) == 1
-        pkgs = pkglist["app/1.0"]["revisions"]["8263c3c32802e14a2f03a0b1fcce0d95"]["packages"]
+        pkgs = pkglist["app/1.0"]["revisions"]["8263c3c32802e14a2f03a0b1fcce0d95"][
+            "packages"
+        ]
         assert len(pkgs) == 1
         pkg_app = pkgs["d8b3bdd894c3eb9bf2a3119ee0f8c70843ace0ac"]
         assert pkg_app["info"]["requires"] == ["zlib/1.0.Z"]
-        assert pkg_app["info"]["settings"] == {'os': 'Linux'}
-        assert pkg_app["info"]["options"] == {'shared': 'False'}
+        assert pkg_app["info"]["settings"] == {"os": "Linux"}
+        assert pkg_app["info"]["options"] == {"shared": "False"}
 
     def test_graph_pkg_list_all_recipes_only(self):
         """
         --graph-recipes=* selects all the recipes in the graph
         """
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+            }
+        )
         c.run("create zlib")
         c.run("create app --format=json", redirect_stdout="graph.json")
         c.run("list --graph=graph.json --graph-recipes=* --format=json")
         pkglist = json.loads(c.stdout)["Local Cache"]
         assert len(pkglist) == 2
-        assert "packages" not in pkglist["app/1.0"]["revisions"]["0fa1ff1b90576bb782600e56df642e19"]
-        assert "packages" not in pkglist["zlib/1.0"]["revisions"]["c570d63921c5f2070567da4bf64ff261"]
+        assert (
+            "packages"
+            not in pkglist["app/1.0"]["revisions"]["0fa1ff1b90576bb782600e56df642e19"]
+        )
+        assert (
+            "packages"
+            not in pkglist["zlib/1.0"]["revisions"]["c570d63921c5f2070567da4bf64ff261"]
+        )
 
     def test_graph_pkg_list_python_requires(self):
         """
         include python_requires too
         """
         c = TestClient(default_server_user=True, light=True)
-        c.save({"pytool/conanfile.py": GenConanfile("pytool", "0.1"),
-                "zlib/conanfile.py": GenConanfile("zlib", "1.0").with_python_requires("pytool/0.1"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")})
+        c.save(
+            {
+                "pytool/conanfile.py": GenConanfile("pytool", "0.1"),
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0").with_python_requires(
+                    "pytool/0.1"
+                ),
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+            }
+        )
         c.run("create pytool")
         c.run("create zlib")
         c.run("upload * -c -r=default")
@@ -141,7 +181,13 @@ class TestCreateGraphToPkgList:
         include python_requires too
         """
         c = TestClient(default_server_user=True, light=True)
-        c.save({"conanfile.py": GenConanfile("pytool", "0.1").with_package_type("python-require")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile("pytool", "0.1").with_package_type(
+                    "python-require"
+                )
+            }
+        )
         c.run("create . --format=json", redirect_stdout="graph.json")
         c.run("list --graph=graph.json --format=json")
         pkglist = json.loads(c.stdout)["Local Cache"]
@@ -152,13 +198,21 @@ class TestCreateGraphToPkgList:
 class TestGraphInfoToPkgList:
     def test_graph_pkg_list_only_built(self):
         c = TestClient(default_server_user=True, light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+            }
+        )
         c.run("create zlib")
         c.run("create app --format=json")
         c.run("upload * -c -r=default")
         c.run("remove * -c")
-        c.run("graph info --requires=app/1.0 --format=json", redirect_stdout="graph.json")
+        c.run(
+            "graph info --requires=app/1.0 --format=json", redirect_stdout="graph.json"
+        )
         c.run("list --graph=graph.json --graph-binaries=build --format=json")
         pkglist = json.loads(c.stdout)
         assert len(pkglist["Local Cache"]) == 0
@@ -175,13 +229,19 @@ class TestGraphInfoToPkgList:
 
 
 class TestPkgListFindRemote:
-    """ we can recover a list of remotes for an already installed graph, for metadata download
-    """
+    """we can recover a list of remotes for an already installed graph, for metadata download"""
+
     def test_graph_2_pkg_list_remotes(self):
         servers = OrderedDict([("default", TestServer()), ("remote2", TestServer())])
         c = TestClient(servers=servers, inputs=2 * ["admin", "password"], light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+            }
+        )
         c.run("create zlib")
         c.run("create app ")
         c.run("upload zlib* -c -r=default")
@@ -198,7 +258,10 @@ class TestPkgListFindRemote:
         assert "default" not in pkglist  # The remote doesn't even exist
 
         # Lets now compute a list finding in the remotes
-        c.run("pkglist find-remote pkglist.json --format=json", redirect_stdout="remotepkg.json")
+        c.run(
+            "pkglist find-remote pkglist.json --format=json",
+            redirect_stdout="remotepkg.json",
+        )
         pkglist = json.loads(c.stdout)
         assert "Local Cache" not in pkglist
         assert len(pkglist["default"]) == 1
@@ -216,15 +279,24 @@ class TestPkgListFindRemote:
 
 
 class TestPkgListMerge:
-    """ deep merge lists
-    """
+    """deep merge lists"""
+
     def test_graph_2_pkg_list_remotes(self):
         servers = OrderedDict([("default", TestServer()), ("remote2", TestServer())])
         c = TestClient(servers=servers, inputs=2 * ["admin", "password"])
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0").with_settings("build_type"),
-                "bzip2/conanfile.py": GenConanfile("bzip2", "1.0").with_settings("build_type"),
-                "app/conanfile.py": GenConanfile("app", "1.0").with_requires("zlib/1.0", "bzip2/1.0")
-                                                              .with_settings("build_type")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0").with_settings(
+                    "build_type"
+                ),
+                "bzip2/conanfile.py": GenConanfile("bzip2", "1.0").with_settings(
+                    "build_type"
+                ),
+                "app/conanfile.py": GenConanfile("app", "1.0")
+                .with_requires("zlib/1.0", "bzip2/1.0")
+                .with_settings("build_type"),
+            }
+        )
         c.run("create zlib")
         c.run("create bzip2")
         c.run("create app ")
@@ -232,8 +304,10 @@ class TestPkgListMerge:
         c.run("list zlib:* --format=json", redirect_stdout="list1.json")
         c.run("list bzip2:* --format=json", redirect_stdout="list2.json")
         c.run("list app:* --format=json", redirect_stdout="list3.json")
-        c.run("pkglist merge --list=list1.json --list=list2.json --list=list3.json --format=json",
-              redirect_stdout="release.json")
+        c.run(
+            "pkglist merge --list=list1.json --list=list2.json --list=list3.json --format=json",
+            redirect_stdout="release.json",
+        )
         final = json.loads(c.stdout)
         assert "app/1.0" in final["Local Cache"]
         assert "zlib/1.0" in final["Local Cache"]
@@ -242,21 +316,37 @@ class TestPkgListMerge:
         c.run("create zlib -s build_type=Debug")
         c.run("create bzip2 -s build_type=Debug")
         c.run("create app -s build_type=Debug")
-        c.run("list *:* -fs build_type=Debug --format=json", redirect_stdout="debug.json")
-        c.run("pkglist merge --list=release.json --list=debug.json --format=json",
-              redirect_stdout="release.json")
+        c.run(
+            "list *:* -fs build_type=Debug --format=json", redirect_stdout="debug.json"
+        )
+        c.run(
+            "pkglist merge --list=release.json --list=debug.json --format=json",
+            redirect_stdout="release.json",
+        )
         final = json.loads(c.stdout)
-        rev = final["Local Cache"]["zlib/1.0"]["revisions"]["11f74ff5f006943c6945117511ac8b64"]
+        rev = final["Local Cache"]["zlib/1.0"]["revisions"][
+            "11f74ff5f006943c6945117511ac8b64"
+        ]
         assert len(rev["packages"]) == 2  # Debug and Release
-        settings = rev["packages"]["efa83b160a55b033c4ea706ddb980cd708e3ba1b"]["info"]["settings"]
+        settings = rev["packages"]["efa83b160a55b033c4ea706ddb980cd708e3ba1b"]["info"][
+            "settings"
+        ]
         assert settings == {"build_type": "Release"}
-        settings = rev["packages"]["9e186f6d94c008b544af1569d1a6368d8339efc5"]["info"]["settings"]
+        settings = rev["packages"]["9e186f6d94c008b544af1569d1a6368d8339efc5"]["info"][
+            "settings"
+        ]
         assert settings == {"build_type": "Debug"}
-        rev = final["Local Cache"]["bzip2/1.0"]["revisions"]["9e0352b3eb99ba4ac79bc7eeae2102c5"]
+        rev = final["Local Cache"]["bzip2/1.0"]["revisions"][
+            "9e0352b3eb99ba4ac79bc7eeae2102c5"
+        ]
         assert len(rev["packages"]) == 2  # Debug and Release
-        settings = rev["packages"]["efa83b160a55b033c4ea706ddb980cd708e3ba1b"]["info"]["settings"]
+        settings = rev["packages"]["efa83b160a55b033c4ea706ddb980cd708e3ba1b"]["info"][
+            "settings"
+        ]
         assert settings == {"build_type": "Release"}
-        settings = rev["packages"]["9e186f6d94c008b544af1569d1a6368d8339efc5"]["info"]["settings"]
+        settings = rev["packages"]["9e186f6d94c008b544af1569d1a6368d8339efc5"]["info"][
+            "settings"
+        ]
         assert settings == {"build_type": "Debug"}
 
     def test_pkglist_file_error(self):
@@ -278,14 +368,14 @@ class TestPkgListMerge:
         )
         assert "conan list --graph graph.json --format=json > pkglist.json" in c.out
 
+
 class TestDownloadUpload:
     @pytest.fixture()
     def client(self):
         c = TestClient(default_server_user=True, light=True)
-        c.save({
-            "zlib.py": GenConanfile("zlib"),
-            "zli.py": GenConanfile("zli", "1.0.0")
-        })
+        c.save(
+            {"zlib.py": GenConanfile("zlib"), "zli.py": GenConanfile("zli", "1.0.0")}
+        )
         c.run("create zli.py")
         c.run("create zlib.py --version=1.0.0 --user=user --channel=channel")
         c.run("upload * -r=default -c")
@@ -298,17 +388,23 @@ class TestDownloadUpload:
         # download and for list
         pattern = "zlib/*#latest:*#latest"
         if prev_list:
-            client.run(f"list {pattern} -r=default --format=json", redirect_stdout="pkglist.json")
+            client.run(
+                f"list {pattern} -r=default --format=json",
+                redirect_stdout="pkglist.json",
+            )
             # Overwriting previous pkglist.json
             pattern = "--list=pkglist.json"
 
-        client.run(f"download {pattern} -r=default --format=json", redirect_stdout="pkglist.json")
+        client.run(
+            f"download {pattern} -r=default --format=json",
+            redirect_stdout="pkglist.json",
+        )
         # TODO: Discuss "origin"
         assert "Local Cache" in client.load("pkglist.json")
         client.run("remove * -r=default -c")
         client.run("upload --list=pkglist.json -r=default")
-        assert f"Uploading recipe 'zlib/1.0.0" in client.out
-        assert f"Uploading recipe 'zli/" not in client.out
+        assert "Uploading recipe 'zlib/1.0.0" in client.out
+        assert "Uploading recipe 'zli/" not in client.out
         assert "Uploading package 'zlib/1.0.0" in client.out
         assert "Uploading package 'zli/" not in client.out
 
@@ -316,21 +412,27 @@ class TestDownloadUpload:
     def test_download_upload_only_recipes(self, client, prev_list):
         if prev_list:
             pattern = "zlib/*#latest"
-            client.run(f"list {pattern} -r=default --format=json", redirect_stdout="pkglist.json")
+            client.run(
+                f"list {pattern} -r=default --format=json",
+                redirect_stdout="pkglist.json",
+            )
             # Overwriting previous pkglist.json
             pattern = "--list=pkglist.json"
         else:
             pattern = "zlib/*#latest --only-recipe"
-        client.run(f"download {pattern} -r=default --format=json", redirect_stdout="pkglist.json")
+        client.run(
+            f"download {pattern} -r=default --format=json",
+            redirect_stdout="pkglist.json",
+        )
         # TODO: Discuss "origin"
         assert "Local Cache" in client.load("pkglist.json")
         # Download binary too! Just to make sure it is in the cache, but not uploaded
         # because it is not in the orignal list of only recipes
-        client.run(f"download * -r=default")
+        client.run("download * -r=default")
         client.run("remove * -r=default -c")
         client.run("upload --list=pkglist.json -r=default")
-        assert f"Uploading recipe 'zlib/1.0.0" in client.out
-        assert f"Uploading recipe 'zli/" not in client.out
+        assert "Uploading recipe 'zlib/1.0.0" in client.out
+        assert "Uploading recipe 'zli/" not in client.out
         assert "Uploading package 'zlib/1.0.0" not in client.out
         assert "Uploading package 'zli/" not in client.out
 
@@ -339,10 +441,9 @@ class TestListRemove:
     @pytest.fixture()
     def client(self):
         c = TestClient(default_server_user=True, light=True)
-        c.save({
-            "zlib.py": GenConanfile("zlib"),
-            "zli.py": GenConanfile("zli", "1.0.0")
-        })
+        c.save(
+            {"zlib.py": GenConanfile("zlib"), "zli.py": GenConanfile("zli", "1.0.0")}
+        )
         c.run("create zli.py")
         c.run("create zlib.py --version=1.0.0 --user=user --channel=channel")
         c.run("upload * -r=default -c")
@@ -350,9 +451,12 @@ class TestListRemove:
 
     def test_remove_nothing_only_refs(self, client):
         # It is necessary to do *#* for actually removing something
-        client.run(f"list * --format=json", redirect_stdout="pkglist.json")
-        client.run(f"remove --list=pkglist.json -c")
-        assert "Nothing to remove, package list do not contain recipe revisions" in client.out
+        client.run("list * --format=json", redirect_stdout="pkglist.json")
+        client.run("remove --list=pkglist.json -c")
+        assert (
+            "Nothing to remove, package list do not contain recipe revisions"
+            in client.out
+        )
 
     @pytest.mark.parametrize("remote", [False, True])
     def test_remove_all(self, client, remote):
@@ -360,10 +464,14 @@ class TestListRemove:
         remote = "-r=default" if remote else ""
         client.run(f"list *#* {remote} --format=json", redirect_stdout="pkglist.json")
         client.run(f"remove --list=pkglist.json {remote} -c")
-        assert "zli/1.0.0#f034dc90894493961d92dd32a9ee3b78:" \
-               " Removed recipe and all binaries" in client.out
-        assert "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb:" \
-               " Removed recipe and all binaries" in client.out
+        assert (
+            "zli/1.0.0#f034dc90894493961d92dd32a9ee3b78:"
+            " Removed recipe and all binaries" in client.out
+        )
+        assert (
+            "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb:"
+            " Removed recipe and all binaries" in client.out
+        )
         client.run(f"list * {remote}")
         assert "There are no matching recipe references" in client.out
 
@@ -373,65 +481,88 @@ class TestListRemove:
         remote = "-r=default" if remote else ""
         client.run(f"list *#*:* {remote} --format=json", redirect_stdout="pkglist.json")
         client.run(f"remove --list=pkglist.json {remote} -c")
-        assert "No binaries to remove for 'zli/1.0.0#f034dc90894493961d92dd32a9ee3b78'" in client.out
-        assert "No binaries to remove for 'zlib/1.0.0@user/channel" \
-               "#ffd4bc45820ddb320ab224685b9ba3fb" in client.out
+        assert (
+            "No binaries to remove for 'zli/1.0.0#f034dc90894493961d92dd32a9ee3b78'"
+            in client.out
+        )
+        assert (
+            "No binaries to remove for 'zlib/1.0.0@user/channel"
+            "#ffd4bc45820ddb320ab224685b9ba3fb" in client.out
+        )
 
     @pytest.mark.parametrize("remote", [False, True])
     def test_remove_packages(self, client, remote):
         # It is necessary to do *#* for actually removing something
         remote = "-r=default" if remote else ""
-        client.run(f"list *#*:*#* {remote} --format=json", redirect_stdout="pkglist.json")
+        client.run(
+            f"list *#*:*#* {remote} --format=json", redirect_stdout="pkglist.json"
+        )
         client.run(f"remove --list=pkglist.json {remote} -c")
 
         assert "Removed recipe and all binaries" not in client.out
-        assert "zli/1.0.0#f034dc90894493961d92dd32a9ee3b78: Removed binaries" in client.out
-        assert "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb: " \
-               "Removed binaries" in client.out
+        assert (
+            "zli/1.0.0#f034dc90894493961d92dd32a9ee3b78: Removed binaries" in client.out
+        )
+        assert (
+            "zlib/1.0.0@user/channel#ffd4bc45820ddb320ab224685b9ba3fb: "
+            "Removed binaries" in client.out
+        )
         client.run(f"list *:* {remote}")
         assert "zli/1.0.0" in client.out
         assert "zlib/1.0.0@user/channel" in client.out
 
 
 class TestListGraphContext:
-
-    @pytest.mark.parametrize("context, refs, not_refs", [
-        ("build", ["cmake/1.0", "m4/1.0", "protobuf/1.0"], []),
-        ("build-only", ["cmake/1.0", "m4/1.0"], ["protobuf/1.0"]),
-        ("host", ["zlib/1.0", "protobuf/1.0"], []),
-        ("host-only", ["zlib/1.0"], ["protobuf/1.0"])
-    ])
+    @pytest.mark.parametrize(
+        "context, refs, not_refs",
+        [
+            ("build", ["cmake/1.0", "m4/1.0", "protobuf/1.0"], []),
+            ("build-only", ["cmake/1.0", "m4/1.0"], ["protobuf/1.0"]),
+            ("host", ["zlib/1.0", "protobuf/1.0"], []),
+            ("host-only", ["zlib/1.0"], ["protobuf/1.0"]),
+        ],
+    )
     def test_list_graph_context(self, context, refs, not_refs):
         c = TestClient(default_server_user=True, light=True)
-        c.save({
-            "zlib/conanfile.py": GenConanfile("zlib", "1.0").with_settings("os"),
-            "cmake/conanfile.py": GenConanfile("cmake", "1.0").with_settings("os"),
-            "m4/conanfile.py": GenConanfile("m4", "1.0").with_settings("os"),
-            "protobuf/conanfile.py": GenConanfile("protobuf", "1.0").with_settings("os"),
-            "app/conanfile.py": GenConanfile("app", "1.0").with_settings("os")
-            .with_requires("zlib/1.0", "protobuf/1.0")
-            .with_tool_requires("cmake/1.0", "m4/1.0", "protobuf/1.0")})
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0").with_settings("os"),
+                "cmake/conanfile.py": GenConanfile("cmake", "1.0").with_settings("os"),
+                "m4/conanfile.py": GenConanfile("m4", "1.0").with_settings("os"),
+                "protobuf/conanfile.py": GenConanfile("protobuf", "1.0").with_settings(
+                    "os"
+                ),
+                "app/conanfile.py": GenConanfile("app", "1.0")
+                .with_settings("os")
+                .with_requires("zlib/1.0", "protobuf/1.0")
+                .with_tool_requires("cmake/1.0", "m4/1.0", "protobuf/1.0"),
+            }
+        )
         c.run("create zlib")
         c.run("create protobuf")
         c.run("create cmake")
         c.run("create m4")
         c.run("create app --format=json", redirect_stdout="graph.json")
         # Now, let's filter the pkgs
-        c.run(f"list --graph=graph.json --graph-context={context} --format=json",
-              redirect_stdout="pkglist.json")
+        c.run(
+            f"list --graph=graph.json --graph-context={context} --format=json",
+            redirect_stdout="pkglist.json",
+        )
         content = json.loads(c.load("pkglist.json"))
         for ref in refs:
             assert content["Local Cache"][ref]["revisions"]
         for ref in not_refs:
             assert content["Local Cache"].get(ref) is None
         # Let's upload all the packages
-        c.run(f"list --graph=graph.json --format=json", redirect_stdout="pkglist.json")
+        c.run("list --graph=graph.json --format=json", redirect_stdout="pkglist.json")
         c.run("upload --list=pkglist.json -r=default")
         c.run("remove * -c")
         c.run("create app --format=json", redirect_stdout="graph.json")
         # Now, let's filter the pkgs
-        c.run(f"list --graph=graph.json --graph-context={context} -r=default --format=json",
-              redirect_stdout="pkglist.json")
+        c.run(
+            f"list --graph=graph.json --graph-context={context} -r=default --format=json",
+            redirect_stdout="pkglist.json",
+        )
         content = json.loads(c.load("pkglist.json"))
         for ref in refs:
             assert content["default"][ref]["revisions"]
@@ -442,8 +573,13 @@ class TestListGraphContext:
         tc = TestClient(light=True)
         tc.save({"conanfile.py": GenConanfile("lib", "1.0")})
 
-        tc.run("graph info . -f json --build=never --no-remote --filter=context", redirect_stdout="graph_context.json")
+        tc.run(
+            "graph info . -f json --build=never --no-remote --filter=context",
+            redirect_stdout="graph_context.json",
+        )
 
-        tc.run("list --graph=graph_context.json --graph-context=build-only --format=json",
-               assert_error=True)
+        tc.run(
+            "list --graph=graph_context.json --graph-context=build-only --format=json",
+            assert_error=True,
+        )
         assert "Note that the graph file should not be filtered" in tc.out

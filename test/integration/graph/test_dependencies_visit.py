@@ -45,13 +45,17 @@ def test_dependencies_visit():
     client.save({"conanfile.py": conanfile})
 
     client.run("install .")
-    refs = client.cache.get_latest_recipe_reference(RecipeReference.loads("openssl/0.1"))
+    refs = client.cache.get_latest_recipe_reference(
+        RecipeReference.loads("openssl/0.1")
+    )
     pkgs = client.cache.get_package_references(refs)
     prev1 = client.cache.get_latest_package_reference(pkgs[0])
     assert f"DefRef: {repr(prev1.ref)}!!!" in client.out
     assert f"DefPRef: {prev1.repr_notime()}!!!" in client.out
 
-    refs = client.cache.get_latest_recipe_reference(RecipeReference.loads("openssl/0.2"))
+    refs = client.cache.get_latest_recipe_reference(
+        RecipeReference.loads("openssl/0.2")
+    )
     pkgs = client.cache.get_package_references(refs)
     prev2 = client.cache.get_latest_package_reference(pkgs[0])
     assert f"DefRefBuild: {repr(prev2.ref)}!!!" in client.out
@@ -69,8 +73,14 @@ def test_dependencies_visit():
 
 def test_dependencies_visit_settings_options():
     client = TestClient(light=True)
-    client.save({"conanfile.py": GenConanfile().with_settings("os").
-                with_option("shared", [True, False]).with_default_option("shared", False)})
+    client.save(
+        {
+            "conanfile.py": GenConanfile()
+            .with_settings("os")
+            .with_option("shared", [True, False])
+            .with_default_option("shared", False)
+        }
+    )
     client.run("create . --name=openssl --version=0.1 -s os=Linux")
     client.save({"conanfile.py": GenConanfile().with_requires("openssl/0.1")})
     client.run("create . --name=pkg --version=0.1  -s os=Linux")
@@ -91,25 +101,50 @@ def test_dependencies_visit_settings_options():
 
 
 asserts = [
-    ('print("=>{}".format(self.dependencies["zlib"].ref))',
-     False, "=>zlib/0.2"),
-    ('print("=>{}".format(self.dependencies.build.get("zlib").ref))',
-     False, "=>zlib/0.1"),
-    ('print("=>{}".format(self.dependencies.get("zlib", build=True).ref))',
-     False, "=>zlib/0.1"),
-    ('print("=>{}".format(self.dependencies.get("zlib", build=False).ref))',
-     False, "=>zlib/0.2"),
-    ('print("=>{}".format(self.dependencies.get("zlib", build=True, visible=False).ref))',
-     False, "=>zlib/0.1"),
-    ('self.dependencies.get("cmake", build=True)', True,
-     'There are more than one requires matching the specified filters: {\'build\': True}\n'
-     '- cmake/0.1, Traits: build=True, headers=False, libs=False, run=False, visible=False\n'
-     '- cmake/0.2, Traits: build=True, headers=False, libs=False, run=False, visible=False'
-     ),
+    ('print("=>{}".format(self.dependencies["zlib"].ref))', False, "=>zlib/0.2"),
+    (
+        'print("=>{}".format(self.dependencies.build.get("zlib").ref))',
+        False,
+        "=>zlib/0.1",
+    ),
+    (
+        'print("=>{}".format(self.dependencies.get("zlib", build=True).ref))',
+        False,
+        "=>zlib/0.1",
+    ),
+    (
+        'print("=>{}".format(self.dependencies.get("zlib", build=False).ref))',
+        False,
+        "=>zlib/0.2",
+    ),
+    (
+        'print("=>{}".format(self.dependencies.get("zlib", build=True, visible=False).ref))',
+        False,
+        "=>zlib/0.1",
+    ),
+    (
+        'self.dependencies.get("cmake", build=True)',
+        True,
+        "There are more than one requires matching the specified filters: {'build': True}\n"
+        "- cmake/0.1, Traits: build=True, headers=False, libs=False, run=False, visible=False\n"
+        "- cmake/0.2, Traits: build=True, headers=False, libs=False, run=False, visible=False",
+    ),
     ('self.dependencies["missing"]', True, "'missing' not found in the dependency set"),
-    ('self.output.info("Missing in deps: " + str("missing" in self.dependencies))', False, "Missing in deps: False"),
-    ('self.output.info("Zlib in deps: " + str("zlib" in self.dependencies))', False, "Zlib in deps: True"),
-    ('self.output.info("Zlib in deps.build: " + str("zlib" in self.dependencies.build))', False, "Zlib in deps.build: True"),
+    (
+        'self.output.info("Missing in deps: " + str("missing" in self.dependencies))',
+        False,
+        "Missing in deps: False",
+    ),
+    (
+        'self.output.info("Zlib in deps: " + str("zlib" in self.dependencies))',
+        False,
+        "Zlib in deps: True",
+    ),
+    (
+        'self.output.info("Zlib in deps.build: " + str("zlib" in self.dependencies.build))',
+        False,
+        "Zlib in deps.build: True",
+    ),
 ]
 
 
@@ -123,14 +158,16 @@ def test_cmake_zlib(generates_line, assert_error, output_text):
     client.run("create . --name=zlib --version=0.1")
     client.run("create . --name=zlib --version=0.2")
 
-    client.save({"conanfile.py": GenConanfile().with_tool_requirement("zlib/0.1",
-                                                                      visible=True)})
+    client.save(
+        {"conanfile.py": GenConanfile().with_tool_requirement("zlib/0.1", visible=True)}
+    )
     client.run("create . --name=cmake --version=0.1")
 
     client.save({"conanfile.py": GenConanfile()})
     client.run("create . --name=cmake --version=0.2")
 
-    app_conanfile = textwrap.dedent("""
+    app_conanfile = textwrap.dedent(
+        """
     from conan import ConanFile
     class Pkg(ConanFile):
 
@@ -141,7 +178,8 @@ def test_cmake_zlib(generates_line, assert_error, output_text):
 
         def generate(self):
            {}
-        """.format(generates_line))
+        """.format(generates_line)
+    )
     client.save({"conanfile.py": app_conanfile})
     client.run("create . --name=app --version=1.0", assert_error=assert_error)
     assert output_text in client.out
@@ -182,7 +220,7 @@ def test_invisible_not_colliding_test_requires():
 
 
 def test_dependencies_visit_build_requires_profile():
-    """ At validate() time, in Conan 1.X, the build-requires are not available yet, because first
+    """At validate() time, in Conan 1.X, the build-requires are not available yet, because first
     the binary package_id is computed, then the build-requires are resolved.
     It is necessary to avoid in Conan 1.X the caching of the ConanFile.dependencies, because
     at generate() time it will have all the graph info, including build-requires
@@ -204,8 +242,7 @@ def test_dependencies_visit_build_requires_profile():
                 dep = self.dependencies.build["cmake"]
                 self.output.info("GENERATE CMAKE: {}!!!".format(dep.ref))
         """)
-    client.save({"conanfile.py": conanfile,
-                 "profile": "[tool_requires]\ncmake/0.1"})
+    client.save({"conanfile.py": conanfile, "profile": "[tool_requires]\ncmake/0.1"})
     client.run("install . -pr:b=default -pr:h=profile --build='*'")  # Use 2 contexts
 
     # Validate time, build-requires available
@@ -217,7 +254,9 @@ def test_dependencies_visit_build_requires_profile():
 
 def test_dependencies_package_type():
     c = TestClient(light=True)
-    c.save({"conanfile.py": GenConanfile("lib", "0.1").with_package_type("static-library")})
+    c.save(
+        {"conanfile.py": GenConanfile("lib", "0.1").with_package_type("static-library")}
+    )
     c.run("create .")
     conanfile = textwrap.dedent("""
         from conan import ConanFile
@@ -262,9 +301,13 @@ def test_dependency_interface():
                 self.output.info("CONANDATA: {}".format(self.dependencies["dep"].conan_data))
 
             """)
-    c.save({"dep/conanfile.py": conanfile,
+    c.save(
+        {
+            "dep/conanfile.py": conanfile,
             "dep/conandata.yml": "",
-            "user/conanfile.py": user})
+            "user/conanfile.py": user,
+        }
+    )
     c.run("create dep")
     c.run("install user")
     assert "conanfile.py: HOME: myhome" in c.out
@@ -299,8 +342,7 @@ def test_dependency_interface_validate():
                 self.output.info("HOME: {}".format(dep.homepage))
                 self.output.info("PKG FOLDER: {}".format(dep.package_folder is None))
             """)
-    c.save({"dep/conanfile.py": conanfile,
-            "user/conanfile.py": user})
+    c.save({"dep/conanfile.py": conanfile, "user/conanfile.py": user})
     c.run("create dep")
     c.run("install user")
     assert "conanfile.py: HOME: myhome" in c.out
@@ -348,9 +390,7 @@ def test_validate_visibility():
                 self.output.info("GENERATE: {}".format(self.dependencies["t2"]))
         """)
 
-    c.save({"t1/conanfile.py": t1,
-            "t2/conanfile.py": t2,
-            "t3/conanfile.py": t3})
+    c.save({"t1/conanfile.py": t1, "t2/conanfile.py": t2, "t3/conanfile.py": t3})
     c.run("create t1")
     c.run("create t2")
     c.run("install t3")

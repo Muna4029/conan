@@ -43,8 +43,7 @@ def test_sdk():
     conf = ConfDefinition()
     conf.loads("tools.apple:sdk_path=mypath")
     conanfile.conf = conf
-    conanfile.settings = MockSettings({"os": "Macos",
-                                       "os.sdk": "macosx"})
+    conanfile.settings = MockSettings({"os": "Macos", "os.sdk": "macosx"})
     xcodebuild = XcodeBuild(conanfile)
     xcodebuild.build("app.xcodeproj")
     # sdk_path takes preference
@@ -54,9 +53,9 @@ def test_sdk():
     xcodebuild = XcodeBuild(conanfile)
     xcodebuild.build("app.xcodeproj")
     assert "SDKROOT=macosx " in conanfile.command
-    conanfile.settings = MockSettings({"os": "Macos",
-                                       "os.sdk": "macosx",
-                                       "os.sdk_version": "12.1"})
+    conanfile.settings = MockSettings(
+        {"os": "Macos", "os.sdk": "macosx", "os.sdk_version": "12.1"}
+    )
     xcodebuild = XcodeBuild(conanfile)
     xcodebuild.build("app.xcodeproj")
     assert "SDKROOT=macosx12.1 " in conanfile.command

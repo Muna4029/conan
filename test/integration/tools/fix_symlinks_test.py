@@ -8,7 +8,9 @@ from conan.api.model import RecipeReference
 from conan.test.utils.tools import TestClient
 
 
-@pytest.mark.skipif(platform.system() == "Windows", reason="symlink need admin privileges")
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="symlink need admin privileges"
+)
 class TestFixSymlinks:
     name_ref = RecipeReference.loads("name/version")
 
@@ -72,30 +74,32 @@ class TestFixSymlinks:
 
     def test_error_reported(self):
         t = TestClient()
-        t.save({'conanfile.py': self.conanfile})
+        t.save({"conanfile.py": self.conanfile})
         t.run("create . --name=name --version=version")
         package_folder = t.created_layout().package()
 
-        assert sorted(os.listdir(package_folder)) == ['abs_to_file_in_folder.txt',
-                                                      'absolute',
-                                                      'absolute_symlink.txt',
-                                                      'conaninfo.txt',
-                                                      'conanmanifest.txt',
-                                                      'folder',
-                                                      'regular.txt',
-                                                      'relative',
-                                                      'relative_symlink.txt']
+        assert sorted(os.listdir(package_folder)) == [
+            "abs_to_file_in_folder.txt",
+            "absolute",
+            "absolute_symlink.txt",
+            "conaninfo.txt",
+            "conanmanifest.txt",
+            "folder",
+            "regular.txt",
+            "relative",
+            "relative_symlink.txt",
+        ]
         # All the links in the package_folder are relative and contained into it
-        for (dirpath, dirnames, filenames) in os.walk(package_folder):
+        for dirpath, dirnames, filenames in os.walk(package_folder):
             for filename in filenames:
                 filename = os.path.join(dirpath, filename)
                 if os.path.islink(filename):
                     rel_path = str(os.readlink(filename))
                     assert not os.path.exists(os.path.abspath(rel_path))
-                    assert not rel_path.startswith('..')
+                    assert not rel_path.startswith("..")
             for dirname in dirnames:
                 dirname = os.path.join(dirpath, dirname)
                 if os.path.islink(dirname):
                     rel_path = str(os.readlink(dirname))
                     assert not os.path.exists(os.path.abspath(rel_path))
-                    assert not rel_path.startswith('..')
+                    assert not rel_path.startswith("..")

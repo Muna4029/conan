@@ -36,6 +36,7 @@ class TestAuthSourcePlugin:
 
     """ Test when the plugin fails, we want a clear message and a helpful trace
     """
+
     def test_error_source_plugin(self, setup_test_client):
         c, url = setup_test_client
         auth_plugin = textwrap.dedent("""\
@@ -49,13 +50,14 @@ class TestAuthSourcePlugin:
     """ Test when the plugin give a correct and wrong password, we want a message about the success
         or fail in login
     """
+
     @pytest.mark.parametrize("password", ["password", "bad-password"])
     def test_auth_source_plugin_direct_credentials(self, password, setup_test_client):
         should_fail = password == "bad-password"
         c, url = setup_test_client
         auth_plugin = textwrap.dedent(f"""\
             def auth_source_plugin(url):
-                return { json.dumps({'user': 'user', 'password': password}) }
+                return {json.dumps({"user": "user", "password": password})}
             """)
         c.save_home({"extensions/plugins/auth_source.py": auth_plugin})
         c.run("source conanfile.py", assert_error=should_fail)
@@ -67,6 +69,7 @@ class TestAuthSourcePlugin:
     """ Test when the plugin do not give any user or password, we want the code to continue with
         the rest of the input methods
     """
+
     def test_auth_source_plugin_fallback(self, setup_test_client):
         c, url = setup_test_client
         auth_plugin = textwrap.dedent("""\
@@ -74,8 +77,12 @@ class TestAuthSourcePlugin:
                     return None
                 """)
         c.save_home({"extensions/plugins/auth_source.py": auth_plugin})
-        source_credentials = json.dumps({"credentials": [{"url": url, "token": "password"}]})
-        save(os.path.join(c.cache_folder, "source_credentials.json"), source_credentials)
+        source_credentials = json.dumps(
+            {"credentials": [{"url": url, "token": "password"}]}
+        )
+        save(
+            os.path.join(c.cache_folder, "source_credentials.json"), source_credentials
+        )
         c.run("source conanfile.py")
         # As the auth plugin is not returning any password the code is falling back to the rest of
         # the input methods in this case provided by source_credentials.json.

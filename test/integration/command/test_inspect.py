@@ -10,21 +10,22 @@ def test_basic_inspect():
     t.save({"foo/conanfile.py": GenConanfile().with_name("foo").with_shared_option()})
     t.run("inspect foo/conanfile.py")
     lines = t.out.splitlines()
-    assert lines == ['default_options:',
-                     '    shared: False',
-                     'generators: []',
-                     'label: ',
-                     'languages: []',
-                     'name: foo',
-                     'options:',
-                     '    shared: False',
-                     'options_definitions:',
-                     "    shared: ['True', 'False']",
-                     'package_type: None',
-                     'requires: []',
-                     'revision_mode: hash',
-                     'vendor: False'
-                     ]
+    assert lines == [
+        "default_options:",
+        "    shared: False",
+        "generators: []",
+        "label: ",
+        "languages: []",
+        "name: foo",
+        "options:",
+        "    shared: False",
+        "options_definitions:",
+        "    shared: ['True', 'False']",
+        "package_type: None",
+        "requires: []",
+        "revision_mode: hash",
+        "vendor: False",
+    ]
 
 
 def test_options_description():
@@ -52,10 +53,10 @@ def test_dot_and_folder_conanfile():
     t = TestClient()
     t.save({"conanfile.py": GenConanfile().with_name("foo")})
     t.run("inspect .")
-    assert 'name: foo' in t.out
+    assert "name: foo" in t.out
     t.save({"foo/conanfile.py": GenConanfile().with_name("foo")}, clean_first=True)
     t.run("inspect foo")
-    assert 'name: foo' in t.out
+    assert "name: foo" in t.out
 
 
 def test_inspect_understands_setname():
@@ -82,20 +83,22 @@ def test_normal_inspect():
     tc = TestClient()
     tc.run("new basic -d name=pkg -d version=1.0")
     tc.run("inspect .")
-    assert tc.out.splitlines() == ['description: A basic recipe',
-                                   'generators: []',
-                                   'homepage: <Your project homepage goes here>',
-                                   'label: ',
-                                   'languages: []',
-                                   'license: <Your project license goes here>',
-                                   'name: pkg',
-                                   'options:',
-                                   'options_definitions:',
-                                   'package_type: None',
-                                   'requires: []',
-                                   'revision_mode: hash',
-                                   'vendor: False',
-                                   'version: 1.0']
+    assert tc.out.splitlines() == [
+        "description: A basic recipe",
+        "generators: []",
+        "homepage: <Your project homepage goes here>",
+        "label: ",
+        "languages: []",
+        "license: <Your project license goes here>",
+        "name: pkg",
+        "options:",
+        "options_definitions:",
+        "package_type: None",
+        "requires: []",
+        "revision_mode: hash",
+        "vendor: False",
+        "version: 1.0",
+    ]
 
 
 def test_empty_inspect():
@@ -129,19 +132,21 @@ def test_requiremens_inspect():
     """)
     tc.save({"conanfile.py": conanfile})
     tc.run("inspect .")
-    assert ['generators: []',
-            'label: ',
-            'languages: []',
-            "license: ['MIT', 'Apache']",
-            'options:',
-            'options_definitions:',
-            'package_type: None',
-            "requires: [{'ref': 'zlib/1.2.13', 'require': 'zlib/1.2.13', 'run': False, "
-            "'libs': True, 'skip': False, 'test': False, 'force': False, 'direct': True, 'build': "
-            "False, 'transitive_headers': None, 'transitive_libs': None, 'headers': "
-            "True, 'package_id_mode': None, 'visible': True}]",
-            'revision_mode: hash',
-            'vendor: False'] == tc.out.splitlines()
+    assert [
+        "generators: []",
+        "label: ",
+        "languages: []",
+        "license: ['MIT', 'Apache']",
+        "options:",
+        "options_definitions:",
+        "package_type: None",
+        "requires: [{'ref': 'zlib/1.2.13', 'require': 'zlib/1.2.13', 'run': False, "
+        "'libs': True, 'skip': False, 'test': False, 'force': False, 'direct': True, 'build': "
+        "False, 'transitive_headers': None, 'transitive_libs': None, 'headers': "
+        "True, 'package_id_mode': None, 'visible': True}]",
+        "revision_mode: hash",
+        "vendor: False",
+    ] == tc.out.splitlines()
 
 
 def test_pythonrequires_remote():
@@ -177,7 +182,10 @@ def test_pythonrequires_remote():
     tc.save({"conanfile.py": conanfile})
     # Not specifying the remote also works
     tc.run("inspect .")
-    assert "pyreq/1.0: Downloaded recipe revision 0ca726ab0febe1100901fffb27dc421f" in tc.out
+    assert (
+        "pyreq/1.0: Downloaded recipe revision 0ca726ab0febe1100901fffb27dc421f"
+        in tc.out
+    )
     assert "name: my_company_package" in tc.out
     assert "version: 1.0" in tc.out
     # It now finds it on the cache, because it was downloaded
@@ -193,10 +201,14 @@ def test_pythonrequires_remote():
 
 def test_serializable_inspect():
     tc = TestClient()
-    tc.save({"conanfile.py": GenConanfile("a", "1.0")
+    tc.save(
+        {
+            "conanfile.py": GenConanfile("a", "1.0")
             .with_requires("b/2.0")
             .with_setting("os")
             .with_option("shared", [True, False])
-            .with_generator("CMakeDeps")})
+            .with_generator("CMakeDeps")
+        }
+    )
     tc.run("inspect . --format=json")
     assert json.loads(tc.out)["name"] == "a"

@@ -4,13 +4,21 @@ from conan.test.utils.tools import TestClient
 
 def test_editable_ranges():
     c = TestClient()
-    c.save({"dep/conanfile.py": GenConanfile("dep"),
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep"),
             "dep2/conanfile.py": GenConanfile("dep", "0.2"),
-            "other/conanfile.py": GenConanfile("other", "23.0"),  # shouldn't be resolved!
-            "app/conanfile.py": GenConanfile("app", "0.1").with_requires("dep/[>=0.1]")})
+            "other/conanfile.py": GenConanfile(
+                "other", "23.0"
+            ),  # shouldn't be resolved!
+            "app/conanfile.py": GenConanfile("app", "0.1").with_requires("dep/[>=0.1]"),
+        }
+    )
     c.run("editable add other")  # This shouldn't be used
     c.run("editable add dep --version=0.1")  # this should be used
-    c.run("editable add dep --version=2.0 --user=myuser --channel=mychannel")  # This shouldn't be used
+    c.run(
+        "editable add dep --version=2.0 --user=myuser --channel=mychannel"
+    )  # This shouldn't be used
     c.run("install app")
     c.assert_listed_require({"dep/0.1": "Editable"})
     assert "dep/[>=0.1]: dep/0.1" in c.out

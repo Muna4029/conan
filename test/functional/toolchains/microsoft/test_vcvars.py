@@ -17,14 +17,16 @@ def test_deactivate_vcvars_message():
                 settings = "os", "compiler", "arch", "build_type"
         """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s compiler.version=194')
-    client.run_command(r'conanbuild.bat')
+    client.run("install . -s compiler.version=194")
+    client.run_command(r"conanbuild.bat")
     assert "[vcvarsall.bat] Environment initialized" in client.out
-    client.run_command(r'deactivate_conanvcvars.bat')
+    client.run_command(r"deactivate_conanvcvars.bat")
     assert "vcvars env cannot be deactivated" in client.out
 
 
-@pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows Powershell")
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="Requires Windows Powershell"
+)
 def test_deactivate_vcvars_with_powershell():
     client = TestClient()
     conanfile = textwrap.dedent("""
@@ -34,7 +36,7 @@ def test_deactivate_vcvars_with_powershell():
                     settings = "os", "compiler", "arch", "build_type"
             """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -c tools.env.virtualenv:powershell=True')
+    client.run("install . -c tools.env.virtualenv:powershell=True")
     client.run_command(r'powershell.exe ".\conanbuild.ps1"')
     assert "conanvcvars.ps1: Activated environment" in client.out
     client.run_command(r'powershell.exe ".\deactivate_conanvcvars.ps1"')

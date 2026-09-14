@@ -15,15 +15,20 @@ def test_remove_files_by_mask_recursively():
         os.makedirs("dir.pdb")
         os.makedirs(os.path.join("subdir", "deepdir"))
 
-    save_files(tmpdir, {"1.txt": "",
-                        "1.pdb": "",
-                        "1.pdb1": "",
-                        os.path.join("subdir", "2.txt"): "",
-                        os.path.join("subdir", "2.pdb"): "",
-                        os.path.join("subdir", "2.pdb1"): "",
-                        os.path.join("subdir", "deepdir", "3.txt"): "",
-                        os.path.join("subdir", "deepdir", "3.pdb"): "",
-                        os.path.join("subdir", "deepdir", "3.pdb1"): ""})
+    save_files(
+        tmpdir,
+        {
+            "1.txt": "",
+            "1.pdb": "",
+            "1.pdb1": "",
+            os.path.join("subdir", "2.txt"): "",
+            os.path.join("subdir", "2.pdb"): "",
+            os.path.join("subdir", "2.pdb1"): "",
+            os.path.join("subdir", "deepdir", "3.txt"): "",
+            os.path.join("subdir", "deepdir", "3.pdb"): "",
+            os.path.join("subdir", "deepdir", "3.pdb1"): "",
+        },
+    )
 
     rm(None, "*.sh", tmpdir, recursive=True)
 
@@ -51,12 +56,17 @@ def test_remove_files_by_mask_non_recursively():
     with chdir(None, tmpdir):
         os.makedirs("subdir")
 
-    save_files(tmpdir, {"1.txt": "",
-                        "1.pdb": "",
-                        "1.pdb1": "",
-                        os.path.join("subdir", "2.txt"): "",
-                        os.path.join("subdir", "2.pdb"): "",
-                        os.path.join("subdir", "2.pdb1"): ""})
+    save_files(
+        tmpdir,
+        {
+            "1.txt": "",
+            "1.pdb": "",
+            "1.pdb1": "",
+            os.path.join("subdir", "2.txt"): "",
+            os.path.join("subdir", "2.pdb"): "",
+            os.path.join("subdir", "2.pdb1"): "",
+        },
+    )
 
     rm(None, "*.pdb", tmpdir)
     assert not os.path.exists(os.path.join(tmpdir, "1.pdb"))
@@ -67,34 +77,41 @@ def test_remove_files_by_mask_non_recursively():
 
 
 @pytest.mark.parametrize("recursive", [False, True])
-@pytest.mark.parametrize("results", [
-    ["*.dll", ("foo.dll",)],
-    [("*.dll",), ("foo.dll",)],
-    [["*.dll"], ("foo.dll",)],
-    [("*.dll", "*.lib"), ("foo.dll", "foo.dll.lib")],
-])
+@pytest.mark.parametrize(
+    "results",
+    [
+        ["*.dll", ("foo.dll",)],
+        [("*.dll",), ("foo.dll",)],
+        [["*.dll"], ("foo.dll",)],
+        [("*.dll", "*.lib"), ("foo.dll", "foo.dll.lib")],
+    ],
+)
 def test_exclude_pattern_from_remove_list(recursive, results):
-    """ conan.tools.files.rm should not remove files that match the pattern but are excluded
-        by the excludes parameter.
-        It should obey the recursive parameter, only excluding the files in the root folder in case
-        it is False.
+    """conan.tools.files.rm should not remove files that match the pattern but are excluded
+    by the excludes parameter.
+    It should obey the recursive parameter, only excluding the files in the root folder in case
+    it is False.
     """
     excludes, expected_files = results
     temporary_folder = temp_folder()
     with chdir(None, temporary_folder):
         os.makedirs("subdir")
 
-    save_files(temporary_folder, {
-        "1.txt": "",
-        "1.pdb": "",
-        "1.pdb1": "",
-        "foo.dll": "",
-        "foo.dll.lib": "",
-        os.path.join("subdir", "2.txt"): "",
-        os.path.join("subdir", "2.pdb"): "",
-        os.path.join("subdir", "foo.dll"): "",
-        os.path.join("subdir", "foo.dll.lib"): "",
-        os.path.join("subdir", "2.pdb1"): ""})
+    save_files(
+        temporary_folder,
+        {
+            "1.txt": "",
+            "1.pdb": "",
+            "1.pdb1": "",
+            "foo.dll": "",
+            "foo.dll.lib": "",
+            os.path.join("subdir", "2.txt"): "",
+            os.path.join("subdir", "2.pdb"): "",
+            os.path.join("subdir", "foo.dll"): "",
+            os.path.join("subdir", "foo.dll.lib"): "",
+            os.path.join("subdir", "2.pdb1"): "",
+        },
+    )
 
     rm(None, "*", temporary_folder, excludes=excludes, recursive=recursive)
 

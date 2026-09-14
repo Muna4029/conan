@@ -6,7 +6,9 @@ import pytest
 new_value = "will_break_next"
 
 
-@pytest.mark.skipif(platform.system() == "Windows", reason="Windows doesn't fail to link")
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="Windows doesn't fail to link"
+)
 def test_auto_cppstd(matrix_c_interface_client):
     c = matrix_c_interface_client
     # IMPORTANT: This must be a C and CXX CMake project!!
@@ -47,8 +49,9 @@ def test_auto_cppstd(matrix_c_interface_client):
             return 0;
         }
         """)
-    c.save({"conanfile.py": conanfile,
-            "CMakeLists.txt": consumer,
-            "app.c": app}, clean_first=True)
+    c.save(
+        {"conanfile.py": conanfile, "CMakeLists.txt": consumer, "app.c": app},
+        clean_first=True,
+    )
     c.run(f"build . -c tools.cmake.cmakedeps:new={new_value}")
     assert "Hello Matrix!" in c.out

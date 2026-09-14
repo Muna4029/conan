@@ -35,11 +35,15 @@ def test_other_client_can_execute(transitive_shared_client):
 
 def _check_install_run(client):
     client = TestClient(servers=client.servers)
-    client.run("install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True "
-               "-g VirtualRunEnv")
+    client.run(
+        "install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True "
+        "-g VirtualRunEnv"
+    )
     # This only finds "app" executable because the "app/0.1" is declaring package_type="application"
     # otherwise, run=None and nothing can tell us if the conanrunenv should have the PATH.
-    command = environment_wrap_command(ConanFileMock(), "conanrun", client.current_folder, "app")
+    command = environment_wrap_command(
+        ConanFileMock(), "conanrun", client.current_folder, "app"
+    )
 
     client.run_command(command)
     assert "app/0.1: Hello World Release!" in client.out
@@ -69,7 +73,9 @@ def test_other_client_can_link_meson(transitive_shared_client):
     client = transitive_shared_client
     # https://github.com/conan-io/conan/issues/13000
     # This failed, because of rpath link in Linux
-    client = TestClient(servers=client.servers, inputs=["admin", "password"], path_with_spaces=False)
+    client = TestClient(
+        servers=client.servers, inputs=["admin", "password"], path_with_spaces=False
+    )
     client.run("new meson_exe -d name=app -d version=0.1 -d requires=chat/0.1")
     client.run("create . -o chat/*:shared=True -o hello/*:shared=True")
     # TODO Check that static builds too
@@ -83,7 +89,9 @@ def test_other_client_can_link_autotools(transitive_shared_client):
     client = transitive_shared_client
     # https://github.com/conan-io/conan/issues/13000
     # This failed, because of rpath link in Linux
-    client = TestClient(servers=client.servers, inputs=["admin", "password"], path_with_spaces=False)
+    client = TestClient(
+        servers=client.servers, inputs=["admin", "password"], path_with_spaces=False
+    )
     client.run("new autotools_exe -d name=app -d version=0.1 -d requires=chat/0.1")
     client.run("create . -o chat/*:shared=True -o hello/*:shared=True")
     # TODO Check that static builds too
@@ -92,14 +100,15 @@ def test_other_client_can_link_autotools(transitive_shared_client):
 
 @pytest.mark.tool("cmake")
 def test_shared_cmake_toolchain_components():
-    """ the same as above, but with components.
-    """
+    """the same as above, but with components."""
     client = TestClient(default_server_user=True)
 
     client.run("new cmake_lib -d name=hello -d version=0.1")
     conanfile = client.load("conanfile.py")
-    conanfile2 = conanfile.replace('self.cpp_info.libs = ["hello"]',
-                                   'self.cpp_info.components["hi"].libs = ["hello"]')
+    conanfile2 = conanfile.replace(
+        'self.cpp_info.libs = ["hello"]',
+        'self.cpp_info.components["hi"].libs = ["hello"]',
+    )
     assert conanfile != conanfile2
     client.save({"conanfile.py": conanfile2})
     client.run("create . -o hello/*:shared=True -tf=")
@@ -107,9 +116,11 @@ def test_shared_cmake_toolchain_components():
     client.save({}, clean_first=True)
     client.run("new cmake_lib -d name=chat -d version=0.1 -d requires=hello/0.1")
     conanfile = client.load("conanfile.py")
-    conanfile2 = conanfile.replace('self.cpp_info.libs = ["chat"]',
-                                   'self.cpp_info.components["talk"].libs = ["chat"]\n'
-                                   '        self.cpp_info.components["talk"].requires=["hello::hi"]')
+    conanfile2 = conanfile.replace(
+        'self.cpp_info.libs = ["chat"]',
+        'self.cpp_info.components["talk"].libs = ["chat"]\n'
+        '        self.cpp_info.components["talk"].requires=["hello::hi"]',
+    )
     assert conanfile != conanfile2
     client.save({"conanfile.py": conanfile2})
     client.run("create . -o chat/*:shared=True -o hello/*:shared=True -tf=")
@@ -118,8 +129,10 @@ def test_shared_cmake_toolchain_components():
     client.save({}, clean_first=True)
     client.run("new cmake_exe -d name=app -d version=0.1 -d requires=chat/0.1")
     cmakelist = client.load("CMakeLists.txt")
-    cmakelist2 = cmakelist.replace('target_link_libraries(app PRIVATE chat::chat)',
-                                   'target_link_libraries(app PRIVATE chat::talk)')
+    cmakelist2 = cmakelist.replace(
+        "target_link_libraries(app PRIVATE chat::chat)",
+        "target_link_libraries(app PRIVATE chat::talk)",
+    )
     assert cmakelist != cmakelist2
     client.save({"CMakeLists.txt": cmakelist2})
     client.run("create . -o chat/*:shared=True -o hello/*:shared=True -tf=")
@@ -127,10 +140,14 @@ def test_shared_cmake_toolchain_components():
     client.run("remove * -c")
 
     client = TestClient(servers=client.servers)
-    client.run("install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True")
+    client.run(
+        "install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True"
+    )
     # This only finds "app" executable because the "app/0.1" is declaring package_type="application"
     # otherwise, run=None and nothing can tell us if the conanrunenv should have the PATH.
-    command = environment_wrap_command(ConanFileMock(), "conanrun", client.current_folder, "app")
+    command = environment_wrap_command(
+        ConanFileMock(), "conanrun", client.current_folder, "app"
+    )
 
     client.run_command(command)
     assert "app/0.1 test_package" in client.out
@@ -147,10 +164,14 @@ def test_shared_cmake_toolchain_components():
     client.run("remove * -c")
 
     client = TestClient(servers=client.servers)
-    client.run("install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True")
+    client.run(
+        "install --requires=app/0.1@ -o chat*:shared=True -o hello/*:shared=True"
+    )
     # This only finds "app" executable because the "app/0.1" is declaring package_type="application"
     # otherwise, run=None and nothing can tell us if the conanrunenv should have the PATH.
-    command = environment_wrap_command(ConanFileMock(), "conanrun", client.current_folder, "app")
+    command = environment_wrap_command(
+        ConanFileMock(), "conanrun", client.current_folder, "app"
+    )
 
     client.run_command(command)
     assert "app/0.1: Hello World Release!" in client.out
@@ -235,7 +256,9 @@ def test_shared_same_dir_using_tool(test_client_shared):
     """
     exe_folder = test_client_shared.test_exe_folder
     # Alternative 1, add the "." to the rpaths so the @rpath from the exe can be replaced with "."
-    test_client_shared.current_folder = os.path.join(test_client_shared.current_folder, exe_folder)
+    test_client_shared.current_folder = os.path.join(
+        test_client_shared.current_folder, exe_folder
+    )
     test_client_shared.run_command("install_name_tool -add_rpath '.' example")
     test_client_shared.run_command("./{}".format("example"))
 
@@ -244,9 +267,9 @@ def test_shared_same_dir_using_tool(test_client_shared):
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
 def test_shared_same_dir_using_cmake(test_client_shared):
     """
-        If we build an executable in Mac and we want it to locate the shared libraries in the same
-        directory, we have different alternatives, here we use CMake to adjust CMAKE_INSTALL_RPATH
-        to @executable_path so the exe knows that can replace @rpath with the current dir
+    If we build an executable in Mac and we want it to locate the shared libraries in the same
+    directory, we have different alternatives, here we use CMake to adjust CMAKE_INSTALL_RPATH
+    to @executable_path so the exe knows that can replace @rpath with the current dir
     """
 
     # Alternative 2, set the rpath in cmake
@@ -303,7 +326,9 @@ def test_shared_same_dir_using_cmake(test_client_shared):
                         # like: install_name_tool -add_rpath /path/to/hello/lib/libhello.dylib test
                         self.run(cmd)
                 """)
-    test_client_shared.save({"test_package/CMakeLists.txt": cmake, "test_package/conanfile.py": cf})
+    test_client_shared.save(
+        {"test_package/CMakeLists.txt": cmake, "test_package/conanfile.py": cf}
+    )
     test_client_shared.run("create . -o hello*:shared=True")
     test_client_shared.run("remove '*' -c")
     exe_folder = os.path.join("test_package", "bin")
@@ -314,9 +339,9 @@ def test_shared_same_dir_using_cmake(test_client_shared):
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
 def test_shared_same_dir_using_env_var_current_dir(test_client_shared):
     """
-        If we build an executable in Mac and we want it to locate the shared libraries in the same
-        directory, we have different alternatives, here we set DYLD_LIBRARY_PATH before calling
-        the executable but running in current dir
+    If we build an executable in Mac and we want it to locate the shared libraries in the same
+    directory, we have different alternatives, here we set DYLD_LIBRARY_PATH before calling
+    the executable but running in current dir
     """
 
     # Alternative 3, FAILING IN CI, set DYLD_LIBRARY_PATH in the current dir
@@ -324,7 +349,9 @@ def test_shared_same_dir_using_env_var_current_dir(test_client_shared):
     rmdir(os.path.join(test_client_shared.current_folder, exe_folder))
     test_client_shared.run("create . -o hello*:shared=True")
     test_client_shared.run("remove '*' -c")
-    test_client_shared.current_folder = os.path.join(test_client_shared.current_folder, exe_folder)
+    test_client_shared.current_folder = os.path.join(
+        test_client_shared.current_folder, exe_folder
+    )
     test_client_shared.run_command("DYLD_LIBRARY_PATH=$(pwd) ./example")
     test_client_shared.run_command("DYLD_LIBRARY_PATH=. ./example")
     # This assert is not working in CI, only locally

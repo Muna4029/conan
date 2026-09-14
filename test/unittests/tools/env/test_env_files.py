@@ -45,8 +45,9 @@ def prevenv():
 
 
 def check_env_files_output(cmd_, prevenv):
-    result, _ = subprocess.Popen(cmd_, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 env=prevenv, shell=True).communicate()
+    result, _ = subprocess.Popen(
+        cmd_, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prevenv, shell=True
+    ).communicate()
     out = result.decode()
     assert "MyVar=MyValue!!" in out
     assert "MyVar1=MyValue1!!" in out
@@ -56,7 +57,9 @@ def check_env_files_output(cmd_, prevenv):
     assert "MyVar5=MyValue5 With Space5=More Space5;:More!!" in out
     assert "MyVar6= MyValue6!!" in out  # The previous is non existing, append has space
     assert "MyPath1=/Some/Path1/!!" in out
-    assert os.pathsep.join(["MyPath2=OldPath2", "/Some/Path2/", "/Other/Path2/!!"]) in out
+    assert (
+        os.pathsep.join(["MyPath2=OldPath2", "/Some/Path2/", "/Other/Path2/!!"]) in out
+    )
     assert os.pathsep.join(["MyPath3=/Some/Path3/", "OldPath3!!"]) in out
     assert "MyPath4=!!" in out
 
@@ -76,7 +79,9 @@ def check_env_files_output(cmd_, prevenv):
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows")
 def test_env_files_bat(env, prevenv):
-    prevenv.update(dict(os.environ.copy()))  # Necessary from Python 3.12, for SYSTEMROOT var
+    prevenv.update(
+        dict(os.environ.copy())
+    )  # Necessary from Python 3.12, for SYSTEMROOT var
 
     display = textwrap.dedent("""\
         @echo off
@@ -151,7 +156,7 @@ def test_env_files_sh(env, prevenv):
         save("display.sh", display)
         os.chmod("display.sh", 0o777)
         # We include the "set -e" to test it is robust against errors
-        cmd = 'set -e && . ./test.sh && ./display.sh && . ./deactivate_test.sh && ./display.sh'
+        cmd = "set -e && . ./test.sh && ./display.sh && . ./deactivate_test.sh && ./display.sh"
         check_env_files_output(cmd, prevenv)
 
 
@@ -181,10 +186,11 @@ def test_relative_paths():
             test_sh = load("test.sh")
             assert 'export PATH="$script_folder/myscripts"' in test_sh
             cmd = ". ./test.sh && myhello.sh"
-        result, _ = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                     shell=True).communicate()
+        result, _ = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+        ).communicate()
         out = result.decode()
-        assert 'Hello MyWorld!!!' in out
+        assert "Hello MyWorld!!!" in out
 
     new_folder = os.path.join(temp_folder(), "new_folder")
     shutil.move(folder, new_folder)
@@ -195,7 +201,8 @@ def test_relative_paths():
             # how-to-get-script-directory-in-posix-sh/29835459#29835459
             script = load("test.sh").replace(folder, new_folder)
             save("test.sh", script)
-        result, _ = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                     shell=True).communicate()
+        result, _ = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+        ).communicate()
         out = result.decode()
-        assert 'Hello MyWorld!!!' in out
+        assert "Hello MyWorld!!!" in out

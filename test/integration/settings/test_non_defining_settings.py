@@ -21,8 +21,7 @@ def test_settings_not_defined_consuming():
                 del self.info.settings.os
                 del self.info.settings.arch
         """)
-    c.save({"conanfile.py": conanfile,
-            "profile": ""})
+    c.save({"conanfile.py": conanfile, "profile": ""})
     c.run("create . -pr=profile -s os=Windows -s arch=armv8")
     assert "Building with os=Windows" in c.out
     assert "Building with arch=armv8" in c.out
@@ -34,9 +33,7 @@ def test_settings_not_defined_consuming():
 
 def test_settings_undefined():
     client = TestClient()
-    client.save({
-        "conanfile.py": GenConanfile(name="hello", version="1.0")
-    })
+    client.save({"conanfile.py": GenConanfile(name="hello", version="1.0")})
     # Undefined settings field
     client.run("install . -s foo=None", assert_error=True)
     assert "'settings.foo' doesn't exist for 'settings'" in client.out

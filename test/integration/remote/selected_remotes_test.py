@@ -11,16 +11,21 @@ class TestSelectedRemotesInstall:
     def _setup(self):
         servers = OrderedDict()
         for index in range(3):
-            servers[f"server{index}"] = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")],
-                                                   users={"user": "password"})
+            servers[f"server{index}"] = TestServer(
+                [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"user": "password"}
+            )
         self.client = TestClient(servers=servers, inputs=3 * ["user", "password"])
 
     def test_selected_remotes(self):
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0").with_build_msg("OLDREV")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0").with_build_msg("OLDREV")}
+        )
         self.client.run("create .")
         self.client.run("upload liba/1.0 -r server0 -c")
         self.client.run("remove * -c")
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0").with_build_msg("NEWER_REV")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0").with_build_msg("NEWER_REV")}
+        )
         self.client.run("create .")
         self.client.run("upload liba/1.0 -r server1 -c")
         self.client.run("remove * -c")

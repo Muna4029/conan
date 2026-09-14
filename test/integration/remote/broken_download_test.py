@@ -12,7 +12,6 @@ from conan.internal.util.files import save
 
 
 class TestBrokenDownload:
-
     @pytest.fixture()
     def setup(self):
         server = TestServer()
@@ -29,7 +28,9 @@ class TestBrokenDownload:
         server = client.servers["default"]
         path = server.test_server.server_store.export(pref.ref)
         tgz = os.path.join(path, "conan_export.tgz")
-        save(tgz, "contents")  # dummy content to break it, so the download decompress will fail
+        save(
+            tgz, "contents"
+        )  # dummy content to break it, so the download decompress will fail
         client.run("install --requires=hello/0.1", assert_error=True)
         assert "Error while extracting downloaded file" in client.out
         assert not os.path.exists(client.get_latest_ref_layout(pref.ref).export())
@@ -44,8 +45,10 @@ class TestBrokenDownload:
         conaninfo = os.path.join(path, "conaninfo.txt")
         os.unlink(conaninfo)
         client.run("install --requires=hello/0.1", assert_error=True)
-        assert "ERROR: Corrupted hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709" \
-               " in 'default' remote: no conaninfo.txt" in client.out
+        assert (
+            "ERROR: Corrupted hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709"
+            " in 'default' remote: no conaninfo.txt" in client.out
+        )
 
     def test_remove_conanfile(self, setup):
         """
@@ -109,32 +112,43 @@ def test_client_retries():
 
     def DownloadFilesBrokenRequesterTimesOne(*args, **kwargs):
         return DownloadFilesBrokenRequester(1, *args, **kwargs)
-    client = TestClient(servers=servers, inputs=["admin", "password"],
-                        requester_class=DownloadFilesBrokenRequesterTimesOne)
+
+    client = TestClient(
+        servers=servers,
+        inputs=["admin", "password"],
+        requester_class=DownloadFilesBrokenRequesterTimesOne,
+    )
     client.run("install --requires=lib/1.0@lasote/stable")
     assert "WARN: network: Error downloading file" in client.out
-    assert 'Fake connection error exception' in client.out
+    assert "Fake connection error exception" in client.out
     assert 1 == str(client.out).count("Waiting 0 seconds to retry...")
 
-    client = TestClient(servers=servers, inputs=["admin", "password"],
-                        requester_class=DownloadFilesBrokenRequesterTimesOne)
+    client = TestClient(
+        servers=servers,
+        inputs=["admin", "password"],
+        requester_class=DownloadFilesBrokenRequesterTimesOne,
+    )
     client.save_home({"global.conf": "core.download:retry_wait=1"})
     client.run("install --requires=lib/1.0@lasote/stable")
     assert 1 == str(client.out).count("Waiting 1 seconds to retry...")
 
     def DownloadFilesBrokenRequesterTimesTen(*args, **kwargs):
         return DownloadFilesBrokenRequester(10, *args, **kwargs)
-    client = TestClient(servers=servers, inputs=["admin", "password"],
-                        requester_class=DownloadFilesBrokenRequesterTimesTen)
-    client.save_home({"global.conf": "core.download:retry_wait=0\n"
-                                "core.download:retry=11"})
+
+    client = TestClient(
+        servers=servers,
+        inputs=["admin", "password"],
+        requester_class=DownloadFilesBrokenRequesterTimesTen,
+    )
+    client.save_home(
+        {"global.conf": "core.download:retry_wait=0\ncore.download:retry=11"}
+    )
     client.run("install --requires=lib/1.0@lasote/stable")
     assert 10 == str(client.out).count("Waiting 0 seconds to retry...")
 
 
 def test_forbidden_blocked_conanmanifest():
-    """ this is what happens when a server blocks downloading a specific file
-    """
+    """this is what happens when a server blocks downloading a specific file"""
     server = TestServer()
     servers = {"default": server}
     client = TestClient(servers=servers, inputs=["admin", "password"])
@@ -152,8 +166,9 @@ def test_forbidden_blocked_conanmanifest():
             else:
                 return super(DownloadForbidden, self).get(url, **kwargs)
 
-    client = TestClient(servers=servers, inputs=["admin", "password"],
-                        requester_class=DownloadForbidden)
+    client = TestClient(
+        servers=servers, inputs=["admin", "password"], requester_class=DownloadForbidden
+    )
     client.run("download lib/1.0 -r=default", assert_error=True)
     assert "Forbidden because of security!!!" in client.out
 
@@ -168,8 +183,7 @@ def test_forbidden_blocked_conanmanifest():
 
 
 def test_forbidden_blocked_package_conanmanifest():
-    """ this is what happens when a server blocks downloading a specific file
-    """
+    """this is what happens when a server blocks downloading a specific file"""
     server = TestServer()
     servers = {"default": server}
     client = TestClient(servers=servers, inputs=["admin", "password"])
@@ -187,8 +201,9 @@ def test_forbidden_blocked_package_conanmanifest():
             else:
                 return super(DownloadForbidden, self).get(url, **kwargs)
 
-    client = TestClient(servers=servers, inputs=["admin", "password"],
-                        requester_class=DownloadForbidden)
+    client = TestClient(
+        servers=servers, inputs=["admin", "password"], requester_class=DownloadForbidden
+    )
     client.run("download lib/1.0 -r=default", assert_error=True)
 
     def check_cache():

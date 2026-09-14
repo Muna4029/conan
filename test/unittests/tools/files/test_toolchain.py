@@ -3,8 +3,12 @@ import textwrap
 
 import pytest
 
-from conan.tools.build import load_toolchain_args, save_toolchain_args, CONAN_TOOLCHAIN_ARGS_FILE, \
-    CONAN_TOOLCHAIN_ARGS_SECTION
+from conan.tools.build import (
+    load_toolchain_args,
+    save_toolchain_args,
+    CONAN_TOOLCHAIN_ARGS_FILE,
+    CONAN_TOOLCHAIN_ARGS_SECTION,
+)
 from conan.errors import ConanException
 from conan.test.utils.test_files import temp_folder
 from conan.internal.util.files import save, load
@@ -27,17 +31,20 @@ def test_load_toolchain_args_if_it_does_not_exist():
 
 def test_toolchain_args_with_content_full():
     folder = temp_folder()
-    content = textwrap.dedent(r"""
+    content = textwrap.dedent(
+        r"""
     [%s]
     win_path=my\win\path
     command=conan --option "My Option"
     my_regex=([A-Z])\w+
-    """ % CONAN_TOOLCHAIN_ARGS_SECTION)
-    save(os.path.join(folder,  CONAN_TOOLCHAIN_ARGS_FILE), content)
+    """
+        % CONAN_TOOLCHAIN_ARGS_SECTION
+    )
+    save(os.path.join(folder, CONAN_TOOLCHAIN_ARGS_FILE), content)
     args = load_toolchain_args(generators_folder=folder)
-    assert args["win_path"] == r'my\win\path'
+    assert args["win_path"] == r"my\win\path"
     assert args["command"] == r'conan --option "My Option"'
-    assert args["my_regex"] == r'([A-Z])\w+'
+    assert args["my_regex"] == r"([A-Z])\w+"
 
 
 def test_save_toolchain_args_empty():
@@ -51,11 +58,11 @@ def test_save_toolchain_args_empty():
 def test_save_toolchain_args_full():
     folder = temp_folder()
     content = {
-        'win_path': r'my\win\path',
-        'command': r'conan --option "My Option"',
-        'my_regex': r'([A-Z])\w+'
+        "win_path": r"my\win\path",
+        "command": r'conan --option "My Option"',
+        "my_regex": r"([A-Z])\w+",
     }
     save_toolchain_args(content, generators_folder=folder)
     args = load(os.path.join(folder, CONAN_TOOLCHAIN_ARGS_FILE))
     assert "[%s]" % CONAN_TOOLCHAIN_ARGS_SECTION in args
-    assert r'win_path = my\win\path' in args
+    assert r"win_path = my\win\path" in args

@@ -26,7 +26,7 @@ _expected_conf_xconfig = [
     "OTHER_CPLUSPLUSFLAGS_{name}_{name}[config={configuration}][arch={architecture}][sdk={sdk}{sdk_version}] = ",
     "FRAMEWORK_SEARCH_PATHS_{name}_{name}[config={configuration}][arch={architecture}][sdk={sdk}{sdk_version}] = ",
     "LIBRARY_SEARCH_PATHS_{name}_{name}[config={configuration}][arch={architecture}][sdk={sdk}{sdk_version}] = ",
-    "OTHER_LDFLAGS_{name}_{name}[config={configuration}][arch={architecture}][sdk={sdk}{sdk_version}] = "
+    "OTHER_LDFLAGS_{name}_{name}[config={configuration}][arch={architecture}][sdk={sdk}{sdk_version}] = ",
 ]
 
 
@@ -35,7 +35,14 @@ def expected_files(current_folder, configuration, architecture, sdk_version):
     name = _get_filename(configuration, architecture, sdk_version)
     deps = ["hello", "goodbye"]
     files.extend(
-        [os.path.join(current_folder, "conan_{dep}_{dep}{name}.xcconfig".format(dep=dep, name=name)) for dep in deps])
+        [
+            os.path.join(
+                current_folder,
+                "conan_{dep}_{dep}{name}.xcconfig".format(dep=dep, name=name),
+            )
+            for dep in deps
+        ]
+    )
     files.append(os.path.join(current_folder, "conandeps.xcconfig"))
     return files
 
@@ -43,8 +50,9 @@ def expected_files(current_folder, configuration, architecture, sdk_version):
 def check_contents(client, deps, configuration, architecture, sdk_version):
     for dep_name in deps:
         dep_xconfig = client.load("conan_{dep}_{dep}.xcconfig".format(dep=dep_name))
-        conf_name = "conan_{}_{}{}.xcconfig".format(dep_name, dep_name,
-                                                 _get_filename(configuration, architecture, sdk_version))
+        conf_name = "conan_{}_{}{}.xcconfig".format(
+            dep_name, dep_name, _get_filename(configuration, architecture, sdk_version)
+        )
 
         assert '#include "{}"'.format(conf_name) in dep_xconfig
         for var in _expected_dep_xconfig:
@@ -53,30 +61,57 @@ def check_contents(client, deps, configuration, architecture, sdk_version):
 
         conan_conf = client.load(conf_name)
         for var in _expected_conf_xconfig:
-            assert var.format(name=dep_name, configuration=configuration, architecture=architecture,
-                              sdk="macosx", sdk_version=sdk_version) in conan_conf
+            assert (
+                var.format(
+                    name=dep_name,
+                    configuration=configuration,
+                    architecture=architecture,
+                    sdk="macosx",
+                    sdk_version=sdk_version,
+                )
+                in conan_conf
+            )
 
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only for MacOS")
 def test_generator_files():
     client = TestClient()
-    client.save({"hello.py": GenConanfile().with_settings("os", "arch", "compiler", "build_type")
-                                           .with_package_info(cpp_info={"libs": ["hello"],
-                                                                        "frameworks": ['framework_hello']},
-                                                              env_info={})})
+    client.save(
+        {
+            "hello.py": GenConanfile()
+            .with_settings("os", "arch", "compiler", "build_type")
+            .with_package_info(
+                cpp_info={"libs": ["hello"], "frameworks": ["framework_hello"]},
+                env_info={},
+            )
+        }
+    )
     client.run("export hello.py --name=hello --version=0.1")
-    client.save({"goodbye.py": GenConanfile().with_settings("os", "arch", "compiler", "build_type")
-                                             .with_package_info(cpp_info={"libs": ["goodbye"],
-                                                                          "frameworks": ['framework_goodbye']},
-                                                                env_info={})})
+    client.save(
+        {
+            "goodbye.py": GenConanfile()
+            .with_settings("os", "arch", "compiler", "build_type")
+            .with_package_info(
+                cpp_info={"libs": ["goodbye"], "frameworks": ["framework_goodbye"]},
+                env_info={},
+            )
+        }
+    )
     client.run("export goodbye.py --name=goodbye --version=0.1")
-    client.save({"conanfile.txt": "[requires]\nhello/0.1\ngoodbye/0.1\n"}, clean_first=True)
+    client.save(
+        {"conanfile.txt": "[requires]\nhello/0.1\ngoodbye/0.1\n"}, clean_first=True
+    )
 
     for build_type in ["Release", "Debug"]:
+        client.run(
+            "install . -g XcodeDeps -s build_type={} -s arch=x86_64 -s os.sdk_version=12.1 --build missing".format(
+                build_type
+            )
+        )
 
-        client.run("install . -g XcodeDeps -s build_type={} -s arch=x86_64 -s os.sdk_version=12.1 --build missing".format(build_type))
-
-        for config_file in expected_files(client.current_folder, build_type, "x86_64", "12.1"):
+        for config_file in expected_files(
+            client.current_folder, build_type, "x86_64", "12.1"
+        ):
             assert os.path.isfile(config_file)
 
         conandeps = client.load("conandeps.xcconfig")
@@ -93,14 +128,22 @@ def test_generator_files():
 def test_generator_files_with_custom_config():
     client = TestClient()
 
-    client.save({"hello.py": GenConanfile().with_settings("os", "arch", "compiler", "build_type")
-                                           .with_package_info(cpp_info={"libs": ["hello"]},
-                                                              env_info={})})
+    client.save(
+        {
+            "hello.py": GenConanfile()
+            .with_settings("os", "arch", "compiler", "build_type")
+            .with_package_info(cpp_info={"libs": ["hello"]}, env_info={})
+        }
+    )
     client.run("export hello.py --name=hello --version=0.1")
 
-    client.save({"goodbye.py": GenConanfile().with_settings("os", "arch", "compiler", "build_type")
-                                             .with_package_info(cpp_info={"libs": ["goodbye"]},
-                                                                env_info={})})
+    client.save(
+        {
+            "goodbye.py": GenConanfile()
+            .with_settings("os", "arch", "compiler", "build_type")
+            .with_package_info(cpp_info={"libs": ["goodbye"]}, env_info={})
+        }
+    )
     client.run("export goodbye.py --name=goodbye --version=0.1")
 
     conanfile_py = textwrap.dedent("""
@@ -124,7 +167,9 @@ def test_generator_files_with_custom_config():
 
     for use_custom_config in [True, False]:
         for build_type in ["Release", "Debug"]:
-            cli_command = "install . -s build_type={} -s arch=x86_64 -s os.sdk_version=12.1  --build missing".format(build_type)
+            cli_command = "install . -s build_type={} -s arch=x86_64 -s os.sdk_version=12.1  --build missing".format(
+                build_type
+            )
             if use_custom_config:
                 cli_command += " -o XcodeConfigName={}".format(custom_config_name)
                 configuration_name = custom_config_name
@@ -133,7 +178,9 @@ def test_generator_files_with_custom_config():
 
             client.run(cli_command)
 
-            for config_file in expected_files(client.current_folder, configuration_name, "x86_64", "12.1"):
+            for config_file in expected_files(
+                client.current_folder, configuration_name, "x86_64", "12.1"
+            ):
                 assert os.path.isfile(config_file)
 
             conandeps = client.load("conandeps.xcconfig")
@@ -143,7 +190,14 @@ def test_generator_files_with_custom_config():
             conan_config = client.load("conan_config.xcconfig")
             assert '#include "conandeps.xcconfig"' in conan_config
 
-            check_contents(client, ["hello", "goodbye"],  configuration_name, "x86_64", "12.1",)
+            check_contents(
+                client,
+                ["hello", "goodbye"],
+                configuration_name,
+                "x86_64",
+                "12.1",
+            )
+
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only for MacOS")
 def test_xcodedeps_aggregate_components():
@@ -212,7 +266,7 @@ def test_xcodedeps_aggregate_components():
     component7_entry = client.load("conan_libb_libb_comp7.xcconfig")
     assert '#include "conan_liba.xcconfig"' in component7_entry
 
-    arch_setting = client.get_default_host_profile().settings['arch']
+    arch_setting = client.get_default_host_profile().settings["arch"]
     arch = "arm64" if arch_setting == "armv8" else arch_setting
 
     component7_vars = client.load(f"conan_libb_libb_comp7_release_{arch}.xcconfig")
@@ -275,7 +329,9 @@ def test_xcodedeps_traits():
         self.cpp_info.components["cmp2"].exelinkflags = ["cmp2_exelinkflag"]
         """
 
-    client.save({"lib_a.py": conanfile_py.format(requirements="", package_info=package_info)})
+    client.save(
+        {"lib_a.py": conanfile_py.format(requirements="", package_info=package_info)}
+    )
 
     client.run("create lib_a.py --name=lib_a --version=1.0")
 
@@ -284,12 +340,14 @@ def test_xcodedeps_traits():
         self.requires("lib_a/1.0", headers=False)
     """
 
-    client.save({"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
-                clean_first=True)
+    client.save(
+        {"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
+        clean_first=True,
+    )
 
     client.run("install lib_b.py -g XcodeDeps")
 
-    arch_setting = client.get_default_host_profile().settings['arch']
+    arch_setting = client.get_default_host_profile().settings["arch"]
     arch = "arm64" if arch_setting == "armv8" else arch_setting
 
     comp1_info = client.load(f"conan_lib_a_cmp1_release_{arch}.xcconfig")
@@ -303,8 +361,10 @@ def test_xcodedeps_traits():
         self.requires("lib_a/1.0", libs=False)
     """
 
-    client.save({"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
-                clean_first=True)
+    client.save(
+        {"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
+        clean_first=True,
+    )
     client.run("install lib_b.py -g XcodeDeps")
 
     comp1_info = client.load(f"conan_lib_a_cmp1_release_{arch}.xcconfig")
@@ -321,14 +381,20 @@ def test_xcodedeps_traits():
         self.requires("lib_a/1.0", headers=False, libs=False)
     """
 
-    client.save({"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
-                clean_first=True)
+    client.save(
+        {"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
+        clean_first=True,
+    )
     client.run("install lib_b.py -g XcodeDeps")
 
     # this changed from non-existing to existing after https://github.com/conan-io/conan/pull/15128
-    existing = [f"conan_lib_a_cmp1_release_{arch}.xcconfig", "conan_lib_a_cmp1.xcconfig",
-                    f"conan_lib_a_cmp2_release_{arch}.xcconfig", "conan_lib_a_cmp2.xcconfig",
-                    "conan_lib_a.xcconfig"]
+    existing = [
+        f"conan_lib_a_cmp1_release_{arch}.xcconfig",
+        "conan_lib_a_cmp1.xcconfig",
+        f"conan_lib_a_cmp2_release_{arch}.xcconfig",
+        "conan_lib_a_cmp2.xcconfig",
+        "conan_lib_a.xcconfig",
+    ]
 
     for file in existing:
         assert os.path.exists(os.path.join(client.current_folder, file))
@@ -340,8 +406,10 @@ def test_xcodedeps_traits():
         self.requires("lib_a/1.0", headers=False, libs=False, run=True)
     """
 
-    client.save({"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
-                clean_first=True)
+    client.save(
+        {"lib_b.py": conanfile_py.format(requirements=requirements, package_info="")},
+        clean_first=True,
+    )
 
     client.run("install lib_b.py -g XcodeDeps")
 
@@ -377,7 +445,7 @@ def test_xcodedeps_frameworkdirs():
     client.save({"conanfile.py": conanfile_py})
     client.run("create .")
 
-    arch_setting = client.get_default_host_profile().settings['arch']
+    arch_setting = client.get_default_host_profile().settings["arch"]
     arch = "arm64" if arch_setting == "armv8" else arch_setting
 
     client.run("install --requires=lib_a/1.0 -g XcodeDeps")
@@ -389,7 +457,6 @@ def test_xcodedeps_frameworkdirs():
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only for MacOS")
 def test_xcodedeps_cppinfo_requires():
-
     """
     lib_a: has four components cmp1, cmp2, cmp3, cmp4
     lib_b --> uses libA cmp1 so cpp_info.requires = ["lib_a::cmp1"]
@@ -434,12 +501,14 @@ def test_xcodedeps_cppinfo_requires():
             self.requires("lib_c/1.0")
     """)
 
-    client.save({
-        'lib_a/conanfile.py': lib_a,
-        'lib_b/conanfile.py': lib.format(name="b", cppinfo_comps='["lib_a::cmp1"]'),
-        'lib_c/conanfile.py': lib.format(name="c", cppinfo_comps='["lib_a::cmp2"]'),
-        'consumer/conanfile.py': consumer,
-    })
+    client.save(
+        {
+            "lib_a/conanfile.py": lib_a,
+            "lib_b/conanfile.py": lib.format(name="b", cppinfo_comps='["lib_a::cmp1"]'),
+            "lib_c/conanfile.py": lib.format(name="c", cppinfo_comps='["lib_a::cmp2"]'),
+            "consumer/conanfile.py": consumer,
+        }
+    )
 
     client.run("create lib_a")
 
@@ -483,8 +552,16 @@ def test_dependency_of_dependency_components():
     lib_a -> lib_b -> lib_c (with components)
     """
     client = TestClient()
-    lib_a = GenConanfile("lib_a", "1.0").with_require("lib_b/1.0").with_settings("os", "arch", "build_type", "compiler")
-    lib_b = GenConanfile("lib_b", "1.0").with_require("lib_c/1.0").with_settings("os", "arch", "build_type", "compiler")
+    lib_a = (
+        GenConanfile("lib_a", "1.0")
+        .with_require("lib_b/1.0")
+        .with_settings("os", "arch", "build_type", "compiler")
+    )
+    lib_b = (
+        GenConanfile("lib_b", "1.0")
+        .with_require("lib_c/1.0")
+        .with_settings("os", "arch", "build_type", "compiler")
+    )
 
     lib_c = textwrap.dedent("""
         from conan import ConanFile
@@ -497,11 +574,13 @@ def test_dependency_of_dependency_components():
                 self.cpp_info.components["cmp2"].includedirs = ["include_cmp2"]
         """)
 
-    client.save({
-        'conanfile.py': lib_a,
-        'lib_b/conanfile.py': lib_b,
-        'lib_c/conanfile.py': lib_c,
-    })
+    client.save(
+        {
+            "conanfile.py": lib_a,
+            "lib_b/conanfile.py": lib_b,
+            "lib_c/conanfile.py": lib_c,
+        }
+    )
 
     client.run("create lib_c")
 
@@ -521,14 +600,20 @@ def test_skipped_not_included():
     client = TestClient()
     pkg_info = {"components": {"component": {"defines": ["SOMEDEFINE"]}}}
 
-    client.save({"dep/conanfile.py": GenConanfile().with_package_type("header-library")
-                                                   .with_package_info(cpp_info=pkg_info,
-                                                                      env_info={}),
-                 "pkg/conanfile.py": GenConanfile().with_requirement("dep/0.1")
-                                                   .with_package_type("library")
-                                                   .with_shared_option(),
-                 "consumer/conanfile.py": GenConanfile().with_requires("pkg/0.1")
-                                                        .with_settings("os", "build_type", "arch")})
+    client.save(
+        {
+            "dep/conanfile.py": GenConanfile()
+            .with_package_type("header-library")
+            .with_package_info(cpp_info=pkg_info, env_info={}),
+            "pkg/conanfile.py": GenConanfile()
+            .with_requirement("dep/0.1")
+            .with_package_type("library")
+            .with_shared_option(),
+            "consumer/conanfile.py": GenConanfile()
+            .with_requires("pkg/0.1")
+            .with_settings("os", "build_type", "arch"),
+        }
+    )
     client.run("create dep --name=dep --version=0.1")
     client.run("create pkg --name=pkg --version=0.1")
     client.run("install consumer -g XcodeDeps -s arch=x86_64 -s build_type=Release")
@@ -570,9 +655,13 @@ def test_correctly_handle_transitive_components():
         uses_components/1.0
         """)
 
-    client.save({"has_components.py": has_components,
-                 "uses_components.py": uses_components,
-                 "consumer.txt": consumer})
+    client.save(
+        {
+            "has_components.py": has_components,
+            "uses_components.py": uses_components,
+            "consumer.txt": consumer,
+        }
+    )
     client.run("create has_components.py")
     client.run("create uses_components.py")
     client.run("install consumer.txt -g XcodeDeps")

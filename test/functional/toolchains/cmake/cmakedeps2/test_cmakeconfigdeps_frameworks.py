@@ -152,15 +152,20 @@ def test_osx_frameworks(shared):
     add_executable(example main.cpp)
     target_link_libraries(example frame::frame)
     """)
-    client.save({
-        'test_package/main.cpp': test_main_cpp,
-        'test_package/CMakeLists.txt': test_cmakelists,
-        'test_package/conanfile.py': test_conanfile,
-        'CMakeLists.txt': cmakelists,
-        'frame.cpp': frame_cpp,
-        'frame.h': frame_h,
-        'conanfile.py': conanfile
-    }, clean_first=True)
-    client.run(f"create . -c tools.cmake.cmakedeps:new={new_value} -o '*:shared={shared}'")
+    client.save(
+        {
+            "test_package/main.cpp": test_main_cpp,
+            "test_package/CMakeLists.txt": test_cmakelists,
+            "test_package/conanfile.py": test_conanfile,
+            "CMakeLists.txt": cmakelists,
+            "frame.cpp": frame_cpp,
+            "frame.h": frame_h,
+            "conanfile.py": conanfile,
+        },
+        clean_first=True,
+    )
+    client.run(
+        f"create . -c tools.cmake.cmakedeps:new={new_value} -o '*:shared={shared}'"
+    )
     assert "Hello from MyFramework!" in client.out
     assert "dep/1.0: Hello World" in client.out

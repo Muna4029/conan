@@ -4,7 +4,6 @@ from conan.test.utils.tools import TestClient
 
 
 class SysrootTest(unittest.TestCase):
-
     def test(self):
         client = TestClient()
         sysroot = """from conan import ConanFile
@@ -13,7 +12,9 @@ class Pkg(ConanFile):
         self.cpp_info.sysroot = "HelloSysRoot"
 """
         client.save({"conanfile.py": sysroot})
-        client.run("create . --name=sysroot --version=0.1 --user=user --channel=testing")
+        client.run(
+            "create . --name=sysroot --version=0.1 --user=user --channel=testing"
+        )
 
         conanfile = """from conan import ConanFile
 class Pkg(ConanFile):
@@ -33,10 +34,14 @@ class Pkg(ConanFile):
     def test(self):
         pass
 """
-        client.save({"conanfile.py": conanfile,
-                     "test_package/conanfile.py": test_conanfile})
+        client.save(
+            {"conanfile.py": conanfile, "test_package/conanfile.py": test_conanfile}
+        )
         client.run("create . --name=pkg --version=0.1 --user=user --channel=testing")
         self.assertIn("pkg/0.1@user/testing: PKG SYSROOT: HelloSysRoot", client.out)
-        self.assertIn("pkg/0.1@user/testing (test package): Test SYSROOT: HelloSysRoot", client.out)
+        self.assertIn(
+            "pkg/0.1@user/testing (test package): Test SYSROOT: HelloSysRoot",
+            client.out,
+        )
 
         client.run("install .")

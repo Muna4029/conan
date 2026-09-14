@@ -55,8 +55,12 @@ class TestLRU:
     def test_update_lru_when_used_as_dependency(self):
         """Show that using a recipe as a dependency will update its LRU"""
         c = TestClient()
-        c.save({"dep/conanfile.py": GenConanfile("dep", "1.0"),
-                "conanfile.py": GenConanfile("app", "1.0").with_require("dep/1.0")})
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep", "1.0"),
+                "conanfile.py": GenConanfile("app", "1.0").with_require("dep/1.0"),
+            }
+        )
 
         c.run("create dep")
         time.sleep(2)

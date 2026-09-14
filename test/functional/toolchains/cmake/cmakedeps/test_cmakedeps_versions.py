@@ -15,26 +15,29 @@ def hello_client():
     return client
 
 
-@pytest.mark.parametrize("name, version, params, cmake_fails, package_found", [
-    ("hello", "1.0", "", False, True),
-    ("Hello", "1.0", "", False, True),
-    ("HELLO", "1.0", "", False, True),
-    ("hello", "1.1", "", False, True),
-    ("hello", "1.2", "", False, False),
-    ("hello", "1.0", "EXACT", False, False),
-    ("hello", "1.1", "EXACT", False, True),
-    ("hello", "1.2", "EXACT", False, False),
-    ("hello", "0.1", "", False, False),
-    ("hello", "2.0", "", False, False),
-    ("hello", "1.0", "REQUIRED", False, True),
-    ("hello", "1.1", "REQUIRED", False, True),
-    ("hello", "1.2", "REQUIRED", True, False),
-    ("hello", "1.0", "EXACT REQUIRED", True, False),
-    ("hello", "1.1", "EXACT REQUIRED", False, True),
-    ("hello", "1.2", "EXACT REQUIRED", True, False),
-    ("hello", "0.1", "REQUIRED", True, False),
-    ("hello", "2.0", "REQUIRED", True, False)
-])
+@pytest.mark.parametrize(
+    "name, version, params, cmake_fails, package_found",
+    [
+        ("hello", "1.0", "", False, True),
+        ("Hello", "1.0", "", False, True),
+        ("HELLO", "1.0", "", False, True),
+        ("hello", "1.1", "", False, True),
+        ("hello", "1.2", "", False, False),
+        ("hello", "1.0", "EXACT", False, False),
+        ("hello", "1.1", "EXACT", False, True),
+        ("hello", "1.2", "EXACT", False, False),
+        ("hello", "0.1", "", False, False),
+        ("hello", "2.0", "", False, False),
+        ("hello", "1.0", "REQUIRED", False, True),
+        ("hello", "1.1", "REQUIRED", False, True),
+        ("hello", "1.2", "REQUIRED", True, False),
+        ("hello", "1.0", "EXACT REQUIRED", True, False),
+        ("hello", "1.1", "EXACT REQUIRED", False, True),
+        ("hello", "1.2", "EXACT REQUIRED", True, False),
+        ("hello", "0.1", "REQUIRED", True, False),
+        ("hello", "2.0", "REQUIRED", True, False),
+    ],
+)
 @pytest.mark.tool("cmake")
 def test_version(hello_client, name, version, params, cmake_fails, package_found):
     client = hello_client
@@ -59,7 +62,9 @@ def test_version(hello_client, name, version, params, cmake_fails, package_found
                 cmake.configure()
         """)
 
-    client.save({"conanfile.py": conanfile, "CMakeLists.txt": cmakelists}, clean_first=True)
+    client.save(
+        {"conanfile.py": conanfile, "CMakeLists.txt": cmakelists}, clean_first=True
+    )
     exit_code = client.run("build .", assert_error=cmake_fails)
     if cmake_fails:
         assert exit_code != 0
@@ -94,7 +99,9 @@ def test_no_version_file(hello_client):
                 cmake.configure()
         """)
 
-    client.save({"conanfile.py": conanfile, "CMakeLists.txt": cmakelists}, clean_first=True)
+    client.save(
+        {"conanfile.py": conanfile, "CMakeLists.txt": cmakelists}, clean_first=True
+    )
     client.run("install .")
     os.unlink(os.path.join(client.current_folder, "hello-config-version.cmake"))
     exit_code = client.run("build .", assert_error=True)

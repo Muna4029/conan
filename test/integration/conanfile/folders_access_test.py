@@ -86,7 +86,7 @@ class AConan(ConanFile):
 
 
 class TestFoldersAccess(unittest.TestCase):
-    """"Tests the presence of self.source_folder, self.build_folder, self.package_folder
+    """ "Tests the presence of self.source_folder, self.build_folder, self.package_folder
     in the conanfile methods. Also the availability of the self.deps_cpp_info, self.deps_user_info
     and self.deps_env_info."""
 
@@ -96,36 +96,30 @@ class TestFoldersAccess(unittest.TestCase):
         self.client.run("export . --user=conan --channel=stable")
 
     def test_source_local_command(self):
-        c1 = conanfile % {"no_copy_source": False,
-                          "local_command": True}
+        c1 = conanfile % {"no_copy_source": False, "local_command": True}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("source .")
 
-        c1 = conanfile % {"no_copy_source": True,
-                          "local_command": True}
+        c1 = conanfile % {"no_copy_source": True, "local_command": True}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("source .")
 
     def test_deploy(self):
-        c1 = conanfile % {"no_copy_source": False,
-                          "local_command": False}
+        c1 = conanfile % {"no_copy_source": False, "local_command": False}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("create . --user=user --channel=testing --build missing")
         self.client.run("install --requires=lib/1.0@user/testing")  # Checks deploy
 
     def test_full_install(self):
-        c1 = conanfile % {"no_copy_source": False,
-                          "local_command": False}
+        c1 = conanfile % {"no_copy_source": False, "local_command": False}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("create . --user=conan --channel=stable --build='*'")
 
-        c1 = conanfile % {"no_copy_source": True,
-                          "local_command": False}
+        c1 = conanfile % {"no_copy_source": True, "local_command": False}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("create . --user=conan --channel=stable --build='*'")
 
-        c1 = conanfile % {"no_copy_source": False,
-                          "local_command": False}
+        c1 = conanfile % {"no_copy_source": False, "local_command": False}
         self.client.save({"conanfile.py": c1}, clean_first=True)
         self.client.run("create . --user=conan --channel=stable --build='*'")
 
@@ -159,8 +153,7 @@ class RecipeFolderTest(unittest.TestCase):
 
     def test_recipe_folder(self):
         client = TestClient()
-        client.save({"conanfile.py": self.recipe_conanfile,
-                     "file.txt": "MYFILE!"})
+        client.save({"conanfile.py": self.recipe_conanfile, "file.txt": "MYFILE!"})
         client.run("export . --name=pkg --version=0.1 --user=user --channel=testing")
         self.assertIn("INIT: MYFILE!", client.out)
         self.assertIn("SET_NAME: MYFILE!", client.out)
@@ -175,8 +168,7 @@ class RecipeFolderTest(unittest.TestCase):
 
     def test_local_flow(self):
         client = TestClient()
-        client.save({"conanfile.py": self.recipe_conanfile,
-                     "file.txt": "MYFILE!"})
+        client.save({"conanfile.py": self.recipe_conanfile, "file.txt": "MYFILE!"})
         client.run("install .")
         self.assertIn("INIT: MYFILE!", client.out)
         self.assertIn("SET_NAME: MYFILE!", client.out)
@@ -185,11 +177,18 @@ class RecipeFolderTest(unittest.TestCase):
 
     def test_editable(self):
         client = TestClient()
-        client.save({"pkg/conanfile.py": self.recipe_conanfile,
-                     "pkg/file.txt": "MYFILE!",
-                     "consumer/conanfile.py":
-                         GenConanfile().with_require("pkg/0.1@user/stable")})
-        client.run("editable add pkg --name=pkg --version=0.1 --user=user --channel=stable")
+        client.save(
+            {
+                "pkg/conanfile.py": self.recipe_conanfile,
+                "pkg/file.txt": "MYFILE!",
+                "consumer/conanfile.py": GenConanfile().with_require(
+                    "pkg/0.1@user/stable"
+                ),
+            }
+        )
+        client.run(
+            "editable add pkg --name=pkg --version=0.1 --user=user --channel=stable"
+        )
 
         client.run("install consumer")
         client.assert_listed_require({"pkg/0.1@user/stable": "Editable"})

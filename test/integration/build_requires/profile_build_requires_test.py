@@ -9,7 +9,6 @@ from conan.test.utils.tools import TestClient, GenConanfile
 
 
 class TestBuildRequires:
-
     @pytest.fixture()
     def client(self):
         c = TestClient()
@@ -30,8 +29,7 @@ class TestBuildRequires:
                     self.buildenv_info.append_path("PATH", self.package_folder)
             """)
         name = "mytool.bat" if platform.system() == "Windows" else "mytool"
-        c.save({CONANFILE: tool_conanfile,
-                name: "echo Hello World!"}, clean_first=True)
+        c.save({CONANFILE: tool_conanfile, name: "echo Hello World!"}, clean_first=True)
         os.chmod(os.path.join(c.current_folder, name), 0o777)
         c.run("export . --user=lasote --channel=stable")
 
@@ -67,10 +65,15 @@ class TestBuildRequires:
                def test(self):
                    pass
            """)
-        c.save({CONANFILE: lib_conanfile,
+        c.save(
+            {
+                CONANFILE: lib_conanfile,
                 "test_package/conanfile.py": test_conanfile,
                 "profile.txt": profile,
-                "profile2.txt": profile2}, clean_first=True)
+                "profile2.txt": profile2,
+            },
+            clean_first=True,
+        )
         return c
 
     def test_profile_requires(self, client):
@@ -79,10 +82,14 @@ class TestBuildRequires:
           \\--(requires)->mylib/0.1 -(tool_requires)->tool/0.1 (skipped)
         """
         client.run("export . --user=lasote --channel=stable")
-        client.run("install --requires=mylib/0.1@lasote/stable --profile ./profile.txt --build missing")
+        client.run(
+            "install --requires=mylib/0.1@lasote/stable --profile ./profile.txt --build missing"
+        )
         assert "Hello World!" in client.out
 
-        client.run("install --requires=mylib/0.1@lasote/stable --profile ./profile2.txt --build='*'")
+        client.run(
+            "install --requires=mylib/0.1@lasote/stable --profile ./profile2.txt --build='*'"
+        )
         assert "Hello World!" in client.out
 
     def test_profile_open_requires(self, client):
@@ -91,9 +98,15 @@ class TestBuildRequires:
 
     def test_build_mode_requires(self, client):
         client.run("install . --profile ./profile.txt", assert_error=True)
-        assert "ERROR: Missing prebuilt package for 'tool/0.1@lasote/stable'" in client.out
-        client.run("install . --profile ./profile.txt --build=Pythontool", assert_error=True)
-        assert "ERROR: Missing prebuilt package for 'tool/0.1@lasote/stable'" in client.out
+        assert (
+            "ERROR: Missing prebuilt package for 'tool/0.1@lasote/stable'" in client.out
+        )
+        client.run(
+            "install . --profile ./profile.txt --build=Pythontool", assert_error=True
+        )
+        assert (
+            "ERROR: Missing prebuilt package for 'tool/0.1@lasote/stable'" in client.out
+        )
         client.run("install . --profile ./profile.txt --build=tool/0.1*")
         assert "tool/0.1@lasote/stable: Created package" in client.out
 
@@ -112,8 +125,9 @@ class TestBuildRequires:
             &: tool/0.1@lasote/stable
             nonexistingpattern*: sometool/1.2@user/channel
             """
-        client.save({CONANFILE: GenConanfile("mylib", "0.1"),
-                     "profile.txt": profile_patterns})
+        client.save(
+            {CONANFILE: GenConanfile("mylib", "0.1"), "profile.txt": profile_patterns}
+        )
         client.run("create . --profile=./profile.txt --build=missing")
         assert 1 == str(client.out).splitlines().count("Hello World!")
 
@@ -154,15 +168,21 @@ def test_consumer_patterns_loop_error():
         tool1/1.0
         tool2/1.0
         """)
-    client.save({"tool1/conanfile.py": GenConanfile(),
-                 "tool2/conanfile.py": GenConanfile().with_build_requires("tool1/1.0"),
-                 "consumer/conanfile.py": GenConanfile(),
-                 "profile.txt": profile_patterns})
+    client.save(
+        {
+            "tool1/conanfile.py": GenConanfile(),
+            "tool2/conanfile.py": GenConanfile().with_build_requires("tool1/1.0"),
+            "consumer/conanfile.py": GenConanfile(),
+            "profile.txt": profile_patterns,
+        }
+    )
 
     client.run("export tool1 --name=tool1 --version=1.0")
     client.run("export tool2 --name=tool2 --version=1.0")
-    client.run("install consumer --build=missing -pr:b=profile.txt -pr:h=profile.txt",
-               assert_error=True)
+    client.run(
+        "install consumer --build=missing -pr:b=profile.txt -pr:h=profile.txt",
+        assert_error=True,
+    )
     assert "There is a cycle/loop in the graph" in client.out
 
     # we can fix it with the negation
@@ -188,15 +208,27 @@ def test_tool_requires_revision_profile():
         [tool_requires]
         *:tool/0.1#2d65f1b4af1ce59028f96adbfe7ed5a2
         """)
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1"),
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1"),
             "cmake/conanfile.py": GenConanfile("cmake", "0.1"),
-            "app/conanfile.py": GenConanfile("app", "0.1").with_tool_requires("cmake/0.1"),
-            "build_profile": build_profile})
+            "app/conanfile.py": GenConanfile("app", "0.1").with_tool_requires(
+                "cmake/0.1"
+            ),
+            "build_profile": build_profile,
+        }
+    )
     c.run("export tool")
     rev1 = c.exported_recipe_revision()
     assert rev1 == "2d65f1b4af1ce59028f96adbfe7ed5a2"
     # Create a new tool revision to proof that we can still require the old one
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1").with_class_attribute("myvar=42")})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1").with_class_attribute(
+                "myvar=42"
+            )
+        }
+    )
     c.run("export tool")
     rev2 = c.exported_recipe_revision()
     assert rev2 != rev1
@@ -215,9 +247,15 @@ def test_tool_requires_version_range_loop():
         [tool_requires]
         tool/[>=1.0 <2]
         """)
-    c.save({"tool/conanfile.py": GenConanfile("tool", "1.1"),
-            "app/conanfile.py": GenConanfile("app", "0.1").with_tool_requires("tool/1.1"),
-            "build_profile": build_profile})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "1.1"),
+            "app/conanfile.py": GenConanfile("app", "0.1").with_tool_requires(
+                "tool/1.1"
+            ),
+            "build_profile": build_profile,
+        }
+    )
     c.run("create tool")
     c.run("install app -pr:b=build_profile")
     assert "tool/1.1" in c.out  # It is skipped

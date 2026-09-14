@@ -14,8 +14,9 @@ def test_library_order():
     c = TestClient()
 
     def _export(libname, refs=None):
-        conanfile = GenConanfile(libname, "0.1").with_package_info(cpp_info={"libs": [libname]},
-                                                                   env_info={})
+        conanfile = GenConanfile(libname, "0.1").with_package_info(
+            cpp_info={"libs": [libname]}, env_info={}
+        )
         for r in refs or []:
             conanfile.with_requires(f"{r}/0.1")
         c.save({"conanfile.py": conanfile}, clean_first=True)
@@ -31,9 +32,13 @@ def test_library_order():
 
     c.run("install . --build missing -g AutotoolsDeps")
 
-    deps = "conanautotoolsdeps.bat" if platform.system() == "Windows" else "conanautotoolsdeps.sh"
+    deps = (
+        "conanautotoolsdeps.bat"
+        if platform.system() == "Windows"
+        else "conanautotoolsdeps.sh"
+    )
     autotoolsdeps = c.load(deps)
-    assert '-lsdl2_ttf -lfreetype -lsdl2 -llibpng -lzlib -lbzip2' in autotoolsdeps
+    assert "-lsdl2_ttf -lfreetype -lsdl2 -llibpng -lzlib -lbzip2" in autotoolsdeps
 
 
 # TODO: Add a test that manages too system libs

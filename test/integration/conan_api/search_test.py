@@ -9,7 +9,7 @@ from conan.test.utils.tools import TestClient
 @pytest.mark.parametrize("remote_name", [None, "default"])
 def test_search_recipes(remote_name):
     """
-        Test the "api.search.recipes"
+    Test the "api.search.recipes"
     """
     client = TestClient(default_server_user=True)
     client.save({"conanfile.py": GenConanfile()})
@@ -29,18 +29,24 @@ def test_search_recipes(remote_name):
         remote = api.remotes.get(remote_name) if remote_name else None
 
         sot = api.search.recipes(query="f*", remote=remote)
-        assert sot == [RecipeReference.loads("felipe/1.0"),
-                       RecipeReference.loads("felipe/2.0"),
-                       RecipeReference.loads("foo/1.0")]
+        assert sot == [
+            RecipeReference.loads("felipe/1.0"),
+            RecipeReference.loads("felipe/2.0"),
+            RecipeReference.loads("foo/1.0"),
+        ]
 
         sot = api.search.recipes(query="fo*", remote=remote)
         assert sot == [RecipeReference.loads("foo/1.0")]
 
         sot = api.search.recipes(query=None, remote=remote)
-        assert sot == [RecipeReference.loads("felipe/1.0"),
-                       RecipeReference.loads("felipe/2.0"),
-                       RecipeReference.loads("foo/1.0")]
+        assert sot == [
+            RecipeReference.loads("felipe/1.0"),
+            RecipeReference.loads("felipe/2.0"),
+            RecipeReference.loads("foo/1.0"),
+        ]
 
         sot = api.search.recipes(query="*i*", remote=remote)
-        assert sot == [RecipeReference.loads("felipe/1.0"),
-                       RecipeReference.loads("felipe/2.0")]
+        assert sot == [
+            RecipeReference.loads("felipe/1.0"),
+            RecipeReference.loads("felipe/2.0"),
+        ]

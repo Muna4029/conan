@@ -21,15 +21,18 @@ def conanfile():
     return c
 
 
-@pytest.mark.parametrize("lib_name, libs", [
-    ("myliblin.a", ["myliblin"]),
-    ("libmyliblin.a", ["myliblin"]),
-    ("mylibmac.a", ["mylibmac"]),
-    ("mylibwin.lib", ["mylibwin"]),
-    ("libmylibwin.lib", ["libmylibwin"]),
-    ("mylibwin2.if.lib", ["mylibwin2.if.lib"]),
-    ("mylibwin2.if.lib", ["mylibwin2"])
-])
+@pytest.mark.parametrize(
+    "lib_name, libs",
+    [
+        ("myliblin.a", ["myliblin"]),
+        ("libmyliblin.a", ["myliblin"]),
+        ("mylibmac.a", ["mylibmac"]),
+        ("mylibwin.lib", ["mylibwin"]),
+        ("libmylibwin.lib", ["libmylibwin"]),
+        ("mylibwin2.if.lib", ["mylibwin2.if.lib"]),
+        ("mylibwin2.if.lib", ["mylibwin2"]),
+    ],
+)
 def test_simple_deduce_locations_static(lib_name, libs, conanfile):
     folder = temp_folder()
     location = os.path.join(folder, "libdir", lib_name)
@@ -65,12 +68,15 @@ def test_deduce_shared_link_locations(conanfile):
     assert result.type == "shared-library"
 
 
-@pytest.mark.parametrize("lib_name, libs", [
-    ("liblog4cxx.so.15.2.0", ["log4cxx"]),
-    ("libapr-1.0.dylib", ["apr-1"]),
-    ("libapr-1.so.0.7.4", ["apr-1"]),
-    ("libgrpc++_alts.so.1.67.1", ["grpc++_alts"])
-])
+@pytest.mark.parametrize(
+    "lib_name, libs",
+    [
+        ("liblog4cxx.so.15.2.0", ["log4cxx"]),
+        ("libapr-1.0.dylib", ["apr-1"]),
+        ("libapr-1.so.0.7.4", ["apr-1"]),
+        ("libgrpc++_alts.so.1.67.1", ["grpc++_alts"]),
+    ],
+)
 def test_complex_deduce_locations_shared(lib_name, libs, conanfile):
     """
     Tests real examples of shared library names in Linux/MacOS,
@@ -93,12 +99,15 @@ def test_complex_deduce_locations_shared(lib_name, libs, conanfile):
     assert result.type == "shared-library"
 
 
-@pytest.mark.parametrize("lib_name, dll_name, libs, pkg_name", [
-    ("libcurl_imp.lib", "libcurl.dll", ["libcurl_imp"], "libcurl"),
-    ("libcrypto.lib", "libcrypto-3-x64.dll", ["libcrypto"], "crypto"),
-    ("libssl.lib", "libssl-3-x64.dll", ["libssl"], "ssl"),
-    ("zdll.lib", "zlib1.dll", ["zdll"], "zlib")
-])
+@pytest.mark.parametrize(
+    "lib_name, dll_name, libs, pkg_name",
+    [
+        ("libcurl_imp.lib", "libcurl.dll", ["libcurl_imp"], "libcurl"),
+        ("libcrypto.lib", "libcrypto-3-x64.dll", ["libcrypto"], "crypto"),
+        ("libssl.lib", "libssl-3-x64.dll", ["libssl"], "ssl"),
+        ("zdll.lib", "zlib1.dll", ["zdll"], "zlib"),
+    ],
+)
 def test_windows_shared_link_locations(lib_name, dll_name, libs, pkg_name, conanfile):
     """
     Tests real examples of shared library names in Windows,
@@ -123,12 +132,16 @@ def test_windows_shared_link_locations(lib_name, dll_name, libs, pkg_name, conan
     assert result.type == "shared-library"
 
 
-@pytest.mark.parametrize("lib_info", [
-    {"charset": ["charset.lib", "charset-1.dll"],
-     "iconv": ["iconv.lib", "iconv-2.dll"]},
-    {"charset": ["libcharset.so.1.0.0"],
-     "iconv": ["libiconv.so.2.6.1"]},
-])
+@pytest.mark.parametrize(
+    "lib_info",
+    [
+        {
+            "charset": ["charset.lib", "charset-1.dll"],
+            "iconv": ["iconv.lib", "iconv-2.dll"],
+        },
+        {"charset": ["libcharset.so.1.0.0"], "iconv": ["libiconv.so.2.6.1"]},
+    ],
+)
 def test_windows_several_shared_link_locations(lib_info, conanfile):
     """
     Tests a real model as LIBICONV with several libs defined in the root component
@@ -155,18 +168,27 @@ def test_windows_several_shared_link_locations(lib_info, conanfile):
 
     result = cppinfo.deduce_full_cpp_info(conanfile)
     for lib_name in lib_info:
-        assert result.components[f"_{lib_name}"].location == locations[lib_name][0].replace("\\", "/")
+        assert result.components[f"_{lib_name}"].location == locations[lib_name][
+            0
+        ].replace("\\", "/")
         if is_windows:
-            assert result.components[f"_{lib_name}"].link_location == locations[lib_name][1].replace("\\", "/")
+            assert result.components[f"_{lib_name}"].link_location == locations[
+                lib_name
+            ][1].replace("\\", "/")
         assert result.components[f"_{lib_name}"].type == "shared-library"
 
 
-@pytest.mark.parametrize("lib, symlinks", [
-    # symlinks == "real_file <- symlink1 <- symlink2 <- ... <- symlinkN"
-    # Issue related: https://github.com/conan-io/conan/issues/17417
-    ("png", "libpng16.so.16.44.0 <- libpng16.so.16 <- libpng16.so <- libpng.so")
-])
-@pytest.mark.skipif(platform.system() == "Windows", reason="Can't apply symlink on Windows")
+@pytest.mark.parametrize(
+    "lib, symlinks",
+    [
+        # symlinks == "real_file <- symlink1 <- symlink2 <- ... <- symlinkN"
+        # Issue related: https://github.com/conan-io/conan/issues/17417
+        ("png", "libpng16.so.16.44.0 <- libpng16.so.16 <- libpng16.so <- libpng.so")
+    ],
+)
+@pytest.mark.skipif(
+    platform.system() == "Windows", reason="Can't apply symlink on Windows"
+)
 def test_shared_link_locations_symlinks(lib, symlinks, conanfile):
     """
     Tests auto deduce location is not resolving symlinks by default. For instance:
@@ -266,10 +288,12 @@ def test_multiple_matches_exact_match(prefix, conanfile):
     assert result.type == "static-library"
 
 
-
-@pytest.mark.parametrize("lib_name, libs", [
-    ("harfbuzz", ["harfbuzz-icu.lib", "harfbuzz.lib"]),
-])
+@pytest.mark.parametrize(
+    "lib_name, libs",
+    [
+        ("harfbuzz", ["harfbuzz-icu.lib", "harfbuzz.lib"]),
+    ],
+)
 def test_several_libs_and_exact_match(lib_name, libs, conanfile):
     """
     Testing that we're keeping the exact match at first instead the similar one

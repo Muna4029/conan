@@ -8,7 +8,6 @@ from conan.api.model import RecipeReference
 
 
 class TestOptions:
-
     @pytest.fixture(autouse=True)
     def _setup(self):
         options = {"static": [True, False], "optimized": [2, 3, 4], "path": ["ANY"]}
@@ -97,8 +96,7 @@ class TestOptions:
         assert "static" not in self.sut.dumps()
 
         # Test None is possible to change
-        sut2 = Options({"static": [True, False],
-                        "other": [True, False]})
+        sut2 = Options({"static": [True, False], "other": [True, False]})
         sut2.freeze()
         sut2.static = True
         assert "static=True" in sut2.dumps()
@@ -113,8 +111,16 @@ class TestOptions:
         assert "other" not in sut2.dumps()
 
     def test_items(self):
-        assert self.sut.items() == [("optimized", "3"), ("path", "mypath"), ("static", "True")]
-        assert self.sut.items() == [("optimized", "3"), ("path", "mypath"), ("static", "True")]
+        assert self.sut.items() == [
+            ("optimized", "3"),
+            ("path", "mypath"),
+            ("static", "True"),
+        ]
+        assert self.sut.items() == [
+            ("optimized", "3"),
+            ("path", "mypath"),
+            ("static", "True"),
+        ]
 
     def test_get_safe_options(self):
         assert True == self.sut.get_safe("static")
@@ -161,7 +167,9 @@ class TestOptionsPropagate:
 
         ref = RecipeReference.loads("boost/1.0")
         # if ref!=None option MUST be preceded by boost:
-        down_options = Options(options_values={"zlib/2.0:other": 1, "boost/1.0:static": False})
+        down_options = Options(
+            options_values={"zlib/2.0:other": 1, "boost/1.0:static": False}
+        )
         sut.apply_downstream(down_options, Options(), ref, False)
         assert not sut.static
 
@@ -170,7 +178,9 @@ class TestOptionsPropagate:
             sut.static = True
         assert "Incorrect attempt to modify option 'static'" in str(e.value)
 
-        self_options, up_options, up_private = sut.get_upstream_options(down_options, ref, False)
+        self_options, up_options, up_private = sut.get_upstream_options(
+            down_options, ref, False
+        )
         assert up_options.dumps() == "zlib/2.0:other=1"
         assert self_options.dumps() == "boost/1.0:static=False\nzlib/2.0:other=1"
         assert up_private.dumps() == ""
@@ -210,7 +220,9 @@ class TestOptionsNone:
             self.sut.more = None
         assert "'None' is not a valid 'options.more' value" in str(e.value)
         self.sut.more = "None"
-        assert not self.sut.more  # This is still evaluated to false, like OFF, 0, FALSE, etc
+        assert (
+            not self.sut.more
+        )  # This is still evaluated to false, like OFF, 0, FALSE, etc
         assert self.sut.more == "None"
         assert self.sut.more != None
 
@@ -238,8 +250,7 @@ class TestOptionsNone:
         assert options.static != None
 
     def test_undefined_value(self):
-        """ Not assigning a value to options will raise an error at validate() step
-        """
+        """Not assigning a value to options will raise an error at validate() step"""
         package_options = Options({"path": ["ANY"]})
         with pytest.raises(ConanException):
             package_options.validate()
@@ -247,10 +258,11 @@ class TestOptionsNone:
         package_options.validate()
 
     def test_undefined_value_none(self):
-        """ The value None is allowed as default, not necessary to default to it
-        """
+        """The value None is allowed as default, not necessary to default to it"""
         package_options = Options({"path": [None, "Other"]})
         package_options.validate()
         package_options = Options({"path": ["None", "Other"]})
-        with pytest.raises(ConanException):  # Literal "None" string not good to be undefined
+        with pytest.raises(
+            ConanException
+        ):  # Literal "None" string not good to be undefined
             package_options.validate()

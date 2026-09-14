@@ -12,7 +12,6 @@ from conan.test.utils.tools import TestClient, TestServer
 
 
 class SourceTest(unittest.TestCase):
-
     def test_local_flow_patch(self):
         # https://github.com/conan-io/conan/issues/2327
         conanfile = """from conan import ConanFile
@@ -35,9 +34,13 @@ class TestexportConan(ConanFile):
         self.output.info("PYTHON: %s" % load(self, python))
 """
         client = TestClient(light=True)
-        client.save({"conanfile.py": conanfile,
-                     "patch.patch": "mypatch",
-                     "mypython.py": "mypython"})
+        client.save(
+            {
+                "conanfile.py": conanfile,
+                "patch.patch": "mypatch",
+                "mypython.py": "mypython",
+            }
+        )
         client.run("source .")
         self.assertIn("conanfile.py (test/0.1): PATCH: mypatch", client.out)
         self.assertIn("conanfile.py (test/0.1): HEADER: my hello header!", client.out)
@@ -62,8 +65,7 @@ class Pkg(ConanFile):
         patch = os.path.join(self.source_folder, "mypatch")
         self.output.info("PATCH: %s" % load(self, patch))
 """
-        client.save({"conanfile.py": conanfile,
-                     "mypatch": "this is my patch"})
+        client.save({"conanfile.py": conanfile, "mypatch": "this is my patch"})
         client.run("source .")
         self.assertIn("PATCH: this is my patch", client.out)
         client.run("source .")
@@ -73,10 +75,10 @@ class Pkg(ConanFile):
 
     def test_source_warning_os_build(self):
         # https://github.com/conan-io/conan/issues/2368
-        conanfile = '''from conan import ConanFile
+        conanfile = """from conan import ConanFile
 class ConanLib(ConanFile):
     pass
-'''
+"""
         client = TestClient(light=True)
         client.save({CONANFILE: conanfile})
         client.run("source .")
@@ -91,10 +93,11 @@ class ConanLib(ConanFile):
         self.assertIn(
             "A conanfile.py is needed, %s is not acceptable"
             % os.path.join(client.current_folder, "conanfile.txt"),
-            client.out)
+            client.out,
+        )
 
     def test_source_local_cwd(self):
-        conanfile = '''
+        conanfile = """
 import os
 from conan import ConanFile
 
@@ -105,17 +108,19 @@ class ConanLib(ConanFile):
     def source(self):
         self.output.info("Running source!")
         self.output.info("cwd=>%s" % os.getcwd())
-'''
+"""
         client = TestClient(light=True)
         client.save({CONANFILE: conanfile})
 
         client.run("install .")
         client.run("source .")
         self.assertIn("conanfile.py (hello/0.1): Calling source()", client.out)
-        self.assertIn("conanfile.py (hello/0.1): cwd=>%s" % client.current_folder, client.out)
+        self.assertIn(
+            "conanfile.py (hello/0.1): cwd=>%s" % client.current_folder, client.out
+        )
 
     def test_local_source(self):
-        conanfile = '''
+        conanfile = """
 from conan import ConanFile
 from conan.tools.files import save
 
@@ -125,14 +130,16 @@ class ConanLib(ConanFile):
         self.output.info("Running source!")
         err
         save(self, "file1.txt", "Hello World")
-'''
+"""
         # First, failing source()
         client = TestClient(light=True)
         client.save({CONANFILE: conanfile})
 
         client.run("source .", assert_error=True)
         self.assertIn("conanfile.py: Running source!", client.out)
-        self.assertIn("ERROR: conanfile.py: Error in source() method, line 9", client.out)
+        self.assertIn(
+            "ERROR: conanfile.py: Error in source() method, line 9", client.out
+        )
 
         # Fix the error and repeat
         client.save({CONANFILE: conanfile.replace("err", "")})
@@ -147,7 +154,7 @@ class ConanLib(ConanFile):
         # no_copy_source where both the build()  and source() methods
         # need to reference source_folder (so the value must be the
         # same in both methods)
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
             from conan import ConanFile
             from conan.tools.files import save, load
 
@@ -164,7 +171,7 @@ class ConanLib(ConanFile):
                 def build(self):
                     self.output.info(f"In the build() method the Source folder is: {self.source_folder}")
                     load(self, f"{self.source_folder}/source_file.c")
-            ''')
+            """)
         client = TestClient(light=True)
         client.save({CONANFILE: conanfile})
 
@@ -180,12 +187,17 @@ class ConanLib(ConanFile):
         # iterate through the remotes to get the sources from the first match
         servers = OrderedDict()
         for index in range(2):
-            servers[f"server{index}"] = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")],
-                                                   users={"user": "password"})
+            servers[f"server{index}"] = TestServer(
+                [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"user": "password"}
+            )
 
-        client = TestClient(servers=servers, inputs=3*["user", "password"])
-        client.save({"conanfile.py": GenConanfile().with_exports_sources("*"),
-                     "sources.cpp": "sources"})
+        client = TestClient(servers=servers, inputs=3 * ["user", "password"])
+        client.save(
+            {
+                "conanfile.py": GenConanfile().with_exports_sources("*"),
+                "sources.cpp": "sources",
+            }
+        )
         client.run("create . --name=hello --version=0.1")
         rrev = client.exported_recipe_revision()
         client.run("upload hello/0.1 -r server0")
@@ -220,7 +232,7 @@ class ConanLib(ConanFile):
         be shared for all the package builds.
         """
 
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
             import os
             from conan import ConanFile
             from conan.tools.files import save
@@ -230,7 +242,7 @@ class ConanLib(ConanFile):
                 def source(self):
                     save(self, os.path.join(self.source_folder, "main.cpp"), "void main() {}")
                     self.output.info("Running source!")
-            ''')
+            """)
 
         client = TestClient()
         client.save({CONANFILE: conanfile})
@@ -250,7 +262,7 @@ class ConanLib(ConanFile):
         next time we create
         """
 
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
             import os
             from conan import ConanFile
 
@@ -259,7 +271,7 @@ class ConanLib(ConanFile):
                 def source(self):
                     self.output.info("Running source!")
                     assert False
-            ''')
+            """)
 
         client = TestClient(light=True)
         client.save({CONANFILE: conanfile})
@@ -322,7 +334,10 @@ def test_source_python_requires():
     c.run("upload * -r=default -c")
     c.run("remove * -c")
 
-    c.save({"conanfile.py": GenConanfile().with_python_requires("pytool/0.1")}, clean_first=True)
+    c.save(
+        {"conanfile.py": GenConanfile().with_python_requires("pytool/0.1")},
+        clean_first=True,
+    )
     c.run("source . ")
     assert "pytool/0.1: Not found in local cache, looking in remotes" in c.out
     assert "pytool/0.1: Downloaded recipe" in c.out

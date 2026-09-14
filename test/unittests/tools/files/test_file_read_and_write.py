@@ -64,5 +64,6 @@ def test_replace_in_file():
     with pytest.raises(ConanException, match="didn't find pattern"):
         replace_in_file(conanfile, file_path, "not existing", "0", encoding="utf-16")
 
-    assert not replace_in_file(conanfile, file_path, "not existing", "0",
-                               encoding="utf-16", strict=False)
+    assert not replace_in_file(
+        conanfile, file_path, "not existing", "0", encoding="utf-16", strict=False
+    )

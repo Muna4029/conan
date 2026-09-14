@@ -6,7 +6,10 @@ from conan.test.utils.tools import TestClient
 resp = Response()
 resp._content = b'{"results": []}'
 resp.status_code = 200
-resp.headers = {"Content-Type": "application/json", "X-Conan-Server-Capabilities": "revisions"}
+resp.headers = {
+    "Content-Type": "application/json",
+    "X-Conan-Server-Capabilities": "revisions",
+}
 
 
 class RequesterMockFalse:
@@ -35,7 +38,6 @@ class RequesterMockTrue(RequesterMockFalse):
 
 
 class TestVerifySSL:
-
     def test_verify_ssl(self):
         c = TestClient(requester_class=RequesterMockTrue)
         c.run("remote add myremote https://localhost --insecure")

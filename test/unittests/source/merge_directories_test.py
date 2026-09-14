@@ -10,7 +10,6 @@ from conan.internal.util.files import mkdir, save, merge_directories, load
 
 
 class TestMergeDirectories:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.source = temp_folder()
@@ -35,7 +34,9 @@ class TestMergeDirectories:
         return ret
 
     def _assert_equals(self, list1, list2):
-        assert set([el.replace("/", "\\") for el in list1]) == set([el.replace("/", "\\") for el in list2])
+        assert set([el.replace("/", "\\") for el in list1]) == set(
+            [el.replace("/", "\\") for el in list2]
+        )
 
     def test_empty_dest_merge(self):
         files = ["file.txt", "subdir/file2.txt"]
@@ -65,8 +66,14 @@ class TestMergeDirectories:
         self._save(self.source, files, "fromsrc")
 
         merge_directories(self.source, self.dest)
-        self._assert_equals(self._get_paths(self.dest), files + files_dest +
-                            ['empty_folder/subempty_folder', ])
+        self._assert_equals(
+            self._get_paths(self.dest),
+            files
+            + files_dest
+            + [
+                "empty_folder/subempty_folder",
+            ],
+        )
         assert load(join(self.dest, "file.txt")) == "fromsrc"
         assert load(join(self.dest, "subdir2/file2.txt")) == "fromdest"
         assert load(join(self.dest, "subdir/file2.txt")) == "fromsrc"

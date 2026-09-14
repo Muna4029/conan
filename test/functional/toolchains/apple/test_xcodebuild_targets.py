@@ -157,25 +157,29 @@ def test_shared_static_targets():
     XcodeBuild build helper we pass the target we want to build depending on the shared option
     """
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "src/hello.cpp": hello_cpp,
-                 "src/hello.hpp": hello_hpp,
-                 "project.yml": xcode_project,
-                 "test_package/conanfile.py": test,
-                 "test_package/src/example.cpp": test_src,
-                 "test_package/CMakeLists.txt": cmakelists,
-                 "conan_config.xcconfig": "",
-                 "static.xcconfig": static_xcconfig,
-                 "dynamic.xcconfig": dynamic_xcconfig})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "src/hello.cpp": hello_cpp,
+            "src/hello.hpp": hello_hpp,
+            "project.yml": xcode_project,
+            "test_package/conanfile.py": test,
+            "test_package/src/example.cpp": test_src,
+            "test_package/CMakeLists.txt": cmakelists,
+            "conan_config.xcconfig": "",
+            "static.xcconfig": static_xcconfig,
+            "dynamic.xcconfig": dynamic_xcconfig,
+        }
+    )
 
     client.run_command("xcodegen generate")
 
-    client.run("create . -o *:shared=True -tf=\"\"")
+    client.run('create . -o *:shared=True -tf=""')
     assert "Packaged 1 '.dylib' file: hello-dynamic.dylib" in client.out
     client.run("test test_package hello/1.0@ -o *:shared=True")
     assert "@rpath/hello-dynamic.dylib" in client.out
 
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
     assert "Packaged 1 '.a' file: libhello-static.a" in client.out
     client.run("test test_package hello/1.0@")
     # check the symbol hellofunction in in the executable

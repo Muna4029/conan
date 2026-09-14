@@ -14,13 +14,25 @@ def folders():
     files = ["foo/var/file.txt"]
     outside_folder = temp_folder()
     symlinks = [
-        (os.path.join(tmp, "foo/var/file.txt"), "foo/var/other/absolute.txt"),  # Absolute link
-        (os.path.join(tmp, "foo/var"), "foo/var/other/other/myfolder"),  # Absolute link folder
+        (
+            os.path.join(tmp, "foo/var/file.txt"),
+            "foo/var/other/absolute.txt",
+        ),  # Absolute link
+        (
+            os.path.join(tmp, "foo/var"),
+            "foo/var/other/other/myfolder",
+        ),  # Absolute link folder
         (os.path.join(tmp, "foo/var/file.txt"), "foo/absolute.txt"),  # Absolute link
         ("../file.txt", "foo/var/other/relative.txt"),  # Relative link
         ("missing.txt", "foo/var/other/broken.txt"),  # Broken link
-        (outside_folder, "foo/var/other/absolute_outside"),  # Absolute folder outside the folder
-        ("../../../../../outside", "foo/absolute_outside"),  # Relative folder outside the folder
+        (
+            outside_folder,
+            "foo/var/other/absolute_outside",
+        ),  # Absolute folder outside the folder
+        (
+            "../../../../../outside",
+            "foo/absolute_outside",
+        ),  # Relative folder outside the folder
     ]
     # Create the files and symlinks
     for path in files:
@@ -44,16 +56,22 @@ def test_absolute_to_relative_symlinks(folders):
     tools.files.symlinks.absolute_to_relative_symlinks(None, folder)
 
     # Check the results
-    linked_to = os.readlink(os.path.join(folder, "foo/var/other/absolute.txt")).replace("\\", "/")
+    linked_to = os.readlink(os.path.join(folder, "foo/var/other/absolute.txt")).replace(
+        "\\", "/"
+    )
     assert linked_to == "../file.txt"
 
-    linked_to = os.readlink(os.path.join(folder, "foo/var/other/other/myfolder")).replace("\\", "/")
+    linked_to = os.readlink(
+        os.path.join(folder, "foo/var/other/other/myfolder")
+    ).replace("\\", "/")
     assert linked_to == "../.."
 
     linked_to = os.readlink(os.path.join(folder, "foo/absolute.txt")).replace("\\", "/")
     assert linked_to == "var/file.txt"
 
-    linked_to = os.readlink(os.path.join(folder, "foo/var/other/relative.txt")).replace("\\", "/")
+    linked_to = os.readlink(os.path.join(folder, "foo/var/other/relative.txt")).replace(
+        "\\", "/"
+    )
     assert linked_to == "../file.txt"
 
     linked_to = os.readlink(os.path.join(folder, "foo/var/other/broken.txt"))
@@ -65,7 +83,6 @@ def test_absolute_to_relative_symlinks(folders):
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Symlinks not in Windows")
 def test_remove_external_symlinks(folders):
-
     folder, outside_folder = folders
     # Remove the external symlinks
     tools.files.symlinks.remove_external_symlinks(None, folder)

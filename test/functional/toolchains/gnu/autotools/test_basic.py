@@ -15,7 +15,9 @@ from test.functional.utils import check_exe_run, check_vs_runtime
 from conan.test.utils.tools import TestClient
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools(matrix_client_nospace):
     client = matrix_client_nospace
@@ -43,22 +45,36 @@ def test_autotools(matrix_client_nospace):
                 autotools.make()
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "configure.ac": configure_ac,
-                 "Makefile.am": makefile_am,
-                 "main.cpp": main}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "configure.ac": configure_ac,
+            "Makefile.am": makefile_am,
+            "main.cpp": main,
+        },
+        clean_first=True,
+    )
 
     client.run("build .")
     client.run_command("./main")
     cxx11_abi = 1 if platform.system() == "Linux" else None
     compiler = "gcc" if platform.system() == "Linux" else "apple-clang"
-    host_arch = client.get_default_host_profile().settings['arch']
-    check_exe_run(client.out, "main", compiler, None, "Release", host_arch, None, cxx11_abi=cxx11_abi)
+    host_arch = client.get_default_host_profile().settings["arch"]
+    check_exe_run(
+        client.out,
+        "main",
+        compiler,
+        None,
+        "Release",
+        host_arch,
+        None,
+        cxx11_abi=cxx11_abi,
+    )
     assert "matrix/1.0: Hello World Release!" in client.out
 
 
 def build_windows_subsystem(profile, make_program, subsystem):
-    """ The AutotoolsDeps can be used also in pure Makefiles, if the makefiles follow
+    """The AutotoolsDeps can be used also in pure Makefiles, if the makefiles follow
     the Autotools conventions
 
     This doesn't run in bash at all, not win_bash, pure Windows terminal
@@ -67,8 +83,10 @@ def build_windows_subsystem(profile, make_program, subsystem):
     client = TestClient(path_with_spaces=False)
     client.run("new cmake_lib -d name=hello -d version=0.1")
     # TODO: Test Windows subsystems in CMake, at least msys is broken
-    os.rename(os.path.join(client.current_folder, "test_package"),
-              os.path.join(client.current_folder, "test_package2"))
+    os.rename(
+        os.path.join(client.current_folder, "test_package"),
+        os.path.join(client.current_folder, "test_package2"),
+    )
     client.save({"profile": profile})
     client.run("create . --profile=profile")
 
@@ -89,25 +107,47 @@ def build_windows_subsystem(profile, make_program, subsystem):
                 autotools = Autotools(self)
                 autotools.make()
         """)
-    client.save({"app.cpp": main,
-                 "Makefile": makefile,
-                 "conanfile.py": conanfile,
-                 "profile": profile}, clean_first=True)
+    client.save(
+        {
+            "app.cpp": main,
+            "Makefile": makefile,
+            "conanfile.py": conanfile,
+            "profile": profile,
+        },
+        clean_first=True,
+    )
 
     client.run("install . --profile=profile")
-    cmd = environment_wrap_command(ConanFileMock(), ["conanbuildenv",
-                                    "conanautotoolstoolchain",
-                                    "conanautotoolsdeps"], client.current_folder, make_program)
+    cmd = environment_wrap_command(
+        ConanFileMock(),
+        ["conanbuildenv", "conanautotoolstoolchain", "conanautotoolsdeps"],
+        client.current_folder,
+        make_program,
+    )
     client.run_command(cmd)
     client.run_command("app")
     # TODO: fill compiler version when ready
-    check_exe_run(client.out, "main", "gcc", None, "Release", "x86_64", None, subsystem=subsystem)
+    check_exe_run(
+        client.out, "main", "gcc", None, "Release", "x86_64", None, subsystem=subsystem
+    )
     assert "hello/0.1: Hello World Release!" in client.out
-    check_vs_runtime("app.exe", client, vs_version="15", build_type="Release", architecture="amd64",
-                     static_runtime=False, subsystem=subsystem)
+    check_vs_runtime(
+        "app.exe",
+        client,
+        vs_version="15",
+        build_type="Release",
+        architecture="amd64",
+        static_runtime=False,
+        subsystem=subsystem,
+    )
 
-    client.save({"app.cpp": gen_function_cpp(name="main", msg="main2",
-                                             includes=["hello"], calls=["hello"])})
+    client.save(
+        {
+            "app.cpp": gen_function_cpp(
+                name="main", msg="main2", includes=["hello"], calls=["hello"]
+            )
+        }
+    )
     # Make sure it is newer
     t = time.time() + 1
     os.utime(os.path.join(client.current_folder, "app.cpp"), (t, t))
@@ -115,8 +155,17 @@ def build_windows_subsystem(profile, make_program, subsystem):
     client.run("build . --profile=profile")
     client.run_command("app")
     # TODO: fill compiler version when ready
-    check_exe_run(client.out, "main2", "gcc", None, "Release", "x86_64", None, cxx11_abi=0,
-                  subsystem=subsystem)
+    check_exe_run(
+        client.out,
+        "main2",
+        "gcc",
+        None,
+        "Release",
+        "x86_64",
+        None,
+        cxx11_abi=0,
+        subsystem=subsystem,
+    )
     assert "hello/0.1: Hello World Release!" in client.out
     return client.out
 
@@ -172,7 +221,9 @@ def test_autotoolsdeps_msys():
     build_windows_subsystem(gcc, make_program="make", subsystem="msys2")
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_install_output_directories(matrix_client_nospace):
     """
@@ -207,17 +258,24 @@ def test_install_output_directories(matrix_client_nospace):
     main = gen_function_cpp(name="main", includes=["matrix"], calls=["matrix"])
     makefile_am = gen_makefile_am(main="main", main_srcs="main.cpp")
     configure_ac = gen_configure_ac()
-    client.save({"conanfile.py": consumer_conanfile,
-                 "configure.ac": configure_ac,
-                 "Makefile.am": makefile_am,
-                 "main.cpp": main}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": consumer_conanfile,
+            "configure.ac": configure_ac,
+            "Makefile.am": makefile_am,
+            "main.cpp": main,
+        },
+        clean_first=True,
+    )
     client.run("create . --name=zlib --version=1.2.11")
     p_folder = client.created_layout().package()
     assert os.path.exists(os.path.join(p_folder, "mybin", "main"))
     assert not os.path.exists(os.path.join(p_folder, "bin"))
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_with_pkgconfigdeps():
     client = TestClient(path_with_spaces=False)
@@ -234,17 +292,21 @@ def test_autotools_with_pkgconfigdeps():
     client.save({"conanfile.txt": consumer_conanfile}, clean_first=True)
     client.run("install .")
 
-    client.run_command(". ./conanautotoolstoolchain.sh && "
-                       "pkg-config --cflags hello && "
-                       "pkg-config --libs-only-l hello && "
-                       "pkg-config --libs-only-L --libs-only-other hello")
+    client.run_command(
+        ". ./conanautotoolstoolchain.sh && "
+        "pkg-config --cflags hello && "
+        "pkg-config --libs-only-l hello && "
+        "pkg-config --libs-only-L --libs-only-other hello"
+    )
 
     assert re.search("I.*/p/include", str(client.out))
     assert "-lhello" in client.out
     assert re.search("L.*/p/lib", str(client.out))
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_option_checking():
     # https://github.com/conan-io/conan/issues/11265
@@ -288,15 +350,19 @@ def test_autotools_option_checking():
             """)
 
     client.save({"test_package/conanfile.py": conanfile})
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
 
     # check that the shared flags are not added to the exe's configure, making it fail
     client.run("test test_package mylib/1.0@")
-    assert "configure: error: unrecognized options: --disable-shared, --enable-static, --with-pic" \
-           not in client.out
+    assert (
+        "configure: error: unrecognized options: --disable-shared, --enable-static, --with-pic"
+        not in client.out
+    )
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_arguments_override():
     client = TestClient(path_with_spaces=False)
@@ -351,24 +417,35 @@ def test_autotools_arguments_override():
         """)
 
     client.save({"conanfile.py": conanfile})
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
 
     # autoreconf args --force that is default should not be there
     assert "--force" not in client.out
     assert "--install" in client.out
 
     # we override the default DESTDIR in the install
-    assert re.search("^.*make install .*DESTDIR=(.*)/somefolder.*$", str(client.out), re.MULTILINE)
+    assert re.search(
+        "^.*make install .*DESTDIR=(.*)/somefolder.*$", str(client.out), re.MULTILINE
+    )
 
     # we did override the default install args
-    for arg in ['--bindir=${prefix}/bin', '--sbindir=${prefix}/bin',
-                '--libdir=${prefix}/lib', '--includedir=${prefix}/include',
-                '--oldincludedir=${prefix}/include', '--datarootdir=${prefix}/res']:
+    for arg in [
+        "--bindir=${prefix}/bin",
+        "--sbindir=${prefix}/bin",
+        "--libdir=${prefix}/lib",
+        "--includedir=${prefix}/include",
+        "--oldincludedir=${prefix}/include",
+        "--datarootdir=${prefix}/res",
+    ]:
         assert arg not in client.out
 
     # and use our custom arguments
-    for arg in ['--prefix=/', '--libdir=${prefix}/customlibfolder',
-                '--includedir=${prefix}/customincludefolder', '--pdfdir=${prefix}/res']:
+    for arg in [
+        "--prefix=/",
+        "--libdir=${prefix}/customlibfolder",
+        "--includedir=${prefix}/customincludefolder",
+        "--pdfdir=${prefix}/res",
+    ]:
         assert arg in client.out
 
     # check the other arguments we set are there
@@ -393,12 +470,14 @@ def test_msvc_extra_flag():
         build_type=Release
         """)
     client = TestClient()
-    conanfile = GenConanfile().with_settings("os", "arch", "compiler", "build_type")\
+    conanfile = (
+        GenConanfile()
+        .with_settings("os", "arch", "compiler", "build_type")
         .with_generator("AutotoolsToolchain")
-    client.save({"conanfile.py": conanfile,
-                "profile": profile})
+    )
+    client.save({"conanfile.py": conanfile, "profile": profile})
     client.run("install . --profile:build=profile --profile:host=profile")
-    toolchain = client.load("conanautotoolstoolchain{}".format('.bat'))
+    toolchain = client.load("conanautotoolstoolchain{}".format(".bat"))
     assert 'set "CXXFLAGS=%CXXFLAGS% -MD -O2 -Ob2 -FS"' in toolchain
     assert 'set "CFLAGS=%CFLAGS% -MD -O2 -Ob2 -FS"' in toolchain
 
@@ -416,6 +495,6 @@ def test_msvc_extra_flag():
                 """)
     client.save({"conanfile.py": conanfile})
     client.run("install . --profile:build=profile --profile:host=profile")
-    toolchain = client.load("conanautotoolstoolchain{}".format('.bat'))
+    toolchain = client.load("conanautotoolstoolchain{}".format(".bat"))
     assert 'set "CXXFLAGS=%CXXFLAGS% -MD -O2 -Ob2 -FS"' in toolchain
     assert 'set "CFLAGS=%CFLAGS% -MD -O2 -Ob2 -FS"' in toolchain

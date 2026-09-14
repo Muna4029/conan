@@ -11,7 +11,6 @@ from ._utils import create_library
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Requires XCode")
 class ToolchainiOSTestCase(unittest.TestCase):
-
     def setUp(self):
         self.t = TestClient()
         create_library(self.t)
@@ -42,8 +41,9 @@ class ToolchainiOSTestCase(unittest.TestCase):
                     cmake.install()
             """)
 
-        self.t.save({
-            'ios_profile': textwrap.dedent("""
+        self.t.save(
+            {
+                "ios_profile": textwrap.dedent("""
                 [settings]
                 os=iOS
                 os.sdk=iphoneos
@@ -54,25 +54,36 @@ class ToolchainiOSTestCase(unittest.TestCase):
                 compiler.libcxx=libc++
                 build_type=Release
             """)
-        })
+            }
+        )
 
     @pytest.mark.tool("cmake", "3.19")
     def test_xcode_generator(self):
-        """ Simplest approach:
-            https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#cross-compiling-for-ios-tvos-or-watchos
+        """Simplest approach:
+        https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#cross-compiling-for-ios-tvos-or-watchos
         """
-        self.t.save({'conanfile.py': self._conanfile.format(generator='"Xcode"')})
+        self.t.save({"conanfile.py": self._conanfile.format(generator='"Xcode"')})
 
         # Build in the cache
-        self.t.run('create . --profile:build=default --profile:host=ios_profile')
-        self.assertIn("Non-fat file: Release-iphoneos/libhello.a is architecture: arm64", self.t.out)
+        self.t.run("create . --profile:build=default --profile:host=ios_profile")
+        self.assertIn(
+            "Non-fat file: Release-iphoneos/libhello.a is architecture: arm64",
+            self.t.out,
+        )
 
         # Build locally
-        self.t.run('install . --profile:host=ios_profile --profile:build=default')
-        self.t.run_command('cmake . -G"Xcode" -DCMAKE_TOOLCHAIN_FILE={}'.format(CMakeToolchain.filename))
-        self.t.run_command('cmake --build . --config Release')
+        self.t.run("install . --profile:host=ios_profile --profile:build=default")
+        self.t.run_command(
+            'cmake . -G"Xcode" -DCMAKE_TOOLCHAIN_FILE={}'.format(
+                CMakeToolchain.filename
+            )
+        )
+        self.t.run_command("cmake --build . --config Release")
         self.t.run_command("lipo -info Release-iphoneos/libhello.a")
-        self.assertIn("Non-fat file: Release-iphoneos/libhello.a is architecture: arm64", self.t.out)
+        self.assertIn(
+            "Non-fat file: Release-iphoneos/libhello.a is architecture: arm64",
+            self.t.out,
+        )
 
     def test_unix_makefiles_generator(self):
         pass

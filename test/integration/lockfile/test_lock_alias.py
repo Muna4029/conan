@@ -12,8 +12,12 @@ def test_conanfile_txt_deps_ranges(requires):
     conanfile.txt locking it dependencies (with version ranges) using alias
     """
     client = TestClient(light=True)
-    client.save({"pkg/conanfile.py": GenConanfile("pkg"),
-                 "consumer/conanfile.txt": f"[{requires}]\npkg/(latest)"})
+    client.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg"),
+            "consumer/conanfile.txt": f"[{requires}]\npkg/(latest)",
+        }
+    )
     client.run("create pkg --version=0.1")
     client.run("create pkg --version=0.2")
     with client.chdir("alias"):
@@ -43,8 +47,12 @@ def test_conanfile_txt_deps_ranges_lock_revisions(requires):
     conanfile.txt locking it dependencies (with version ranges)
     """
     client = TestClient(light=True)
-    client.save({"pkg/conanfile.py": GenConanfile("pkg"),
-                 "consumer/conanfile.txt": f"[{requires}]\npkg/(latest)"})
+    client.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg"),
+            "consumer/conanfile.txt": f"[{requires}]\npkg/(latest)",
+        }
+    )
     client.run("create pkg --version=0.1")
     client.assert_listed_require({"pkg/0.1#a9ec2e5fbb166568d4670a9cd1ef4b26": "Cache"})
     client.run("create pkg --version=0.2")
@@ -56,7 +64,9 @@ def test_conanfile_txt_deps_ranges_lock_revisions(requires):
     assert '"pkg/latest": "pkg/0.1"' in client.load("consumer/conan.lock")
 
     # Create a new revision
-    client.save({"pkg/conanfile.py": GenConanfile("pkg").with_class_attribute("potato=42")})
+    client.save(
+        {"pkg/conanfile.py": GenConanfile("pkg").with_class_attribute("potato=42")}
+    )
     client.run("create pkg --version=0.1")
     client.assert_listed_require({"pkg/0.1#8d60cd02b0b4aa8fe8b3cae32944c61b": "Cache"})
     client.run("install consumer/conanfile.txt")  # use conan.lock by default

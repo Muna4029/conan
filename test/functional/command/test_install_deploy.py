@@ -44,8 +44,12 @@ def client(matrix_client_shared):
 def test_install_deploy(client, powershell):
     c = client
     custom_content = 'message(STATUS "MY_TOOL_VARIABLE=${MY_TOOL_VARIABLE}!")'
-    cmake = gen_cmakelists(appname="my_app", appsources=["main.cpp"], find_package=["matrix", "tool"],
-                           custom_content=custom_content)
+    cmake = gen_cmakelists(
+        appname="my_app",
+        appsources=["main.cpp"],
+        find_package=["matrix", "tool"],
+        custom_content=custom_content,
+    )
     deploy = textwrap.dedent("""
         import os, shutil
 
@@ -57,19 +61,32 @@ def test_install_deploy(client, powershell):
                 shutil.copytree(d.package_folder, new_folder)
                 d.set_deploy_folder(new_folder)
         """)
-    c.save({"conanfile.txt": "[requires]\nmatrix/1.0\ntool/1.0",
+    c.save(
+        {
+            "conanfile.txt": "[requires]\nmatrix/1.0\ntool/1.0",
             "deploy.py": deploy,
             "CMakeLists.txt": cmake,
-            "main.cpp": gen_function_cpp(name="main", includes=["matrix"], calls=["matrix"])},
-           clean_first=True)
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["matrix"], calls=["matrix"]
+            ),
+        },
+        clean_first=True,
+    )
     pwsh = "-c tools.env.virtualenv:powershell=True" if powershell else ""
-    c.run("install . -o *:shared=True "
-          f"--deployer=deploy.py -of=mydeploy -g CMakeToolchain -g CMakeDeps {pwsh}")
+    c.run(
+        "install . -o *:shared=True "
+        f"--deployer=deploy.py -of=mydeploy -g CMakeToolchain -g CMakeDeps {pwsh}"
+    )
     c.run("remove * -c")  # Make sure the cache is clean, no deps there
-    arch = c.get_default_host_profile().settings['arch']
+    arch = c.get_default_host_profile().settings["arch"]
     deps = c.load(f"mydeploy/matrix-release-{arch}-data.cmake")
-    assert 'set(matrix_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/matrix")' in deps
-    assert 'set(matrix_INCLUDE_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/include")' in deps
+    assert (
+        'set(matrix_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/matrix")' in deps
+    )
+    assert (
+        'set(matrix_INCLUDE_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/include")'
+        in deps
+    )
     assert 'set(matrix_LIB_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/lib")' in deps
 
     # We can fully move it to another folder, and still works
@@ -78,8 +95,10 @@ def test_install_deploy(client, powershell):
     shutil.rmtree(c.current_folder)
     c2 = TestClient(current_folder=tmp)
     # I can totally build without errors with deployed
-    c2.run_command("cmake . -DCMAKE_TOOLCHAIN_FILE=mydeploy/conan_toolchain.cmake "
-                   "-DCMAKE_BUILD_TYPE=Release")
+    c2.run_command(
+        "cmake . -DCMAKE_TOOLCHAIN_FILE=mydeploy/conan_toolchain.cmake "
+        "-DCMAKE_BUILD_TYPE=Release"
+    )
     assert "MY_TOOL_VARIABLE=Hello world!!" in c2.out
     c2.run_command("cmake --build . --config Release")
     if platform.system() == "Windows":  # Only the .bat env-generators are relocatable
@@ -96,8 +115,12 @@ def test_install_deploy(client, powershell):
 def test_install_full_deploy_layout(client):
     c = client
     custom_content = 'message(STATUS "MY_TOOL_VARIABLE=${MY_TOOL_VARIABLE}!")'
-    cmake = gen_cmakelists(appname="my_app", appsources=["main.cpp"], find_package=["matrix", "tool"],
-                           custom_content=custom_content)
+    cmake = gen_cmakelists(
+        appname="my_app",
+        appsources=["main.cpp"],
+        find_package=["matrix", "tool"],
+        custom_content=custom_content,
+    )
     conanfile = textwrap.dedent("""
         [requires]
         matrix/1.0
@@ -108,19 +131,30 @@ def test_install_full_deploy_layout(client):
         [layout]
         cmake_layout
         """)
-    c.save({"conanfile.txt": conanfile,
+    c.save(
+        {
+            "conanfile.txt": conanfile,
             "CMakeLists.txt": cmake,
-            "main.cpp": gen_function_cpp(name="main", includes=["matrix"], calls=["matrix"])},
-           clean_first=True)
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["matrix"], calls=["matrix"]
+            ),
+        },
+        clean_first=True,
+    )
     c.run("install . -o *:shared=True --deployer=full_deploy.py")
     c.run("remove * -c")  # Make sure the cache is clean, no deps there
-    arch = c.get_default_host_profile().settings['arch']
+    arch = c.get_default_host_profile().settings["arch"]
     folder = "/Release" if platform.system() != "Windows" else ""
     rel_path = "../../" if platform.system() == "Windows" else "../../../"
     deps = c.load(f"build{folder}/generators/matrix-release-{arch}-data.cmake")
-    assert 'set(matrix_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/' \
-           f'{rel_path}full_deploy/host/matrix/1.0/Release/{arch}")' in deps
-    assert 'set(matrix_INCLUDE_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/include")' in deps
+    assert (
+        'set(matrix_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/'
+        f'{rel_path}full_deploy/host/matrix/1.0/Release/{arch}")' in deps
+    )
+    assert (
+        'set(matrix_INCLUDE_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/include")'
+        in deps
+    )
     assert 'set(matrix_LIB_DIRS_RELEASE "${matrix_PACKAGE_FOLDER_RELEASE}/lib")' in deps
 
     # We can fully move it to another folder, and still works
@@ -131,11 +165,15 @@ def test_install_full_deploy_layout(client):
     with c2.chdir(f"build{folder}"):
         # I can totally build without errors with deployed
         cmakelist = "../.." if platform.system() != "Windows" else ".."
-        c2.run_command(f"cmake {cmakelist} -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake "
-                       "-DCMAKE_BUILD_TYPE=Release")
+        c2.run_command(
+            f"cmake {cmakelist} -DCMAKE_TOOLCHAIN_FILE=generators/conan_toolchain.cmake "
+            "-DCMAKE_BUILD_TYPE=Release"
+        )
         assert "MY_TOOL_VARIABLE=Hello world!!" in c2.out
         c2.run_command("cmake --build . --config Release")
-        if platform.system() == "Windows":  # Only the .bat env-generators are relocatable atm
+        if (
+            platform.system() == "Windows"
+        ):  # Only the .bat env-generators are relocatable atm
             cmd = r"generators\conanrun.bat && Release\my_app.exe"
             # For Lunux: cmd = ". mydeploy/conanrun.sh && ./my_app"
             c2.run_command(cmd)
@@ -154,16 +192,21 @@ def test_copy_files_deploy():
                 for f in os.listdir(bindir):
                     shutil.copy2(os.path.join(bindir, f), os.path.join(output_folder, f))
         """)
-    c.save({"conanfile.txt": "[requires]\nhello/0.1",
+    c.save(
+        {
+            "conanfile.txt": "[requires]\nhello/0.1",
             "deploy.py": deploy,
-            "hello/conanfile.py": GenConanfile("hello", "0.1").with_package_file("bin/file.txt",
-                                                                                 "content!!")})
+            "hello/conanfile.py": GenConanfile("hello", "0.1").with_package_file(
+                "bin/file.txt", "content!!"
+            ),
+        }
+    )
     c.run("create hello")
     c.run("install . --deployer=deploy.py -of=mydeploy")
 
 
 def test_multi_deploy():
-    """ check that we can add more than 1 deployer in the command line, both in local folders
+    """check that we can add more than 1 deployer in the command line, both in local folders
     and in cache.
     Also testing that using .py extension or not, is the same
     Also, the local folder have precedence over the cache extensions
@@ -184,28 +227,34 @@ def test_multi_deploy():
             conanfile = graph.root.conanfile
             conanfile.output.info("deploy cache!!")
         """)
-    save(os.path.join(c.cache_folder, "extensions", "deploy", "deploy_cache.py"), deploy_cache)
+    save(
+        os.path.join(c.cache_folder, "extensions", "deploy", "deploy_cache.py"),
+        deploy_cache,
+    )
     # This should never be called in this test, always the local is found first
-    save(os.path.join(c.cache_folder, "extensions", "deploy", "mydeploy.py"), "CRASH!!!!")
-    c.save({"conanfile.txt": "",
-            "mydeploy.py": deploy1,
-            "sub/mydeploy2.py": deploy2})
+    save(
+        os.path.join(c.cache_folder, "extensions", "deploy", "mydeploy.py"), "CRASH!!!!"
+    )
+    c.save({"conanfile.txt": "", "mydeploy.py": deploy1, "sub/mydeploy2.py": deploy2})
 
-    c.run("install . --deployer=mydeploy --deployer=sub/mydeploy2 --deployer=deploy_cache")
+    c.run(
+        "install . --deployer=mydeploy --deployer=sub/mydeploy2 --deployer=deploy_cache"
+    )
     assert "conanfile.txt: deploy1!!" in c.out
     assert "conanfile.txt: sub/deploy2!!" in c.out
     assert "conanfile.txt: deploy cache!!" in c.out
 
     # Now with .py extension
-    c.run("install . --deployer=mydeploy.py --deployer=sub/mydeploy2.py --deployer=deploy_cache.py")
+    c.run(
+        "install . --deployer=mydeploy.py --deployer=sub/mydeploy2.py --deployer=deploy_cache.py"
+    )
     assert "conanfile.txt: deploy1!!" in c.out
     assert "conanfile.txt: sub/deploy2!!" in c.out
     assert "conanfile.txt: deploy cache!!" in c.out
 
 
 def test_deploy_local_import():
-    """ test that deployers can share some Python code with local imports
-    """
+    """test that deployers can share some Python code with local imports"""
     c = TestClient()
     helper = textwrap.dedent("""
         def myhelper(conanfile):
@@ -216,7 +265,10 @@ def test_deploy_local_import():
         def deploy(graph, output_folder, **kwargs):
             myhelper(graph.root.conanfile)
         """)
-    save(os.path.join(c.cache_folder, "extensions", "deployers", "deploy_cache.py"), deploy_cache)
+    save(
+        os.path.join(c.cache_folder, "extensions", "deployers", "deploy_cache.py"),
+        deploy_cache,
+    )
     save(os.path.join(c.cache_folder, "extensions", "deployers", "helper.py"), helper)
     c.save({"conanfile.txt": ""})
     c.run("install . --deployer=deploy_cache")
@@ -224,8 +276,7 @@ def test_deploy_local_import():
 
 
 def test_builtin_full_deploy():
-    """ check the built-in full_deploy
-    """
+    """check the built-in full_deploy"""
     c = TestClient()
     conanfile = textwrap.dedent("""
         import os
@@ -247,31 +298,53 @@ def test_builtin_full_deploy():
     c.save({"conanfile.txt": "[requires]\ndep/0.1"}, clean_first=True)
     c.run("install . --deployer=full_deploy -of=output -g CMakeDeps")
     assert "Conan built-in full deployer" in c.out
-    c.run("install . --deployer=full_deploy -of=output -g CMakeDeps "
-          "-s build_type=Debug -s arch=x86")
+    c.run(
+        "install . --deployer=full_deploy -of=output -g CMakeDeps "
+        "-s build_type=Debug -s arch=x86"
+    )
 
-    host_arch = c.get_default_host_profile().settings['arch']
-    release = c.load(f"output/full_deploy/host/dep/0.1/Release/{host_arch}/include/hello.h")
+    host_arch = c.get_default_host_profile().settings["arch"]
+    release = c.load(
+        f"output/full_deploy/host/dep/0.1/Release/{host_arch}/include/hello.h"
+    )
     assert f"Release-{host_arch}" in release
     debug = c.load("output/full_deploy/host/dep/0.1/Debug/x86/include/hello.h")
     assert "Debug-x86" in debug
     cmake_release = c.load(f"output/dep-release-{host_arch}-data.cmake")
-    assert 'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")' in cmake_release
-    assert f"${{CMAKE_CURRENT_LIST_DIR}}/full_deploy/host/dep/0.1/Release/{host_arch}" in cmake_release
-    assert 'set(dep_BUILD_MODULES_PATHS_RELEASE ' \
-           '"${dep_PACKAGE_FOLDER_RELEASE}/build/my_tools_host.cmake")' in cmake_release
+    assert (
+        'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")'
+        in cmake_release
+    )
+    assert (
+        f"${{CMAKE_CURRENT_LIST_DIR}}/full_deploy/host/dep/0.1/Release/{host_arch}"
+        in cmake_release
+    )
+    assert (
+        "set(dep_BUILD_MODULES_PATHS_RELEASE "
+        '"${dep_PACKAGE_FOLDER_RELEASE}/build/my_tools_host.cmake")' in cmake_release
+    )
     cmake_debug = c.load("output/dep-debug-x86-data.cmake")
-    assert 'set(dep_INCLUDE_DIRS_DEBUG "${dep_PACKAGE_FOLDER_DEBUG}/include")' in cmake_debug
+    assert (
+        'set(dep_INCLUDE_DIRS_DEBUG "${dep_PACKAGE_FOLDER_DEBUG}/include")'
+        in cmake_debug
+    )
     assert "${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/dep/0.1/Debug/x86" in cmake_debug
-    assert 'set(dep_BUILD_MODULES_PATHS_DEBUG ' \
-           '"${dep_PACKAGE_FOLDER_DEBUG}/build/my_tools_host.cmake")' in cmake_debug
+    assert (
+        "set(dep_BUILD_MODULES_PATHS_DEBUG "
+        '"${dep_PACKAGE_FOLDER_DEBUG}/build/my_tools_host.cmake")' in cmake_debug
+    )
 
 
 def test_deploy_reference():
-    """ check that we can also deploy a reference
-    """
+    """check that we can also deploy a reference"""
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0").with_package_file("include/hi.h", "hi")})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0").with_package_file(
+                "include/hi.h", "hi"
+            )
+        }
+    )
     c.run("create .")
 
     c.run("install  --requires=pkg/1.0 --deployer=full_deploy --output-folder=output")
@@ -288,10 +361,15 @@ def test_deploy_reference():
 
 
 def test_deploy_overwrite():
-    """ calling several times the install --deploy doesn't crash if files already exist
-    """
+    """calling several times the install --deploy doesn't crash if files already exist"""
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0").with_package_file("include/hi.h", "hi")})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0").with_package_file(
+                "include/hi.h", "hi"
+            )
+        }
+    )
     c.run("create .")
 
     c.run("install  --requires=pkg/1.0 --deployer=full_deploy --output-folder=output")
@@ -299,7 +377,13 @@ def test_deploy_overwrite():
     assert "hi" in header
 
     # modify the package
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0").with_package_file("include/hi.h", "bye")})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0").with_package_file(
+                "include/hi.h", "bye"
+            )
+        }
+    )
     c.run("create .")
     c.run("install  --requires=pkg/1.0 --deployer=full_deploy --output-folder=output")
     header = c.load("output/full_deploy/host/pkg/1.0/include/hi.h")
@@ -307,18 +391,19 @@ def test_deploy_overwrite():
 
 
 def test_deploy_editable():
-    """ when deploying something that is editable, with the full_deploy built-in, it will copy the
+    """when deploying something that is editable, with the full_deploy built-in, it will copy the
     editable files as-is, but it doesn't fail at this moment
     """
 
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0"),
-            "src/include/hi.h": "hi"})
+    c.save({"conanfile.py": GenConanfile("pkg", "1.0"), "src/include/hi.h": "hi"})
     c.run("editable add .")
 
     # If we don't change to another folder, the full_deploy will be recursive and fail
     with c.chdir(temp_folder()):
-        c.run("install  --requires=pkg/1.0 --deployer=full_deploy --output-folder=output")
+        c.run(
+            "install  --requires=pkg/1.0 --deployer=full_deploy --output-folder=output"
+        )
         header = c.load("output/full_deploy/host/pkg/1.0/src/include/hi.h")
         assert "hi" in header
 
@@ -339,30 +424,47 @@ def test_deploy_aggregate_components():
             def package_info(self):
                 self.cpp_info.components["mycomp"].libs = ["mycomp"]
             """)
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_settings("build_type")
-                                                          .with_requires("dep/0.1")
-                                                          .with_generator("CMakeDeps"),
-            "consumer/conanfile.py": GenConanfile().with_settings("build_type")
-                                                   .with_requires("pkg/0.1")
-                                                   .with_generator("CMakeDeps")})
+    c.save(
+        {
+            "dep/conanfile.py": dep,
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1")
+            .with_settings("build_type")
+            .with_requires("dep/0.1")
+            .with_generator("CMakeDeps"),
+            "consumer/conanfile.py": GenConanfile()
+            .with_settings("build_type")
+            .with_requires("pkg/0.1")
+            .with_generator("CMakeDeps"),
+        }
+    )
     c.run("export dep")
     c.run("export pkg")
 
     # If we don't change to another folder, the full_deploy will be recursive and fail
-    c.run("install consumer --build=missing --deployer=full_deploy --output-folder=output")
+    c.run(
+        "install consumer --build=missing --deployer=full_deploy --output-folder=output"
+    )
     data = c.load("output/dep-release-data.cmake")
-    assert 'set(dep_PACKAGE_FOLDER_RELEASE ' \
-           '"${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/dep/0.1")' in data
-    assert 'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")' in data
+    assert (
+        "set(dep_PACKAGE_FOLDER_RELEASE "
+        '"${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/dep/0.1")' in data
+    )
+    assert (
+        'set(dep_INCLUDE_DIRS_RELEASE "${dep_PACKAGE_FOLDER_RELEASE}/include")' in data
+    )
 
 
 def test_deploy_single_package():
-    """ Let's try a deploy that executes on a single package reference
-    """
+    """Let's try a deploy that executes on a single package reference"""
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0").with_package_file("include/hi.h", "hi"),
-            "consumer/conanfile.txt": "[requires]\npkg/1.0"})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0").with_package_file(
+                "include/hi.h", "hi"
+            ),
+            "consumer/conanfile.txt": "[requires]\npkg/1.0",
+        }
+    )
     c.run("create .")
 
     # if we deploy one --requires, we get that package
@@ -371,7 +473,9 @@ def test_deploy_single_package():
     assert "hi" in header
 
     # If we deploy a local conanfile.txt, we get deployed its direct dependencies
-    c.run("install consumer/conanfile.txt --deployer=direct_deploy --output-folder=output2")
+    c.run(
+        "install consumer/conanfile.txt --deployer=direct_deploy --output-folder=output2"
+    )
     header = c.load("output2/direct_deploy/pkg/include/hi.h")
     assert "hi" in header
 
@@ -382,21 +486,22 @@ def test_deploy_output_locations():
     def deploy(graph, output_folder, **kwargs):
         graph.root.conanfile.output.info(f"Deployer output: {output_folder}")
     """)
-    tc.save({"conanfile.txt": "",
-             "my_deploy.py": deployer})
+    tc.save({"conanfile.txt": "", "my_deploy.py": deployer})
 
     tmp_folder = temp_folder()
     tc.run(f"install . --deployer=my_deploy -of='{tmp_folder}'")
     assert f"Deployer output: {tmp_folder}" in tc.out
 
     deployer_output = temp_folder()
-    tc.run(f"install . --deployer=my_deploy -of='{tmp_folder}' --deployer-folder='{deployer_output}'")
+    tc.run(
+        f"install . --deployer=my_deploy -of='{tmp_folder}' --deployer-folder='{deployer_output}'"
+    )
     assert f"Deployer output: {deployer_output}" in tc.out
     assert f"Deployer output: {tmp_folder}" not in tc.out
 
 
 def test_not_deploy_absolute_paths():
-    """ Absolute paths, for system packages, don't need to be relativized
+    """Absolute paths, for system packages, don't need to be relativized
     https://github.com/conan-io/conan/issues/15242
     """
     c = TestClient()
@@ -415,8 +520,10 @@ def test_not_deploy_absolute_paths():
     c.run("create .")
 
     # if we deploy one --requires, we get that package
-    c.run("install  --requires=pkg/1.0 --deployer=full_deploy -g CMakeDeps -g CMakeToolchain "
-          "-s os=Linux -s:b os=Linux -s arch=x86_64 -s:b arch=x86_64")
+    c.run(
+        "install  --requires=pkg/1.0 --deployer=full_deploy -g CMakeDeps -g CMakeToolchain "
+        "-s os=Linux -s:b os=Linux -s arch=x86_64 -s:b arch=x86_64"
+    )
     data = c.load("pkg-release-x86_64-data.cmake")
     assert f'set(pkg_INCLUDE_DIRS_RELEASE "{some_abs_path}/myusr/include")' in data
     assert f'set(pkg_LIB_DIRS_RELEASE "{some_abs_path}/myusr/lib")' in data
@@ -432,8 +539,10 @@ def test_deploy_incorrect_folder():
     c.run('install . --deployer=full_deploy --deployer-folder="mydep fold"')
     assert os.path.exists(os.path.join(c.current_folder, "mydep fold"))
     if platform.system() == "Windows":  # This only fails in Windows
-        c.run(r'install . --deployer=full_deploy --deployer-folder="\"mydep fold\""',
-              assert_error=True)
+        c.run(
+            r'install . --deployer=full_deploy --deployer-folder="\"mydep fold\""',
+            assert_error=True,
+        )
         assert "ERROR: Deployer folder cannot be created" in c.out
 
 
@@ -449,18 +558,26 @@ class TestRuntimeDeployer:
                    copy(self, "*.so", src=self.build_folder, dst=self.package_folder)
                    copy(self, "*.dll", src=self.build_folder, dst=self.package_folder)
            """)
-        c.save({"pkga/conanfile.py": conanfile,
+        c.save(
+            {
+                "pkga/conanfile.py": conanfile,
                 "pkga/lib/pkga.so": "",
                 "pkga/bin/pkga.dll": "",
                 "pkgb/conanfile.py": conanfile,
-                "pkgb/lib/pkgb.so": ""})
+                "pkgb/lib/pkgb.so": "",
+            }
+        )
         c.run("export-pkg pkga --name=pkga --version=1.0")
         c.run("export-pkg pkgb --name=pkgb --version=1.0")
-        c.run("install --requires=pkga/1.0 --requires=pkgb/1.0 --deployer=runtime_deploy "
-              "--deployer-folder=myruntime -vvv")
+        c.run(
+            "install --requires=pkga/1.0 --requires=pkgb/1.0 --deployer=runtime_deploy "
+            "--deployer-folder=myruntime -vvv"
+        )
 
         expected = sorted(["pkga.so", "pkgb.so", "pkga.dll"])
-        assert sorted(os.listdir(os.path.join(c.current_folder, "myruntime"))) == expected
+        assert (
+            sorted(os.listdir(os.path.join(c.current_folder, "myruntime"))) == expected
+        )
 
     def test_runtime_not_deploy(self):
         # https://github.com/conan-io/conan/issues/16712
@@ -474,11 +591,17 @@ class TestRuntimeDeployer:
                    copy(self, "*.so", src=self.build_folder, dst=self.package_folder)
                    copy(self, "*.dll", src=self.build_folder, dst=self.package_folder)
            """)
-        c.save({"pkga/conanfile.py": conanfile,
+        c.save(
+            {
+                "pkga/conanfile.py": conanfile,
                 "pkga/lib/pkga.so": "",
-                "pkga/bin/pkga.dll": ""})
+                "pkga/bin/pkga.dll": "",
+            }
+        )
         c.run("export-pkg pkga --name=pkga --version=1.0")
-        c.run("install --requires=pkga/1.0 --deployer=runtime_deploy --deployer-folder=myruntime")
+        c.run(
+            "install --requires=pkga/1.0 --deployer=runtime_deploy --deployer-folder=myruntime"
+        )
         assert os.listdir(os.path.join(c.current_folder, "myruntime")) == []
 
     def test_runtime_deploy_components(self):
@@ -498,26 +621,37 @@ class TestRuntimeDeployer:
                    self.cpp_info.components["a"].libdirs = ["a"]
                    self.cpp_info.components["b"].bindirs = ["b"]
            """)
-        c.save({"pkga/conanfile.py": conanfile,
+        c.save(
+            {
+                "pkga/conanfile.py": conanfile,
                 "pkga/lib/pkga.so": "",
                 "pkga/bin/pkga.dll": "",
                 "pkgb/conanfile.py": conanfile,
-                "pkgb/lib/pkgb.so": ""})
+                "pkgb/lib/pkgb.so": "",
+            }
+        )
         c.run("export-pkg pkga --name=pkga --version=1.0")
         c.run("export-pkg pkgb --name=pkgb --version=1.0")
-        c.run("install --requires=pkga/1.0 --requires=pkgb/1.0 --deployer=runtime_deploy "
-              "--deployer-folder=myruntime -vvv")
+        c.run(
+            "install --requires=pkga/1.0 --requires=pkgb/1.0 --deployer=runtime_deploy "
+            "--deployer-folder=myruntime -vvv"
+        )
 
         expected = sorted(["pkga.so", "pkgb.so", "pkga.dll"])
-        assert sorted(os.listdir(os.path.join(c.current_folder, "myruntime"))) == expected
+        assert (
+            sorted(os.listdir(os.path.join(c.current_folder, "myruntime"))) == expected
+        )
 
 
-@pytest.mark.parametrize("symlink, expected",
-                         [(True, ["libfoo.so.0.1.0", "libfoo.so.0", "libfoo.so"]),
-                          (False, ["libfoo.so.0.1.0"])])
+@pytest.mark.parametrize(
+    "symlink, expected",
+    [
+        (True, ["libfoo.so.0.1.0", "libfoo.so.0", "libfoo.so"]),
+        (False, ["libfoo.so.0.1.0"]),
+    ],
+)
 def test_runtime_deploy_symlinks(symlink, expected):
-    """ The deployer runtime_deploy should preserve symlinks when deploying shared libraries
-    """
+    """The deployer runtime_deploy should preserve symlinks when deploying shared libraries"""
     c = TestClient()
     conanfile = textwrap.dedent("""
            from conan import ConanFile
@@ -531,13 +665,16 @@ def test_runtime_deploy_symlinks(symlink, expected):
                        os.symlink(src="libfoo.so.0.1.0", dst="libfoo.so.0")
                        os.symlink(src="libfoo.so.0", dst="libfoo.so")
            """)
-    c.save({"foo/conanfile.py": conanfile,
-            "foo/lib/libfoo.so.0.1.0": ""})
+    c.save({"foo/conanfile.py": conanfile, "foo/lib/libfoo.so.0.1.0": ""})
     c.run("export-pkg foo/ --name=foo --version=0.1.0")
-    c.run(f"install --requires=foo/0.1.0 --deployer=runtime_deploy --deployer-folder=output -c:a tools.deployer:symlinks={symlink}")
+    c.run(
+        f"install --requires=foo/0.1.0 --deployer=runtime_deploy --deployer-folder=output -c:a tools.deployer:symlinks={symlink}"
+    )
 
     sorted_expected = sorted(expected)
-    assert sorted(os.listdir(os.path.join(c.current_folder, "output"))) == sorted_expected
+    assert (
+        sorted(os.listdir(os.path.join(c.current_folder, "output"))) == sorted_expected
+    )
     link_so_0 = os.path.join(c.current_folder, "output", "libfoo.so.0")
     link_so = os.path.join(c.current_folder, "output", "libfoo.so")
     lib = os.path.join(c.current_folder, "output", "libfoo.so.0.1.0")
@@ -556,9 +693,7 @@ def test_runtime_deploy_symlinks(symlink, expected):
 
 def test_deployer_errors():
     c = TestClient()
-    c.save({"conanfile.txt": "",
-            "mydeploy.py": "",
-            "mydeploy2.py": "nonsense"})
+    c.save({"conanfile.txt": "", "mydeploy.py": "", "mydeploy2.py": "nonsense"})
     c.run("install . --deployer=nonexisting.py", assert_error=True)
     assert "ERROR: Cannot find deployer 'nonexisting.py'" in c.out
     c.run("install . --deployer=mydeploy.py", assert_error=True)
@@ -592,30 +727,47 @@ def test_deploy_relative_paths():
                 shutil.copytree(dep.package_folder, new_folder, symlinks=True)
                 dep.set_deploy_folder(new_folder)
         """)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1"),
             "consumer/conanfile.py": consumer,
-            "mydeploy.py": deploy})
+            "mydeploy.py": deploy,
+        }
+    )
     c.run("create pkg")
 
     # If we don't change to another folder, the full_deploy will be recursive and fail
     c.run("install consumer --build=missing --deployer=mydeploy.py")
     data = c.load("consumer/some/sub/folders/generators/pkg-release-data.cmake")
-    assert 'set(pkg_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/../installed/pkg")' in data
+    assert (
+        'set(pkg_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/../installed/pkg")'
+        in data
+    )
 
 
 @pytest.mark.parametrize("absolute_path", [True, False])
 def test_deploy_output_absolute(absolute_path):
     # https://github.com/conan-io/conan/issues/18560
     c = TestClient()
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1").with_package_file("myfile.txt", "c"),
-            "consumer/conanfile.txt": "[requires]\npkg/0.1"})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_package_file(
+                "myfile.txt", "c"
+            ),
+            "consumer/conanfile.txt": "[requires]\npkg/0.1",
+        }
+    )
     c.run("create pkg")
 
     # It is important to use the forward /myout in Windows, this was the breaking input
     out_path = f"{c.current_folder}/myout" if absolute_path else "myout"
-    c.run("install consumer/conanfile.txt -s arch=x86_64 --deployer=full_deploy -g CMakeDeps "
-          f'-of="{out_path}"')
+    c.run(
+        "install consumer/conanfile.txt -s arch=x86_64 --deployer=full_deploy -g CMakeDeps "
+        f'-of="{out_path}"'
+    )
     assert c.load("myout/full_deploy/host/pkg/0.1/myfile.txt") == "c"
     data = c.load("myout/pkg-release-x86_64-data.cmake")
-    assert ('set(pkg_PACKAGE_FOLDER_RELEASE '
-            '"${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/pkg/0.1")') in data
+    assert (
+        "set(pkg_PACKAGE_FOLDER_RELEASE "
+        '"${CMAKE_CURRENT_LIST_DIR}/full_deploy/host/pkg/0.1")'
+    ) in data

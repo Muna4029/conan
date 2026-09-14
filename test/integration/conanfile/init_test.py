@@ -41,8 +41,7 @@ class InitTest(unittest.TestCase):
                     self.output.info("license: %s" % self.license)
             """)
         data = '{"license": "MIT", "description": "MyDescription"}'
-        client.save({"conanfile.py": conanfile,
-                     "data.json": data})
+        client.save({"conanfile.py": conanfile, "data.json": data})
 
         client.run("export . --name=pkg --version=version")
         self.assertIn("description: MyDescription", client.out)

@@ -19,9 +19,9 @@ class _ResponseMock:
 
     def raise_for_status(self):
         """Raises stored :class:`HTTPError`, if one occurred."""
-        http_error_msg = ''
+        http_error_msg = ""
         if 500 <= self.status_code < 600:
-            http_error_msg = u'%s Server Error: %s' % (self.status_code, self.content)
+            http_error_msg = "%s Server Error: %s" % (self.status_code, self.content)
 
         if http_error_msg:
             raise HTTPError(http_error_msg, response=self)
@@ -38,13 +38,11 @@ class _RequesterMock:
 
 
 class _ConfigMock:
-
     def get(self, conf_name, default=None, check_type=None):
         return 0
 
 
 class RetryDownloadTests(unittest.TestCase):
-
     def setUp(self):
         self.filename = os.path.join(temp_folder(), "anyfile")
         save(self.filename, "anything")
@@ -52,8 +50,11 @@ class RetryDownloadTests(unittest.TestCase):
     def test_error_401(self):
         output = RedirectedTestOutput()
         with redirect_output(output):
-            uploader = FileUploader(requester=_RequesterMock(401, "content"),
-                                    verify=False, config=_ConfigMock())
+            uploader = FileUploader(
+                requester=_RequesterMock(401, "content"),
+                verify=False,
+                config=_ConfigMock(),
+            )
             with self.assertRaisesRegex(AuthenticationException, "content"):
                 uploader.upload(url="fake", abs_path=self.filename, retry=2)
             output_lines = output.getvalue().splitlines()
@@ -64,11 +65,16 @@ class RetryDownloadTests(unittest.TestCase):
     def test_error_403_forbidden(self):
         output = RedirectedTestOutput()
         with redirect_output(output):
-            uploader = FileUploader(requester=_RequesterMock(403, "content"),
-                                    verify=False, config=_ConfigMock())
+            uploader = FileUploader(
+                requester=_RequesterMock(403, "content"),
+                verify=False,
+                config=_ConfigMock(),
+            )
             with self.assertRaisesRegex(ForbiddenException, "content"):
                 auth = namedtuple("auth", "bearer")
-                uploader.upload(url="fake", abs_path=self.filename, retry=2, auth=auth("token"))
+                uploader.upload(
+                    url="fake", abs_path=self.filename, retry=2, auth=auth("token")
+                )
             output_lines = output.getvalue().splitlines()
             counter = Counter(output_lines)
             self.assertEqual(counter["ERROR: content"], 0)
@@ -77,11 +83,16 @@ class RetryDownloadTests(unittest.TestCase):
     def test_error_403_authentication(self):
         output = RedirectedTestOutput()
         with redirect_output(output):
-            uploader = FileUploader(requester=_RequesterMock(403, "content"),
-                                    verify=False, config=_ConfigMock())
+            uploader = FileUploader(
+                requester=_RequesterMock(403, "content"),
+                verify=False,
+                config=_ConfigMock(),
+            )
             with self.assertRaisesRegex(AuthenticationException, "content"):
                 auth = namedtuple("auth", "bearer")
-                uploader.upload(url="fake", abs_path=self.filename, retry=2, auth=auth(None))
+                uploader.upload(
+                    url="fake", abs_path=self.filename, retry=2, auth=auth(None)
+                )
             output_lines = output.getvalue().splitlines()
             counter = Counter(output_lines)
             self.assertEqual(counter["ERROR: content"], 0)
@@ -89,13 +100,14 @@ class RetryDownloadTests(unittest.TestCase):
 
     def test_error_requests(self):
         class _RequesterMock:
-
             def put(self, *args, **kwargs):
                 raise Exception("any exception")
 
         output = RedirectedTestOutput()
         with redirect_output(output):
-            uploader = FileUploader(requester=_RequesterMock(), verify=False, config=_ConfigMock())
+            uploader = FileUploader(
+                requester=_RequesterMock(), verify=False, config=_ConfigMock()
+            )
             with self.assertRaisesRegex(Exception, "any exception"):
                 uploader.upload(url="fake", abs_path=self.filename, retry=2)
             output_lines = output.getvalue().splitlines()
@@ -106,8 +118,11 @@ class RetryDownloadTests(unittest.TestCase):
     def test_error_500(self):
         output = RedirectedTestOutput()
         with redirect_output(output):
-            uploader = FileUploader(requester=_RequesterMock(500, "content"), verify=False,
-                                    config=_ConfigMock())
+            uploader = FileUploader(
+                requester=_RequesterMock(500, "content"),
+                verify=False,
+                config=_ConfigMock(),
+            )
             with self.assertRaisesRegex(Exception, "500 Server Error: content"):
                 uploader.upload(url="fake", abs_path=self.filename, retry=2)
             output_lines = output.getvalue().splitlines()

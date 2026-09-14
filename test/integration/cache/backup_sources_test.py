@@ -21,15 +21,20 @@ class TestDownloadCacheBackupSources:
     def test_users_download_cache_summary(self):
         def custom_download(this, url, filepath, *args, **kwargs):  # noqa
             assert not url.startswith("http://myback")
-            save(filepath, f"Hello, world!")
+            save(filepath, "Hello, world!")
 
-        with mock.patch("conan.internal.rest.file_downloader.FileDownloader.download",
-                        custom_download):
+        with mock.patch(
+            "conan.internal.rest.file_downloader.FileDownloader.download",
+            custom_download,
+        ):
             client = TestClient(default_server_user=True, light=True)
             tmp_folder = temp_folder()
             client.save_home(
-                {"global.conf": f"core.sources:download_cache={tmp_folder}\n"
-                                "core.sources:download_urls=['origin', 'http://myback']"})
+                {
+                    "global.conf": f"core.sources:download_cache={tmp_folder}\n"
+                    "core.sources:download_urls=['origin', 'http://myback']"
+                }
+            )
             sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
             conanfile = textwrap.dedent(f"""
                 from conan import ConanFile
@@ -44,7 +49,9 @@ class TestDownloadCacheBackupSources:
 
             assert 2 == len(os.listdir(os.path.join(tmp_folder, "s")))
             content = json.loads(load(os.path.join(tmp_folder, "s", sha256 + ".json")))
-            assert "http://localhost:5000/myfile.txt" in content["references"]["unknown"]
+            assert (
+                "http://localhost:5000/myfile.txt" in content["references"]["unknown"]
+            )
             assert len(content["references"]["unknown"]) == 1
 
             conanfile = textwrap.dedent(f"""
@@ -62,8 +69,13 @@ class TestDownloadCacheBackupSources:
 
             assert 2 == len(os.listdir(os.path.join(tmp_folder, "s")))
             content = json.loads(load(os.path.join(tmp_folder, "s", sha256 + ".json")))
-            assert "http://localhost.mirror:5000/myfile.txt" in content["references"]["unknown"]
-            assert "http://localhost:5000/myfile.txt" in content["references"]["unknown"]
+            assert (
+                "http://localhost.mirror:5000/myfile.txt"
+                in content["references"]["unknown"]
+            )
+            assert (
+                "http://localhost:5000/myfile.txt" in content["references"]["unknown"]
+            )
             assert len(content["references"]["unknown"]) == 2
 
             # Ensure the cache is working and we didn't break anything by modifying the summary
@@ -72,13 +84,15 @@ class TestDownloadCacheBackupSources:
 
             client.run("create .")
             content = json.loads(load(os.path.join(tmp_folder, "s", sha256 + ".json")))
-            assert content["references"]["pkg/1.0"] == \
-                   ["http://localhost.mirror:5000/myfile.txt"]
+            assert content["references"]["pkg/1.0"] == [
+                "http://localhost.mirror:5000/myfile.txt"
+            ]
 
             client.run("create . --user=barbarian --channel=stable")
             content = json.loads(load(os.path.join(tmp_folder, "s", sha256 + ".json")))
-            assert content["references"]["pkg/1.0@barbarian/stable"] == \
-                   ["http://localhost.mirror:5000/myfile.txt"]
+            assert content["references"]["pkg/1.0@barbarian/stable"] == [
+                "http://localhost.mirror:5000/myfile.txt"
+            ]
 
     @pytest.fixture(autouse=True)
     def _setup(self):
@@ -88,20 +102,46 @@ class TestDownloadCacheBackupSources:
         self.download_cache_folder = temp_folder()
 
     def test_upload_sources_backup(self):
-        http_server_base_folder_backups = os.path.join(self.file_server.store, "backups")
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_backups = os.path.join(
+            self.file_server.store, "backups"
+        )
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
-        save(os.path.join(self.file_server.store, "mycompanystorage", "mycompanyfile.txt"),
-             "Business stuff")
-        save(os.path.join(http_server_base_folder_internet, "duplicated1.txt"), "I am duplicated #1")
-        save(os.path.join(self.file_server.store, "mycompanystorage2", "duplicated2.txt"),
-             "I am duplicated #2")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
+        save(
+            os.path.join(
+                self.file_server.store, "mycompanystorage", "mycompanyfile.txt"
+            ),
+            "Business stuff",
+        )
+        save(
+            os.path.join(http_server_base_folder_internet, "duplicated1.txt"),
+            "I am duplicated #1",
+        )
+        save(
+            os.path.join(
+                self.file_server.store, "mycompanystorage2", "duplicated2.txt"
+            ),
+            "I am duplicated #2",
+        )
 
-        hello_world_sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        mycompanyfile_sha256 = "7f1d5d6ae44eb93061b0e07661bd8cbac95a7c51fa204570bf7e24d877d4a224"
-        duplicated1_sha256 = "744aca0436e2e355c285fa926a37997df488544589cec2260fc9db969a3c78df"
-        duplicated2_sha256 = "66ba2ba05211da3b0b0cb0a08f18e1d9077e7321c2be27887371ec37fade376d"
+        hello_world_sha256 = (
+            "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
+        )
+        mycompanyfile_sha256 = (
+            "7f1d5d6ae44eb93061b0e07661bd8cbac95a7c51fa204570bf7e24d877d4a224"
+        )
+        duplicated1_sha256 = (
+            "744aca0436e2e355c285fa926a37997df488544589cec2260fc9db969a3c78df"
+        )
+        duplicated2_sha256 = (
+            "66ba2ba05211da3b0b0cb0a08f18e1d9077e7321c2be27887371ec37fade376d"
+        )
 
         conanfile = textwrap.dedent(f"""
             from conan import ConanFile
@@ -140,20 +180,26 @@ class TestDownloadCacheBackupSources:
         # Ensure that a None url is only warned about but no exception is thrown,
         # this is possible in CI systems that substitute an env var and fail to give it a value
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=[None, 'origin', '{self.file_server.fake_url}/backups/']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backups/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=[None, 'origin', '{self.file_server.fake_url}/backups/']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backups/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .", assert_error=True)
         assert "Trying to download sources from None backup remote" in self.client.out
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/backups/']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backups/\n"
-                            f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', "
-                            f"'{self.file_server.fake_url}/mycompanystorage2/']"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/backups/']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backups/\n"
+                f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', "
+                f"'{self.file_server.fake_url}/mycompanystorage2/']"
+            }
+        )
         self.client.run("create .")
 
         self.client.run("upload * -c -r=default")
@@ -186,27 +232,50 @@ class TestDownloadCacheBackupSources:
         mkdir(self.download_cache_folder)
         # Everything the same, but try to download from backup first
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backups/', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backups/\n"
-                            f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', '{self.file_server.fake_url}/mycompanystorage2/']"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backups/', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backups/\n"
+                f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', '{self.file_server.fake_url}/mycompanystorage2/']"
+            }
+        )
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup" in self.client.out
-        assert f"File {self.file_server.fake_url}/mycompanystorage/mycompanyfile.txt not found in {self.file_server.fake_url}/backups/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup"
+            in self.client.out
+        )
+        assert (
+            f"File {self.file_server.fake_url}/mycompanystorage/mycompanyfile.txt not found in {self.file_server.fake_url}/backups/"
+            in self.client.out
+        )
 
         # Ensure defaults backup folder works if it's not set in global.conf
         # (The rest is needed to exercise the rest of the code)
         self.client.save_home(
-            {"global.conf": f"core.sources:download_urls=['{self.file_server.fake_url}/backups/', 'origin']\n"
-                            f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', '{self.file_server.fake_url}/mycompanystorage2/']"})
+            {
+                "global.conf": f"core.sources:download_urls=['{self.file_server.fake_url}/backups/', 'origin']\n"
+                f"core.sources:exclude_urls=['{self.file_server.fake_url}/mycompanystorage/', '{self.file_server.fake_url}/mycompanystorage2/']"
+            }
+        )
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup" in self.client.out
-        assert f"File {self.file_server.fake_url}/mycompanystorage/mycompanyfile.txt not found in {self.file_server.fake_url}/backups/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup"
+            in self.client.out
+        )
+        assert (
+            f"File {self.file_server.fake_url}/mycompanystorage/mycompanyfile.txt not found in {self.file_server.fake_url}/backups/"
+            in self.client.out
+        )
 
     def test_unknown_handling(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         conanfile = textwrap.dedent(f"""
@@ -221,9 +290,12 @@ class TestDownloadCacheBackupSources:
                             """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backups/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backups/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("source .")
@@ -242,9 +314,14 @@ class TestDownloadCacheBackupSources:
         assert len(os.listdir(s_folder)) == 0
 
     def test_download_origin_first(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         conanfile = textwrap.dedent(f"""
@@ -259,9 +336,12 @@ class TestDownloadCacheBackupSources:
                     """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/backup/']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/backup/']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .")
@@ -270,14 +350,25 @@ class TestDownloadCacheBackupSources:
         rmdir(self.download_cache_folder)
 
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in origin" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in origin"
+            in self.client.out
+        )
         self.client.run("source .")
-        assert f"Source {self.file_server.fake_url}/internet/myfile.txt retrieved from local download cache" in self.client.out
+        assert (
+            f"Source {self.file_server.fake_url}/internet/myfile.txt retrieved from local download cache"
+            in self.client.out
+        )
 
     def test_download_origin_last(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         conanfile = textwrap.dedent(f"""
@@ -292,22 +383,34 @@ class TestDownloadCacheBackupSources:
                     """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create . -vv")
-        assert f"WARN: File {self.file_server.fake_url}/internet/myfile.txt not found in {self.file_server.fake_url}/backup/" in self.client.out
+        assert (
+            f"WARN: File {self.file_server.fake_url}/internet/myfile.txt not found in {self.file_server.fake_url}/backup/"
+            in self.client.out
+        )
         assert f"Downloaded {self.file_server.fake_url}/internet/myfile.txt from {self.file_server.fake_url}/internet/myfile.txt"
         self.client.run("upload * -c -r=default")
 
         rmdir(self.download_cache_folder)
 
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup"
+            in self.client.out
+        )
         self.client.run("source .")
-        assert f"Source {self.file_server.fake_url}/internet/myfile.txt retrieved from local download cache" in self.client.out
+        assert (
+            f"Source {self.file_server.fake_url}/internet/myfile.txt retrieved from local download cache"
+            in self.client.out
+        )
 
     def test_sources_backup_server_error_500(self):
         conanfile = textwrap.dedent(f"""
@@ -322,9 +425,12 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/internal_error/', "
-                            f"'{self.file_server.fake_url}/unused/']\n"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/internal_error/', "
+                f"'{self.file_server.fake_url}/unused/']\n"
+            }
+        )
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .", assert_error=True)
         assert "ConanException: Error 500 downloading file" in self.client.out
@@ -342,9 +448,12 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.download:retry=0\n"
-                            f"core.sources:download_urls=['error_server', 'origin']\n"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.download:retry=0\n"
+                f"core.sources:download_urls=['error_server', 'origin']\n"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .", assert_error=True)
@@ -356,10 +465,12 @@ class TestDownloadCacheBackupSources:
         http_server_base_folder_backups = temp_folder()
         http_server_base_folder_internet = temp_folder()
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         class TestFileServer2:
-
             def __init__(self):
                 self.fake_url = "http://fake%s.com" % str(uuid.uuid4()).replace("-", "")
                 self.root_app = bottle.Bottle()
@@ -389,7 +500,7 @@ class TestDownloadCacheBackupSources:
                     if ret:
                         return ret
                     dest = os.path.join(http_server_base_folder_backups, file)
-                    with open(dest, 'wb') as f:
+                    with open(dest, "wb") as f:
                         f.write(request.body.read())
 
         http_server = TestFileServer2()
@@ -409,30 +520,47 @@ class TestDownloadCacheBackupSources:
             """)
 
         client.save_home(
-            {"global.conf": f"core.sources:download_cache={download_cache_folder}\n"
-                            f"core.sources:download_urls=['{http_server.fake_url}/downloader/', 'origin']\n"
-                            f"core.sources:upload_url={http_server.fake_url}/uploader/"})
+            {
+                "global.conf": f"core.sources:download_cache={download_cache_folder}\n"
+                f"core.sources:download_urls=['{http_server.fake_url}/downloader/', 'origin']\n"
+                f"core.sources:upload_url={http_server.fake_url}/uploader/"
+            }
+        )
 
         client.save({"conanfile.py": conanfile})
         client.run("create .", assert_error=True)
-        assert f"ConanException: The source backup server '{http_server.fake_url}" \
-               f"/downloader/' needs authentication" in client.out
-        content = {"credentials": [
-            {"url": f"{http_server.fake_url}", "token": "mytoken"}
-        ]}
-        save(os.path.join(client.cache_folder, "source_credentials.json"), json.dumps(content))
+        assert (
+            f"ConanException: The source backup server '{http_server.fake_url}"
+            f"/downloader/' needs authentication" in client.out
+        )
+        content = {
+            "credentials": [{"url": f"{http_server.fake_url}", "token": "mytoken"}]
+        }
+        save(
+            os.path.join(client.cache_folder, "source_credentials.json"),
+            json.dumps(content),
+        )
 
         client.run("create .")
         assert "CONTENT: Hello, world!" in client.out
         client.run("upload * -c -r=default", assert_error=True)
-        assert f"The source backup server '{http_server.fake_url}" \
-               f"/uploader/' needs authentication" in client.out
-        content = {"credentials": [
-            {"url": f"{http_server.fake_url}", "token": "myuploadtoken"}
-        ]}
+        assert (
+            f"The source backup server '{http_server.fake_url}"
+            f"/uploader/' needs authentication" in client.out
+        )
+        content = {
+            "credentials": [
+                {"url": f"{http_server.fake_url}", "token": "myuploadtoken"}
+            ]
+        }
         # Now use the correct UPLOAD token
-        save(os.path.join(client.cache_folder, "source_credentials.json"), json.dumps(content))
-        client.run("upload * -c -r=default --force")  # need --force to guarantee cached updated
+        save(
+            os.path.join(client.cache_folder, "source_credentials.json"),
+            json.dumps(content),
+        )
+        client.run(
+            "upload * -c -r=default --force"
+        )  # need --force to guarantee cached updated
 
         server_contents = os.listdir(http_server_base_folder_backups)
         assert sha256 in server_contents
@@ -441,11 +569,14 @@ class TestDownloadCacheBackupSources:
         client.run("upload * -c -r=default")
         assert "already in server, skipping upload" in client.out
 
-        content = {"credentials": [
-            {"url": f"{http_server.fake_url}", "token": "mytoken"}
-        ]}
+        content = {
+            "credentials": [{"url": f"{http_server.fake_url}", "token": "mytoken"}]
+        }
 
-        save(os.path.join(client.cache_folder, "source_credentials.json"), json.dumps(content))
+        save(
+            os.path.join(client.cache_folder, "source_credentials.json"),
+            json.dumps(content),
+        )
         rmdir(download_cache_folder)
 
         # Remove the "remote" myfile.txt so if it raises
@@ -453,18 +584,31 @@ class TestDownloadCacheBackupSources:
         os.remove(os.path.join(http_server_base_folder_internet, "myfile.txt"))
 
         client.run("source .")
-        assert f"Sources for {http_server.fake_url}/internet/myfile.txt found in remote backup" in client.out
+        assert (
+            f"Sources for {http_server.fake_url}/internet/myfile.txt found in remote backup"
+            in client.out
+        )
         assert "CONTENT: Hello, world!" in client.out
         client.run("source .")
-        assert f"Source {http_server.fake_url}/internet/myfile.txt retrieved from local download cache" in client.out
+        assert (
+            f"Source {http_server.fake_url}/internet/myfile.txt retrieved from local download cache"
+            in client.out
+        )
         assert "CONTENT: Hello, world!" in client.out
 
     def test_download_sources_multiurl(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
         http_server_base_folder_backup = os.path.join(self.file_server.store, "backup")
-        http_server_base_folder_downloader = os.path.join(self.file_server.store, "downloader")
+        http_server_base_folder_downloader = os.path.join(
+            self.file_server.store, "downloader"
+        )
 
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
 
         conanfile = textwrap.dedent(f"""
@@ -479,10 +623,13 @@ class TestDownloadCacheBackupSources:
             """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/\n"
-                            f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/downloader/', "
-                            f"'{self.file_server.fake_url}/backup/']"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/\n"
+                f"core.sources:download_urls=['origin', '{self.file_server.fake_url}/downloader/', "
+                f"'{self.file_server.fake_url}/backup/']"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .")
@@ -499,23 +646,35 @@ class TestDownloadCacheBackupSources:
         remove(os.path.join(http_server_base_folder_internet, "myfile.txt"))
 
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/backup/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/backup/"
+            in self.client.out
+        )
 
         # And if the first one has them, prefer it before others in the list
-        save(os.path.join(http_server_base_folder_downloader, sha256),
-             load(os.path.join(http_server_base_folder_backup, sha256)))
-        save(os.path.join(http_server_base_folder_downloader, sha256 + ".json"),
-             load(os.path.join(http_server_base_folder_backup, sha256 + ".json")))
+        save(
+            os.path.join(http_server_base_folder_downloader, sha256),
+            load(os.path.join(http_server_base_folder_backup, sha256)),
+        )
+        save(
+            os.path.join(http_server_base_folder_downloader, sha256 + ".json"),
+            load(os.path.join(http_server_base_folder_backup, sha256 + ".json")),
+        )
         rmdir(self.download_cache_folder)
         self.client.run("source .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/downloader/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/downloader/"
+            in self.client.out
+        )
 
     def test_list_urls_miss(self):
         def custom_download(this, url, *args, **kwargs):
             raise NotFoundException()
 
-        with mock.patch("conan.internal.rest.file_downloader.FileDownloader.download",
-                        custom_download):
+        with mock.patch(
+            "conan.internal.rest.file_downloader.FileDownloader.download",
+            custom_download,
+        ):
             client = TestClient(default_server_user=True, light=True)
             download_cache_folder = temp_folder()
 
@@ -532,21 +691,34 @@ class TestDownloadCacheBackupSources:
                 """)
 
             client.save_home(
-                {"global.conf": f"core.sources:download_cache={download_cache_folder}\n"
-                                f"core.sources:download_urls=['origin', 'http://extrafake/']\n"})
+                {
+                    "global.conf": f"core.sources:download_cache={download_cache_folder}\n"
+                    f"core.sources:download_urls=['origin', 'http://extrafake/']\n"
+                }
+            )
             client.save({"conanfile.py": conanfile})
             client.run("source .", assert_error=True)
-            assert "WARN: Sources for http://fake/myfile.txt failed in 'origin'" in client.out
+            assert (
+                "WARN: Sources for http://fake/myfile.txt failed in 'origin'"
+                in client.out
+            )
             assert "WARN: Checking backups" in client.out
-            assert "NotFoundException: File http://fake/myfile.txt " \
-                   "not found in ['origin', 'http://extrafake/']" in client.out
+            assert (
+                "NotFoundException: File http://fake/myfile.txt "
+                "not found in ['origin', 'http://extrafake/']" in client.out
+            )
 
     def test_ok_when_origin_breaks_midway_list(self):
-        http_server_base_folder_backup2 = os.path.join(self.file_server.store, "backup2")
+        http_server_base_folder_backup2 = os.path.join(
+            self.file_server.store, "backup2"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         save(os.path.join(http_server_base_folder_backup2, sha256), "Hello, world!")
-        save(os.path.join(http_server_base_folder_backup2, sha256 + ".json"), '{"references": {}}')
+        save(
+            os.path.join(http_server_base_folder_backup2, sha256 + ".json"),
+            '{"references": {}}',
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -560,14 +732,20 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": "tools.files.download:retry=0\n"
-                            f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/empty/', "
-                            f"'origin', '{self.file_server.fake_url}/backup2/']\n"})
+            {
+                "global.conf": "tools.files.download:retry=0\n"
+                f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/empty/', "
+                f"'origin', '{self.file_server.fake_url}/backup2/']\n"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .")
-        assert f"Sources for {self.file_server.fake_url}/internal_error/myfile.txt found in remote backup {self.file_server.fake_url}/backup2/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internal_error/myfile.txt found in remote backup {self.file_server.fake_url}/backup2/"
+            in self.client.out
+        )
 
     def test_ok_when_origin_authorization_error(self):
         client = TestClient(default_server_user=True, light=True)
@@ -577,10 +755,12 @@ class TestDownloadCacheBackupSources:
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         save(os.path.join(http_server_base_folder_backup2, sha256), "Hello, world!")
-        save(os.path.join(http_server_base_folder_backup2, sha256 + ".json"), '{"references": {}}')
+        save(
+            os.path.join(http_server_base_folder_backup2, sha256 + ".json"),
+            '{"references": {}}',
+        )
 
         class TestFileServer2:
-
             def __init__(self, store=None):
                 self.store = store or temp_folder(path_with_spaces=False)
                 mkdir(self.store)
@@ -604,7 +784,7 @@ class TestDownloadCacheBackupSources:
                     if file in os.listdir(http_server_base_folder_backup1):
                         return HTTPError(401, "You Are Not Allowed Here")
                     dest = os.path.join(http_server_base_folder_backup1, file)
-                    with open(dest, 'wb') as f:
+                    with open(dest, "wb") as f:
                         f.write(request.body.read())
 
                 @app.route("/downloader2/<file>", method=["GET"])
@@ -624,15 +804,22 @@ class TestDownloadCacheBackupSources:
                    download(self, "{http_server.fake_url}/internet/myfile.txt", "myfile.txt",
                             sha256="{sha256}")
            """)
-        client.save_home({"global.conf": f"core.sources:download_cache={download_cache_folder}\n"
-                          f"core.sources:download_urls=['{http_server.fake_url}/downloader1/', "
-                          f"'origin', '{http_server.fake_url}/downloader2/']\n"
-                          f"core.sources:upload_url={http_server.fake_url}/downloader1/\n"
-                          "core.upload:retry=0\ncore.download:retry=0"})
+        client.save_home(
+            {
+                "global.conf": f"core.sources:download_cache={download_cache_folder}\n"
+                f"core.sources:download_urls=['{http_server.fake_url}/downloader1/', "
+                f"'origin', '{http_server.fake_url}/downloader2/']\n"
+                f"core.sources:upload_url={http_server.fake_url}/downloader1/\n"
+                "core.upload:retry=0\ncore.download:retry=0"
+            }
+        )
 
         client.save({"conanfile.py": conanfile})
         client.run("create .")
-        assert f"Sources for {http_server.fake_url}/internet/myfile.txt found in remote backup {http_server.fake_url}/downloader2/" in client.out
+        assert (
+            f"Sources for {http_server.fake_url}/internet/myfile.txt found in remote backup {http_server.fake_url}/downloader2/"
+            in client.out
+        )
         # TODO: Check better message with Authentication error message
         assert "failed in 'origin'" in client.out
 
@@ -645,17 +832,29 @@ class TestDownloadCacheBackupSources:
         client.run("remove * -c -r=default")
 
         client.run("upload * -c -r=default")
-        assert f"Could not update summary '{sha256}.json' in backup sources server" in client.out
+        assert (
+            f"Could not update summary '{sha256}.json' in backup sources server"
+            in client.out
+        )
 
     def test_ok_when_origin_bad_sha256(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
-        http_server_base_folder_backup2 = os.path.join(self.file_server.store, "backup2")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
+        http_server_base_folder_backup2 = os.path.join(
+            self.file_server.store, "backup2"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
         # This file's sha is not the one in the line above
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Bye, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"), "Bye, world!"
+        )
         save(os.path.join(http_server_base_folder_backup2, sha256), "Hello, world!")
-        save(os.path.join(http_server_base_folder_backup2, sha256 + ".json"), '{"references": {}}')
+        save(
+            os.path.join(http_server_base_folder_backup2, sha256 + ".json"),
+            '{"references": {}}',
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -669,23 +868,34 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup1/', "
-                            f"'origin', '{self.file_server.fake_url}/backup2/']\n"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup1/', "
+                f"'origin', '{self.file_server.fake_url}/backup2/']\n"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("create .")
-        assert f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/backup2/" in self.client.out
+        assert (
+            f"Sources for {self.file_server.fake_url}/internet/myfile.txt found in remote backup {self.file_server.fake_url}/backup2/"
+            in self.client.out
+        )
         assert "sha256 signature failed for" in self.client.out
 
     def test_export_then_upload_workflow(self):
         mkdir(os.path.join(self.download_cache_folder, "s"))
 
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
         http_server_base_folder_backup = os.path.join(self.file_server.store, "backup")
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -699,9 +909,12 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("export .")
@@ -716,10 +929,15 @@ class TestDownloadCacheBackupSources:
         assert len(backups) == 0
 
     def test_export_then_upload_recipe_only_workflow(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -733,9 +951,12 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("export .")
@@ -744,16 +965,24 @@ class TestDownloadCacheBackupSources:
         # This second run used to crash because we thought there would be some packages always
         self.client.run("upload * --only-recipe -c -r=default")
         # Ensure we are testing for an already uploaded recipe
-        assert f"Recipe 'pkg/1.0#{exported_rev}' already in server, skipping upload" in self.client.out
+        assert (
+            f"Recipe 'pkg/1.0#{exported_rev}' already in server, skipping upload"
+            in self.client.out
+        )
 
     def test_source_then_upload_workflow(self):
         mkdir(os.path.join(self.download_cache_folder, "s"))
 
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
         http_server_base_folder_backup = os.path.join(self.file_server.store, "backup")
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -765,9 +994,12 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("source .")
@@ -777,10 +1009,15 @@ class TestDownloadCacheBackupSources:
         assert sha256 in os.listdir(http_server_base_folder_backup)
 
     def test_backup_source_corrupted_download_handling(self):
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -792,7 +1029,8 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}"})
+            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}"}
+        )
 
         self.client.save({"conanfile.py": conanfile})
         self.client.run("source .")
@@ -809,10 +1047,15 @@ class TestDownloadCacheBackupSources:
         def custom_download(this, *args, **kwargs):
             raise exception()
 
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -824,19 +1067,29 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"tools.files.download:retry=0"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"tools.files.download:retry=0"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
 
-        with mock.patch("conan.internal.rest.file_downloader.FileDownloader._download_file",
-                        custom_download):
+        with mock.patch(
+            "conan.internal.rest.file_downloader.FileDownloader._download_file",
+            custom_download,
+        ):
             self.client.run("source .", assert_error=True)
             # The mock does not actually download a file, let's add it for the test
-            save(os.path.join(self.download_cache_folder, "s", sha256), "__corrupted download__")
+            save(
+                os.path.join(self.download_cache_folder, "s", sha256),
+                "__corrupted download__",
+            )
             # Check that the dirty file was not removed.
             # This check should go away once we refactor dirty handling
-            assert os.path.exists(os.path.join(self.download_cache_folder, "s", f"{sha256}.dirty"))
+            assert os.path.exists(
+                os.path.join(self.download_cache_folder, "s", f"{sha256}.dirty")
+            )
 
         if upload:
             self.client.run("cache backup-upload")
@@ -851,10 +1104,15 @@ class TestDownloadCacheBackupSources:
             raise exception()
 
         mkdir(os.path.join(self.download_cache_folder, "s"))
-        http_server_base_folder_internet = os.path.join(self.file_server.store, "internet")
+        http_server_base_folder_internet = os.path.join(
+            self.file_server.store, "internet"
+        )
 
         sha256 = "315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3"
-        save(os.path.join(http_server_base_folder_internet, "myfile.txt"), "Hello, world!")
+        save(
+            os.path.join(http_server_base_folder_internet, "myfile.txt"),
+            "Hello, world!",
+        )
 
         conanfile = textwrap.dedent(f"""
            from conan import ConanFile
@@ -866,17 +1124,24 @@ class TestDownloadCacheBackupSources:
            """)
 
         self.client.save_home(
-            {"global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
-                            f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
-                            f"core.sources:upload_url={self.file_server.fake_url}/backup/"})
+            {
+                "global.conf": f"core.sources:download_cache={self.download_cache_folder}\n"
+                f"core.sources:download_urls=['{self.file_server.fake_url}/backup/', 'origin']\n"
+                f"core.sources:upload_url={self.file_server.fake_url}/backup/"
+            }
+        )
 
         self.client.save({"conanfile.py": conanfile})
-        with mock.patch("conan.internal.rest.file_downloader.FileDownloader._download_file",
-                        custom_download):
+        with mock.patch(
+            "conan.internal.rest.file_downloader.FileDownloader._download_file",
+            custom_download,
+        ):
             self.client.run("source .", assert_error=True)
 
         # A .dirty file was created, now try to source again, it should detect the dirty download and re-download it
         self.client.run("export . --name=pkg2 --version=1.0")
         self.client.run("upload * -c -r=default")
         assert "No backup sources files to upload" in self.client.out
-        assert sha256 + ".dirty" not in os.listdir(os.path.join(self.download_cache_folder, "s"))
+        assert sha256 + ".dirty" not in os.listdir(
+            os.path.join(self.download_cache_folder, "s")
+        )

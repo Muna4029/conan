@@ -21,7 +21,6 @@ from conan.internal.util.files import save
 
 
 class GraphManagerTest(unittest.TestCase):
-
     def setUp(self):
         cache_folder = temp_folder()
         cache = PkgCache(cache_folder, ConfDefinition())
@@ -59,11 +58,14 @@ class GraphManagerTest(unittest.TestCase):
 
     def alias_cache(self, alias, target):
         ref = RecipeReference.loads(alias)
-        conanfile = textwrap.dedent("""
+        conanfile = textwrap.dedent(
+            """
             from conan import ConanFile
             class Alias(ConanFile):
                 alias = "%s"
-            """ % target)
+            """
+            % target
+        )
         self._cache_recipe(ref, conanfile)
 
     @staticmethod
@@ -90,14 +92,19 @@ class GraphManagerTest(unittest.TestCase):
         save(path, str(conanfile))
         return path
 
-    def build_graph(self, content, profile_build_requires=None, install=True, options_build=None):
+    def build_graph(
+        self, content, profile_build_requires=None, install=True, options_build=None
+    ):
         path = temp_folder()
         path = os.path.join(path, "conanfile.py")
         save(path, str(content))
-        return self.build_consumer(path, profile_build_requires, install,
-                                   options_build=options_build)
+        return self.build_consumer(
+            path, profile_build_requires, install, options_build=options_build
+        )
 
-    def build_consumer(self, path, profile_build_requires=None, install=True, options_build=None):
+    def build_consumer(
+        self, path, profile_build_requires=None, install=True, options_build=None
+    ):
         profile_host = Profile()
         profile_host.settings["os"] = "Linux"
         profile_build = Profile()
@@ -113,9 +120,9 @@ class GraphManagerTest(unittest.TestCase):
 
         conan_api = ConanAPI(cache_folder=self.cache_folder)
 
-        deps_graph = conan_api.graph.load_graph_consumer(path, None, None, None, None,
-                                                         profile_host, profile_build, None, None,
-                                                         None)
+        deps_graph = conan_api.graph.load_graph_consumer(
+            path, None, None, None, None, profile_host, profile_build, None, None, None
+        )
 
         if install:
             deps_graph.report_graph_error()
@@ -124,7 +131,9 @@ class GraphManagerTest(unittest.TestCase):
 
         return deps_graph
 
-    def _check_node(self, node, ref, deps=None, dependents=None, settings=None, options=None):
+    def _check_node(
+        self, node, ref, deps=None, dependents=None, settings=None, options=None
+    ):
         dependents = dependents or []
         deps = deps or []
 

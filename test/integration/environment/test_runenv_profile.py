@@ -22,8 +22,7 @@ def client():
       MyVar2=MyValue2_1
       """)
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "profile1": profile1})
+    client.save({"conanfile.py": conanfile, "profile1": profile1})
     return client
 
 

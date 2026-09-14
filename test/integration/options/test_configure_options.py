@@ -13,19 +13,21 @@ class TestConfigureOptions:
     header_only options automatically.
     """
 
-    @parameterized.expand([
-        ["Linux", False, False, False, [False, False, False]],
-        ["Windows", False, False, False, [False, None, False]],
-        ["Windows", True, False, False, [True, None, False]],
-        ["Windows", False, False, True, [None, None, True]],
-        ["Linux", False, False, True, [None, None, True]],
-        ["Linux", True, True, False, [True, None, False]],
-        ["Linux", True, False, False, [True, None, False]],
-        ["Linux", True, True, True, [None, None, True]],
-        ["Linux", True, True, True, [None, None, True]],
-        ["Linux", False, True, False, [False, True, False]],
-        ["Linux", False, True, False, [False, True, False]],
-    ])
+    @parameterized.expand(
+        [
+            ["Linux", False, False, False, [False, False, False]],
+            ["Windows", False, False, False, [False, None, False]],
+            ["Windows", True, False, False, [True, None, False]],
+            ["Windows", False, False, True, [None, None, True]],
+            ["Linux", False, False, True, [None, None, True]],
+            ["Linux", True, True, False, [True, None, False]],
+            ["Linux", True, False, False, [True, None, False]],
+            ["Linux", True, True, True, [None, None, True]],
+            ["Linux", True, True, True, [None, None, True]],
+            ["Linux", False, True, False, [False, True, False]],
+            ["Linux", False, True, False, [False, True, False]],
+        ]
+    )
     def test_methods_not_defined(self, settings_os, shared, fpic, header_only, result):
         """
         Test that options are managed automatically when methods config_options and configure are not
@@ -53,26 +55,31 @@ class TestConfigureOptions:
         result = f"shared: {result[0]}, fPIC: {result[1]}, header only: {result[2]}"
         assert result in client.out
         if header_only:
-            assert "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created"in client.out
+            assert (
+                "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created"
+                in client.out
+            )
 
-    @parameterized.expand([
-        ["Linux", False, False, False, [False, False, False]],
-        ["Linux", False, False, True, [False, False, True]],
-        ["Linux", False, True, False, [False, True, False]],
-        ["Linux", False, True, True, [False, True, True]],
-        ["Linux", True, False, False, [True, False, False]],
-        ["Linux", True, False, True, [True, False, True]],
-        ["Linux", True, True, False, [True, True, False]],
-        ["Linux", True, True, True, [True, True, True]],
-        ["Windows", False, False, False, [False, False, False]],
-        ["Windows", False, False, True, [False, False, True]],
-        ["Windows", False, True, False, [False, True, False]],
-        ["Windows", False, True, True, [False, True, True]],
-        ["Windows", True, False, False, [True, False, False]],
-        ["Windows", True, False, True, [True, False, True]],
-        ["Windows", True, True, False, [True, True, False]],
-        ["Windows", True, True, True, [True, True, True]],
-    ])
+    @parameterized.expand(
+        [
+            ["Linux", False, False, False, [False, False, False]],
+            ["Linux", False, False, True, [False, False, True]],
+            ["Linux", False, True, False, [False, True, False]],
+            ["Linux", False, True, True, [False, True, True]],
+            ["Linux", True, False, False, [True, False, False]],
+            ["Linux", True, False, True, [True, False, True]],
+            ["Linux", True, True, False, [True, True, False]],
+            ["Linux", True, True, True, [True, True, True]],
+            ["Windows", False, False, False, [False, False, False]],
+            ["Windows", False, False, True, [False, False, True]],
+            ["Windows", False, True, False, [False, True, False]],
+            ["Windows", False, True, True, [False, True, True]],
+            ["Windows", True, False, False, [True, False, False]],
+            ["Windows", True, False, True, [True, False, True]],
+            ["Windows", True, True, False, [True, True, False]],
+            ["Windows", True, True, True, [True, True, True]],
+        ]
+    )
     def test_optout(self, settings_os, shared, fpic, header_only, result):
         """
         Test that options are not managed automatically when methods are defined even if implements = ["auto_shared_fpic", "auto_header_only"]
@@ -105,14 +112,17 @@ class TestConfigureOptions:
         result = f"shared: {result[0]}, fPIC: {result[1]}, header only: {result[2]}"
         assert result in client.out
         if header_only:
-            assert "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created"in client.out
+            assert (
+                "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created"
+                in client.out
+            )
 
     def test_header_package_type_pid(self):
         """
         Test that we get the pid for header only when package type is set to header-library
         """
         client = TestClient()
-        conanfile = textwrap.dedent(f"""\
+        conanfile = textwrap.dedent("""\
                from conan import ConanFile
 
                class Pkg(ConanFile):
@@ -122,13 +132,17 @@ class TestConfigureOptions:
 
                 """)
         client.save({"conanfile.py": conanfile})
-        client.run(f"create . --name=pkg --version=0.1")
-        assert "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created" in client.out
+        client.run("create . --name=pkg --version=0.1")
+        assert (
+            "Package 'da39a3ee5e6b4b0d3255bfef95601890afd80709' created" in client.out
+        )
 
 
 def test_config_options_override_behaviour():
     tc = TestClient(light=True)
-    tc.save({"conanfile.py": textwrap.dedent("""
+    tc.save(
+        {
+            "conanfile.py": textwrap.dedent("""
     from conan import ConanFile
 
     class Pkg(ConanFile):
@@ -143,7 +157,9 @@ def test_config_options_override_behaviour():
 
         def build(self):
             self.output.info(f"Foo: {self.options.foo}")
-    """)})
+    """)
+        }
+    )
 
     tc.run("create .")
     assert "Foo: 2" in tc.out

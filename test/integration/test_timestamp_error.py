@@ -5,7 +5,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_timestamp_error():
-    """ this test is a reproduction for
+    """this test is a reproduction for
     # https://github.com/conan-io/conan/issues/11606
 
     It was crashing because of multiple test_requires, some of them being BINARY_SKIP,
@@ -30,9 +30,13 @@ def test_timestamp_error():
             def build_requirements(self):
                 self.test_requires("gtest/0.1")
         """)
-    c.save({"gtest/conanfile.py": GenConanfile("gtest", "0.1"),
+    c.save(
+        {
+            "gtest/conanfile.py": GenConanfile("gtest", "0.1"),
             "engine/conanfile.py": engine,
-            "app/conanfile.py": app})
+            "app/conanfile.py": app,
+        }
+    )
     c.run("create gtest")
     c.run("create engine")
     c.run("upload * -r=default -c")

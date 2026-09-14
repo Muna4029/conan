@@ -28,17 +28,27 @@ def test_subgraph_reports():
         """)
 
     c.save_home({"extensions/hooks/subgraph_hook/hook_subgraph.py": subgraph_hook})
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
             "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requirement("dep/0.1"),
-            "app/conanfile.py": GenConanfile("app", "0.1").with_requirement("pkg/0.1")})
+            "app/conanfile.py": GenConanfile("app", "0.1").with_requirement("pkg/0.1"),
+        }
+    )
     c.run("export dep")
     c.run("export pkg")
     # app -> pkg -> dep
     c.run("create app --build=missing --format=json")
 
-    app_graph = json.loads(load(os.path.join(_metadata(c, "app/0.1"), "conangraph.json")))
-    pkg_graph = json.loads(load(os.path.join(_metadata(c, "pkg/0.1"), "conangraph.json")))
-    dep_graph = json.loads(load(os.path.join(_metadata(c, "dep/0.1"), "conangraph.json")))
+    app_graph = json.loads(
+        load(os.path.join(_metadata(c, "app/0.1"), "conangraph.json"))
+    )
+    pkg_graph = json.loads(
+        load(os.path.join(_metadata(c, "pkg/0.1"), "conangraph.json"))
+    )
+    dep_graph = json.loads(
+        load(os.path.join(_metadata(c, "dep/0.1"), "conangraph.json"))
+    )
 
     app_lock = json.loads(load(os.path.join(_metadata(c, "app/0.1"), "conan.lock")))
     pkg_lock = json.loads(load(os.path.join(_metadata(c, "pkg/0.1"), "conan.lock")))

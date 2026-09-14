@@ -5,25 +5,45 @@ import pytest
 from conan.internal.model.info import load_binary_info
 from conan.api.model import RecipeReference
 from conan.internal.paths import CONANFILE_TXT, CONANINFO
-from conan.test.utils.tools import TestClient,  GenConanfile
+from conan.test.utils.tools import TestClient, GenConanfile
 from conan.internal.util.files import load
 
 
 @pytest.fixture()
 def client():
     c = TestClient()
-    c.save_home({"settings.yaml": "os: [Windows, Macos, Linux, FreeBSD]\nos_build: [Windows, Macos]\narch_build: [x86_64]",
-                 "profiles/default":  "[settings]\nos=Windows"})
+    c.save_home(
+        {
+            "settings.yaml": "os: [Windows, Macos, Linux, FreeBSD]\nos_build: [Windows, Macos]\narch_build: [x86_64]",
+            "profiles/default": "[settings]\nos=Windows",
+        }
+    )
 
     def base_conanfile(name):
-        return GenConanfile(name, "0.1").with_option("language", [0, 1])\
-            .with_default_option("language", 0).with_settings("os")
+        return (
+            GenConanfile(name, "0.1")
+            .with_option("language", [0, 1])
+            .with_default_option("language", 0)
+            .with_settings("os")
+        )
 
     c.save({"conanfile.py": base_conanfile("hello0")})
     c.run("export . --user=lasote --channel=stable")
-    c.save({"conanfile.py": base_conanfile("hello1").with_requires("hello0/0.1@lasote/stable")})
+    c.save(
+        {
+            "conanfile.py": base_conanfile("hello1").with_requires(
+                "hello0/0.1@lasote/stable"
+            )
+        }
+    )
     c.run("export . --user=lasote --channel=stable")
-    c.save({"conanfile.py": base_conanfile("hello2").with_requires("hello1/0.1@lasote/stable")})
+    c.save(
+        {
+            "conanfile.py": base_conanfile("hello2").with_requires(
+                "hello1/0.1@lasote/stable"
+            )
+        }
+    )
     c.run("export . --user=lasote --channel=stable")
     return c
 
@@ -43,8 +63,10 @@ def test_install_transitive_cache(client):
 
 
 def test_upper_option(client):
-    client.run("install conanfile.py -o hello2*:language=1 -o hello1*:language=0 "
-               "-o hello0*:language=1 --build missing")
+    client.run(
+        "install conanfile.py -o hello2*:language=1 -o hello1*:language=0 "
+        "-o hello0*:language=1 --build missing"
+    )
     package_id = client.created_package_id("hello0/0.1@lasote/stable")
     package_id2 = client.created_package_id("hello1/0.1@lasote/stable")
     ref = RecipeReference.loads("hello0/0.1@lasote/stable")
@@ -55,7 +77,9 @@ def test_upper_option(client):
     hello0_conan_info = load_binary_info(load(hello0_info))
     assert "1" == hello0_conan_info["options"]["language"]
 
-    pref1 = client.get_latest_package_reference(RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2)
+    pref1 = client.get_latest_package_reference(
+        RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2
+    )
     hello1 = client.get_latest_pkg_layout(pref1).package()
     hello1_info = os.path.join(hello1, CONANINFO)
     hello1_conan_info = load_binary_info(load(hello1_info))
@@ -63,7 +87,9 @@ def test_upper_option(client):
 
 
 def test_inverse_upper_option(client):
-    client.run("install . -o language=0 -o hello1*:language=1 -o hello0*:language=0 --build missing")
+    client.run(
+        "install . -o language=0 -o hello1*:language=1 -o hello0*:language=0 --build missing"
+    )
     package_id = client.created_package_id("hello0/0.1@lasote/stable")
     package_id2 = client.created_package_id("hello1/0.1@lasote/stable")
     ref = RecipeReference.loads("hello0/0.1@lasote/stable")
@@ -74,7 +100,9 @@ def test_inverse_upper_option(client):
     hello0_conan_info = load_binary_info(load(hello0_info))
     assert "0" == hello0_conan_info["options"]["language"]
 
-    pref1 = client.get_latest_package_reference(RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2)
+    pref1 = client.get_latest_package_reference(
+        RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2
+    )
     hello1 = client.get_latest_pkg_layout(pref1).package()
     hello1_info = os.path.join(hello1, CONANINFO)
     hello1_conan_info = load_binary_info(load(hello1_info))
@@ -82,13 +110,15 @@ def test_inverse_upper_option(client):
 
 
 def test_upper_option_txt(client):
-    files = {CONANFILE_TXT: """[requires]
+    files = {
+        CONANFILE_TXT: """[requires]
         hello1/0.1@lasote/stable
 
         [options]
         hello0*:language=1
         hello1*:language=0
-        """}
+        """
+    }
     client.save(files, clean_first=True)
 
     client.run("install . --build missing")
@@ -101,7 +131,9 @@ def test_upper_option_txt(client):
     hello0_conan_info = load_binary_info(load(hello0_info))
     assert "1" == hello0_conan_info["options"]["language"]
 
-    pref1 = client.get_latest_package_reference(RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2)
+    pref1 = client.get_latest_package_reference(
+        RecipeReference.loads("hello1/0.1@lasote/stable"), package_id2
+    )
     hello1 = client.get_latest_pkg_layout(pref1).package()
     hello1_info = os.path.join(hello1, CONANINFO)
     hello1_conan_info = load_binary_info(load(hello1_info))

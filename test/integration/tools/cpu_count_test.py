@@ -4,7 +4,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestNJobs:
-
     def test_cpu_count_override(self):
         client = TestClient()
         conanfile = textwrap.dedent("""

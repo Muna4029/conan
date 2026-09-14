@@ -28,13 +28,12 @@ links_conanfile = textwrap.dedent("""
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Requires Symlinks")
 def test_complete_round_trip():
-    """ a full round trip with a in package symlink, that is maintained all the way to
+    """a full round trip with a in package symlink, that is maintained all the way to
     the server and re-deployed in the client
     the symlink is relative just "link.txt" -> "midlink.txt" -> "target.txt" (local)
     """
     c = TestClient(default_server_user=True)
-    c.save({"conanfile.py": links_conanfile,
-            "target.txt": "hello world!"})
+    c.save({"conanfile.py": links_conanfile, "target.txt": "hello world!"})
     os.symlink("target.txt", os.path.join(c.current_folder, "midlink.txt"))
     os.symlink("midlink.txt", os.path.join(c.current_folder, "link.txt"))
     assert c.load("link.txt") == "hello world!"
@@ -64,7 +63,7 @@ def test_complete_round_trip():
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Requires Symlinks")
 def test_complete_round_trip_broken_link():
-    """ same as above but with a broken one
+    """same as above but with a broken one
     link.txt->midlink.txt->(broken)
     """
     c = TestClient(default_server_user=True)
@@ -96,7 +95,7 @@ def test_complete_round_trip_broken_link():
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Requires Symlinks")
 def test_complete_round_trip_external_link():
-    """ same as above but with a broken one
+    """same as above but with a broken one
     link.txt->midlink.txt->/abs/path/to/target.txt
     """
     c = TestClient(default_server_user=True)
@@ -133,21 +132,31 @@ def test_complete_round_trip_external_link():
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Requires Symlinks")
 def test_complete_round_trip_folders():
-    """ similar to above, but with 2 folder symlinks and one file symlink
+    """similar to above, but with 2 folder symlinks and one file symlink
     # Reproduces issue: https://github.com/conan-io/conan/issues/5329
     """
     c = TestClient(default_server_user=True)
 
-    c.save({"conanfile.py": links_conanfile,
+    c.save(
+        {
+            "conanfile.py": links_conanfile,
             "src/framework/Versions/v1/headers/content": "myheader!",
-            "src/framework/Versions/v1/file": "myfile!"})
+            "src/framework/Versions/v1/file": "myfile!",
+        }
+    )
 
     # Add two levels of symlinks
-    os.symlink('v1', os.path.join(c.current_folder, 'src', 'framework', 'Versions', 'Current'))
-    os.symlink('Versions/Current/headers',
-               os.path.join(c.current_folder, 'src', 'framework', 'headers'))
-    os.symlink('Versions/Current/file',
-               os.path.join(c.current_folder, 'src', 'framework', 'file'))
+    os.symlink(
+        "v1", os.path.join(c.current_folder, "src", "framework", "Versions", "Current")
+    )
+    os.symlink(
+        "Versions/Current/headers",
+        os.path.join(c.current_folder, "src", "framework", "headers"),
+    )
+    os.symlink(
+        "Versions/Current/file",
+        os.path.join(c.current_folder, "src", "framework", "file"),
+    )
 
     c.run("create .")
 
@@ -177,23 +186,33 @@ def test_complete_round_trip_folders():
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="Only linux")
-@pytest.mark.parametrize("package_files",
-                         [{"files": ["foo/bar/folder/file.txt",
-                                     "foo/bar/folder/other/other_file.txt"],
-                           "symlinks": [("../file.txt", "foo/bar/folder/other/file2.txt")]},
-                          # relative ../ symlink
-                          {"files": ["foo/bar/file/file.txt"],
-                           "symlinks": [(temp_folder(), "foo/symlink_folder")]},  # absolute symlink
-                          {"files": ["folder/file.txt"],
-                           "symlinks": [("folder", "folder2"),
-                                        ("file.txt", "folder/file2.txt")]},  # single level symlink
-                          {"files": ["foo/bar/file/file.txt"],
-                           "symlinks": [("bar/file", "foo/symlink_folder"),
-                                        ("foo/symlink_folder/file.txt", "file2.txt")]},
-                          # double level symlink
-                          ])
+@pytest.mark.parametrize(
+    "package_files",
+    [
+        {
+            "files": ["foo/bar/folder/file.txt", "foo/bar/folder/other/other_file.txt"],
+            "symlinks": [("../file.txt", "foo/bar/folder/other/file2.txt")],
+        },
+        # relative ../ symlink
+        {
+            "files": ["foo/bar/file/file.txt"],
+            "symlinks": [(temp_folder(), "foo/symlink_folder")],
+        },  # absolute symlink
+        {
+            "files": ["folder/file.txt"],
+            "symlinks": [("folder", "folder2"), ("file.txt", "folder/file2.txt")],
+        },  # single level symlink
+        {
+            "files": ["foo/bar/file/file.txt"],
+            "symlinks": [
+                ("bar/file", "foo/symlink_folder"),
+                ("foo/symlink_folder/file.txt", "file2.txt"),
+            ],
+        },
+        # double level symlink
+    ],
+)
 def test_package_with_symlinks(package_files):
-
     client = TestClient(default_server_user=True)
     client2 = TestClient(servers=client.servers)
     client.save({"conanfile.py": links_conanfile})
@@ -236,7 +255,9 @@ def test_package_with_symlinks(package_files):
     # Check package files are there
     package_folder = client2.get_latest_pkg_layout(pref).package()
     assert_folder_symlinks(package_folder)
-    assert_folder_symlinks(os.path.join(client2.current_folder, "full_deploy", "host", "hello", "0.1"))
+    assert_folder_symlinks(
+        os.path.join(client2.current_folder, "full_deploy", "host", "hello", "0.1")
+    )
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Symlinks not in Windows")
@@ -245,16 +266,20 @@ def test_exports_does_not_follow_symlink():
     linked_abs_folder = tmp
     save(os.path.join(tmp, "source.cpp"), "foo")
     client = TestClient(default_server_user=True)
-    conanfile = GenConanfile("lib", "1.0")\
-        .with_package('copy(self, "*", self.source_folder, self.package_folder)')\
-        .with_exports_sources("*")\
+    conanfile = (
+        GenConanfile("lib", "1.0")
+        .with_package('copy(self, "*", self.source_folder, self.package_folder)')
+        .with_exports_sources("*")
         .with_import("from conan.tools.files import copy")
+    )
     client.save({"conanfile.py": conanfile, "foo.txt": "bar"})
     os.symlink(linked_abs_folder, os.path.join(client.current_folder, "linked_folder"))
     client.run("create . ")
     exports_sources_folder = client.exported_layout().export_sources()
     assert os.path.islink(os.path.join(exports_sources_folder, "linked_folder"))
-    assert os.path.exists(os.path.join(exports_sources_folder, "linked_folder", "source.cpp"))
+    assert os.path.exists(
+        os.path.join(exports_sources_folder, "linked_folder", "source.cpp")
+    )
 
     # Check files have been copied to the build
     build_folder = client.created_layout().build()
@@ -274,9 +299,13 @@ def test_exports_does_not_follow_symlink():
 
     # Now is a broken link, but the files are not in the cache, just a broken link
     rmdir(linked_abs_folder)
-    assert not os.path.exists(os.path.join(exports_sources_folder, "linked_folder", "source.cpp"))
+    assert not os.path.exists(
+        os.path.join(exports_sources_folder, "linked_folder", "source.cpp")
+    )
     assert not os.path.exists(os.path.join(build_folder, "linked_folder", "source.cpp"))
-    assert not os.path.exists(os.path.join(package_folder, "linked_folder", "source.cpp"))
+    assert not os.path.exists(
+        os.path.join(package_folder, "linked_folder", "source.cpp")
+    )
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="Only linux")
@@ -308,7 +337,9 @@ class HelloConan(ConanFile):
     # We can uncompress it without warns
     tgz = os.path.join(p_folder, PACKAGE_TGZ_NAME)
     client.run_command('gzip -d "{}"'.format(tgz))
-    client.run_command('tar tvf "{}"'.format(os.path.join(p_folder, "conan_package.tar")))
+    client.run_command(
+        'tar tvf "{}"'.format(os.path.join(p_folder, "conan_package.tar"))
+    )
     lines = str(client.out).splitlines()
     """
 -rw-r--r-- 0/0               8 1970-01-01 01:00 file.txt

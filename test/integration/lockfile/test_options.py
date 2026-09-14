@@ -5,7 +5,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_options():
-    """ lockfiles no longer contains option or any other configuration information. Instead
+    """lockfiles no longer contains option or any other configuration information. Instead
     the ``graph build-order`` applying a lockfile will return the necessary options to build
     it in order
     """
@@ -27,14 +27,16 @@ def test_options():
             default_options = {"ffmpeg/1.0:variation": "nano"}
         """)
 
-    client.save({"ffmepg/conanfile.py": ffmpeg,
-                 "variant/conanfile.py": variant})
+    client.save({"ffmepg/conanfile.py": ffmpeg, "variant/conanfile.py": variant})
     client.run("export ffmepg --name=ffmpeg --version=1.0")
     client.run("export variant --name=nano --version=1.0")
     client.run("lock create --requires=nano/1.0@ --build=*")
-    client.run("graph build-order --requires=nano/1.0@ "
-               "--lockfile-out=conan.lock --build=missing "
-               "--format=json", redirect_stdout="build_order.json")
+    client.run(
+        "graph build-order --requires=nano/1.0@ "
+        "--lockfile-out=conan.lock --build=missing "
+        "--format=json",
+        redirect_stdout="build_order.json",
+    )
 
     json_file = client.load("build_order.json")
     to_build = json.loads(json_file)

@@ -12,7 +12,10 @@ def test_db_error():
     c.run("create liba")
     c.run("install --requires=liba/0.1 --format=json", redirect_stdout="graph.json")
     c.run("list --graph=graph.json --format=json", redirect_stdout="installed.json")
-    c.run("upload --list=installed.json -r=default --format=json -c", redirect_stdout="upload.json")
+    c.run(
+        "upload --list=installed.json -r=default --format=json -c",
+        redirect_stdout="upload.json",
+    )
 
     c2 = TestClient(servers=c.servers, inputs=["admin", "password"])
     shutil.copy(os.path.join(c.current_folder, "upload.json"), c2.current_folder)

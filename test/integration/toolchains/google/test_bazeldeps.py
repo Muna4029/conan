@@ -27,8 +27,7 @@ def test_bazel():
             requires = 'dep/0.1',
         """)
     c = TestClient()
-    c.save({"dep/conanfile.py": dep,
-            "consumer/conanfile.py": conanfile})
+    c.save({"dep/conanfile.py": dep, "consumer/conanfile.py": conanfile})
     c.run("create dep")
     c.run("install consumer")
     assert "conanfile.py: Generator 'BazelToolchain' calling 'generate()'" in c.out
@@ -48,8 +47,12 @@ def test_bazel_relative_paths():
                 self.folders.generators = "conandeps"
         """)
     c = TestClient()
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-            "consumer/conanfile.py": conanfile})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
+            "consumer/conanfile.py": conanfile,
+        }
+    )
     c.run("create dep")
     c.run("install consumer")
     assert "conanfile.py: Generator 'BazelToolchain' calling 'generate()'" in c.out
@@ -232,7 +235,13 @@ def test_pkg_with_public_deps_and_component_requires():
     """)
     client.save({"conanfile.py": conanfile})
     client.run("create . --name=first --version=0.1")
-    client.save({"conanfile.py": GenConanfile("other", "0.1").with_package_file("file.h", "0.1")})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("other", "0.1").with_package_file(
+                "file.h", "0.1"
+            )
+        }
+    )
     client.run("create .")
 
     conanfile = textwrap.dedent("""
@@ -248,10 +257,15 @@ def test_pkg_with_public_deps_and_component_requires():
         """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("create . --name=second --version=0.1")
-    client.save({"conanfile.py": GenConanfile("third", "0.1").with_package_file("file.h", "0.1")
-                                                             .with_require("second/0.1")
-                                                             .with_require("other/0.1")},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": GenConanfile("third", "0.1")
+            .with_package_file("file.h", "0.1")
+            .with_require("second/0.1")
+            .with_require("other/0.1")
+        },
+        clean_first=True,
+    )
     client.run("create .")
 
     client2 = TestClient(cache_folder=client.cache_folder)
@@ -265,7 +279,8 @@ def test_pkg_with_public_deps_and_component_requires():
     client2.save({"conanfile.txt": conanfile})
     client2.run("install .")
     content = client2.load("third/BUILD.bazel")
-    assert textwrap.dedent("""\
+    assert (
+        textwrap.dedent("""\
     cc_library(
         name = "third",
         hdrs = glob([
@@ -280,9 +295,12 @@ def test_pkg_with_public_deps_and_component_requires():
             "@second//:second",
             "@other//:other",
         ],
-    )""") in content
+    )""")
+        in content
+    )
     content = client2.load("second/BUILD.bazel")
-    assert textwrap.dedent("""\
+    assert (
+        textwrap.dedent("""\
     # Components libraries declaration
     cc_library(
         name = "second-mycomponent",
@@ -330,9 +348,12 @@ def test_pkg_with_public_deps_and_component_requires():
             ":second-myfirstcomp",
             "@first//:myfirstlib",
         ],
-    )""") in content
+    )""")
+        in content
+    )
     content = client2.load("first/BUILD.bazel")
-    assert textwrap.dedent("""\
+    assert (
+        textwrap.dedent("""\
     # Components precompiled libs
     cc_import(
         name = "libcmp1_precompiled",
@@ -371,7 +392,9 @@ def test_pkg_with_public_deps_and_component_requires():
             # do not sort
             ":myfirstlib-cmp1",
         ],
-    )""") in content
+    )""")
+        in content
+    )
     content = client2.load("other/BUILD.bazel")
     assert "deps =" not in content
 
@@ -442,7 +465,8 @@ def test_pkg_with_public_deps_and_component_requires_2():
     client2.save({"conanfile.txt": conanfile})
     client2.run("install .")
     content = client2.load("pkg/BUILD.bazel")
-    assert textwrap.dedent("""\
+    assert (
+        textwrap.dedent("""\
     # Package library declaration
     cc_library(
         name = "pkg",
@@ -457,9 +481,12 @@ def test_pkg_with_public_deps_and_component_requires_2():
             # do not sort
             "@other//:component1",
         ],
-    )""") in content
+    )""")
+        in content
+    )
     content = client2.load("other/BUILD.bazel")
-    assert textwrap.dedent("""\
+    assert (
+        textwrap.dedent("""\
     # Components precompiled libs
     cc_import(
         name = "other_cmp1_precompiled",
@@ -536,7 +563,9 @@ def test_pkg_with_public_deps_and_component_requires_2():
             ":fancy_name-cmp2",
             ":component3",
         ],
-    )""") in content
+    )""")
+        in content
+    )
 
 
 def test_pkgconfigdeps_with_test_requires():
@@ -623,10 +652,14 @@ def test_with_editable_layout():
             def package_info(self):
                 self.cpp_info.libs = ["mylib"]
         """)
-    client.save({"dep/conanfile.py": dep,
-                 "dep/include/header.h": "",
-                 "dep/bazel-bin/main/libmylib.a": "",
-                 "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1")})
+    client.save(
+        {
+            "dep/conanfile.py": dep,
+            "dep/include/header.h": "",
+            "dep/bazel-bin/main/libmylib.a": "",
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1"),
+        }
+    )
     client.run("create dep")
     client.run("editable add dep --name=dep --version=0.1")
     recipes_folder = client.current_folder.replace("\\", "/")
@@ -634,25 +667,32 @@ def test_with_editable_layout():
         client.run("install . -g BazelDeps")
         # TODO: Remove when dropped Bazel 6.x compatibility
         content = client.load("dependencies.bzl")
-        assert textwrap.dedent(f"""\
+        assert (
+            textwrap.dedent(f"""\
         def load_conan_dependencies():
             native.new_local_repository(
                 name="dep",
                 path="{recipes_folder}/dep",
                 build_file="{recipes_folder}/pkg/dep/BUILD.bazel",
-            )""") in content
+            )""")
+            in content
+        )
         # Bazel 7.x
         content = client.load("conan_deps_module_extension.bzl")
-        assert textwrap.dedent(f"""\
+        assert (
+            textwrap.dedent(f"""\
         def _load_dependencies_impl(mctx):
             conan_dependency_repo(
                 name = "dep",
                 package_path = "{recipes_folder}/dep",
                 build_file_path = "{recipes_folder}/pkg/dep/BUILD.bazel",
-            )""") in content
+            )""")
+            in content
+        )
         content = client.load("dep/BUILD.bazel")
         assert pathlib.Path(client.current_folder, "conan_deps_repo_rules.bzl").exists()
-        assert textwrap.dedent("""\
+        assert (
+            textwrap.dedent("""\
         cc_import(
             name = "mylib_precompiled",
             static_library = "bazel-bin/main/libmylib.a",
@@ -673,7 +713,9 @@ def test_with_editable_layout():
                 # do not sort
                 ":mylib_precompiled",
             ],
-        )""") in content
+        )""")
+            in content
+        )
 
 
 def test_tool_requires():
@@ -823,12 +865,16 @@ def test_tool_requires():
     # TODO: Remove when dropped Bazel 6.x compatibility
     # Let's check if the names used in the dependencies.bzl are correct
     content = client.load("dependencies.bzl")
-    assert 'name="build-other-repo"' in content  # build context + bazel_repository_name prop
+    assert (
+        'name="build-other-repo"' in content
+    )  # build context + bazel_repository_name prop
     assert 'name="build-tool"' in content  # build context + package reference name
     # Bazel 7.x
     # Let's check if the names used in the conan_deps_repo_rules.bzl are correct
     content = client.load("conan_deps_module_extension.bzl")
-    assert 'name = "build-other-repo"' in content  # build context + bazel_repository_name prop
+    assert (
+        'name = "build-other-repo"' in content
+    )  # build context + bazel_repository_name prop
     assert 'name = "build-tool"' in content  # build context + package reference name
 
 
@@ -940,15 +986,24 @@ def test_error_missing_bazel_build_files_in_build_context():
                 assert os.path.exists(os.path.join(f"{context}engine", "BUILD.bazel"))
                 assert os.path.exists(os.path.join(f"{context}game", "BUILD.bazel"))
             """)
-    c.save({"math/conanfile.py": GenConanfile("math", "1.0").with_settings("build_type"),
-            "engine/conanfile.py": GenConanfile("engine", "1.0").with_settings("build_type")
-                                                                .with_require("math/1.0"),
-            "game/conanfile.py": GenConanfile("game", "1.0").with_settings("build_type")
-                                                            .with_requires("engine/1.0"),
+    c.save(
+        {
+            "math/conanfile.py": GenConanfile("math", "1.0").with_settings(
+                "build_type"
+            ),
+            "engine/conanfile.py": GenConanfile("engine", "1.0")
+            .with_settings("build_type")
+            .with_require("math/1.0"),
+            "game/conanfile.py": GenConanfile("game", "1.0")
+            .with_settings("build_type")
+            .with_requires("engine/1.0"),
             "example/conanfile.py": example,
             # With ``with_test()`` it already generates a requires(example/1.0)
-            "example/test_package/conanfile.py": GenConanfile().with_build_requires("example/1.0")
-                                                               .with_test("pass")})
+            "example/test_package/conanfile.py": GenConanfile()
+            .with_build_requires("example/1.0")
+            .with_test("pass"),
+        }
+    )
     c.run("create math")
     c.run("create engine")
     c.run("create game")
@@ -956,8 +1011,10 @@ def test_error_missing_bazel_build_files_in_build_context():
     c.run("create example -pr:b=default -pr:h=default")
     # Now make sure we can actually build with build!=host context
     # The debug binaries are missing, so adding --build=missing
-    c.run("create example -pr:b=default -pr:h=default -s:h build_type=Debug --build=missing "
-          "--build=example")
+    c.run(
+        "create example -pr:b=default -pr:h=default -s:h build_type=Debug --build=missing "
+        "--build=example"
+    )
     c.assert_listed_require({"example/1.0": "Cache"})
     c.assert_listed_require({"example/1.0": "Cache"}, build=True)
 
@@ -966,6 +1023,7 @@ class TestBazelGenerationBuildContext:
     """
     https://github.com/conan-io/conan/issues/15764
     """
+
     def test_bazel_generate(self):
         c = TestClient()
         tool = textwrap.dedent("""
@@ -990,18 +1048,30 @@ class TestBazelGenerationBuildContext:
                     assert os.path.exists(os.path.join("wayland", "BUILD.bazel"))
                     assert os.path.exists(os.path.join("dep", "BUILD.bazel"))
                 """)
-        c.save({"dep/conanfile.py": GenConanfile("dep", "1.0").with_package_type("shared-library"),
-                "wayland/conanfile.py": GenConanfile("wayland", "1.0").with_requires("dep/1.0"),
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep", "1.0").with_package_type(
+                    "shared-library"
+                ),
+                "wayland/conanfile.py": GenConanfile("wayland", "1.0").with_requires(
+                    "dep/1.0"
+                ),
                 "tool/conanfile.py": tool,
-                "app/conanfile.py": GenConanfile().with_tool_requires("tool/1.0")})
+                "app/conanfile.py": GenConanfile().with_tool_requires("tool/1.0"),
+            }
+        )
         c.run("export dep")
         c.run("export wayland")
         c.run("export tool")
         c.run("install app --build=missing")
-        assert "Install finished successfully" in c.out  # the asserts in build() didn't fail
+        assert (
+            "Install finished successfully" in c.out
+        )  # the asserts in build() didn't fail
         # Now make sure we can actually build with build!=host context
         c.run("install app -s:h build_type=Debug --build=missing")
-        assert "Install finished successfully" in c.out  # the asserts in build() didn't fail
+        assert (
+            "Install finished successfully" in c.out
+        )  # the asserts in build() didn't fail
 
     def test_bazel_generate_components(self):
         c = TestClient()
@@ -1037,19 +1107,28 @@ class TestBazelGenerationBuildContext:
                     self.cpp_info.components["client"].libs = []
                     self.cpp_info.components["server"].libs = []
             """)
-        c.save({"dep/conanfile.py": GenConanfile("dep", "1.0").with_package_type("shared-library"),
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep", "1.0").with_package_type(
+                    "shared-library"
+                ),
                 "wayland/conanfile.py": wayland,
                 "tool/conanfile.py": tool,
-                "app/conanfile.py": GenConanfile().with_tool_requires("tool/1.0")})
+                "app/conanfile.py": GenConanfile().with_tool_requires("tool/1.0"),
+            }
+        )
         c.run("export dep")
         c.run("export wayland")
         c.run("export tool")
         c.run("install app --build=missing")
-        assert "Install finished successfully" in c.out  # the asserts in build() didn't fail
+        assert (
+            "Install finished successfully" in c.out
+        )  # the asserts in build() didn't fail
         # Now make sure we can actually build with build!=host context
         c.run("install app -s:h build_type=Debug --build=missing")
-        assert "Install finished successfully" in c.out  # the asserts in build() didn't fail
-
+        assert (
+            "Install finished successfully" in c.out
+        )  # the asserts in build() didn't fail
 
 
 def test_shared_windows_find_libraries():
@@ -1153,21 +1232,30 @@ def test_shared_windows_find_libraries():
         [options]
         *:shared=True
     """)
-    c.save({"conanfile.txt": consumer,
+    c.save(
+        {
+            "conanfile.txt": consumer,
             "zlib/conanfile.py": zlib,
             "openssl/conanfile.py": openssl,
             "libcurl/conanfile.py": libcurl,
             "libiconv/conanfile.py": libiconv,
-    })
+        }
+    )
     c.run("export-pkg zlib -o:a shared=True")
     c.run("export-pkg openssl -o:a shared=True")
     c.run("export-pkg libcurl -o:a shared=True")
     c.run("export-pkg libiconv -o:a shared=True")
     c.run("install . -g BazelDeps")
-    libcurl_bazel_build = load(None, os.path.join(c.current_folder, "libcurl", "BUILD.bazel"))
+    libcurl_bazel_build = load(
+        None, os.path.join(c.current_folder, "libcurl", "BUILD.bazel")
+    )
     zlib_bazel_build = load(None, os.path.join(c.current_folder, "zlib", "BUILD.bazel"))
-    openssl_bazel_build = load(None, os.path.join(c.current_folder, "openssl", "BUILD.bazel"))
-    libiconv_bazel_build = load(None, os.path.join(c.current_folder, "libiconv", "BUILD.bazel"))
+    openssl_bazel_build = load(
+        None, os.path.join(c.current_folder, "openssl", "BUILD.bazel")
+    )
+    libiconv_bazel_build = load(
+        None, os.path.join(c.current_folder, "libiconv", "BUILD.bazel")
+    )
     libcurl_expected = textwrap.dedent("""\
     # Components precompiled libs
     cc_import(
@@ -1214,7 +1302,10 @@ def test_shared_windows_find_libraries():
     assert libcurl_expected in libcurl_bazel_build
     assert zlib_expected in zlib_bazel_build
     assert openssl_expected in openssl_bazel_build
-    assert iconv_expected in libiconv_bazel_build and charset_expected in libiconv_bazel_build
+    assert (
+        iconv_expected in libiconv_bazel_build
+        and charset_expected in libiconv_bazel_build
+    )
 
 
 def test_pkg_with_duplicated_component_requires():
@@ -1236,10 +1327,14 @@ def test_pkg_with_duplicated_component_requires():
         """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("create . --name=mylib --version=0.1")
-    client.save({"conanfile.py": GenConanfile("pkg", "0.1").with_require("mylib/0.1")},
-                clean_first=True)
+    client.save(
+        {"conanfile.py": GenConanfile("pkg", "0.1").with_require("mylib/0.1")},
+        clean_first=True,
+    )
     client.run("install . -g BazelDeps")
-    build_content = load(None, os.path.join(client.current_folder, "mylib", "BUILD.bazel"))
+    build_content = load(
+        None, os.path.join(client.current_folder, "mylib", "BUILD.bazel")
+    )
     myfirstcomp_expected = textwrap.dedent("""\
     cc_library(
         name = "mylib-myfirstcomp",

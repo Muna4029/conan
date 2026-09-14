@@ -4,9 +4,11 @@ import textwrap
 
 from conan.test.utils.tools import TestClient
 
-@pytest.mark.skipif(platform.system() not in  ["Darwin", "Linux"], reason="Autotools on Linux or macOS")
-def test_crossbuild_triplet_from_conf():
 
+@pytest.mark.skipif(
+    platform.system() not in ["Darwin", "Linux"], reason="Autotools on Linux or macOS"
+)
+def test_crossbuild_triplet_from_conf():
     settings_yml = textwrap.dedent("""
         os:
             Linux:
@@ -47,7 +49,9 @@ def test_crossbuild_triplet_from_conf():
     client.save({"build_profile": build_profile})
 
     client.run("new autotools_lib -d name=hello -d version=0.1")
-    client.run("create . --profile:build=build_profile --profile:host=host_profile -tf=\"\"")
+    client.run(
+        'create . --profile:build=build_profile --profile:host=host_profile -tf=""'
+    )
 
     assert "--host=hexagon-acme-linux-gnu" in client.out
     assert "checking host system type... hexagon-acme-linux-gnu" in client.out

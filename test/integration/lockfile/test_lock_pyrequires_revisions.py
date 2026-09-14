@@ -26,9 +26,13 @@ def test_transitive_py_requires_revisions():
             def generate(self):
                 self.output.info("VAR={}!!!".format(self.python_requires["dep"].module.some_var))
         """)
-    client.save({"dep/conanfile.py": python_req.format("42"),
-                 "pkg/conanfile.py": conanfile,
-                 "consumer/conanfile.py": consumer})
+    client.save(
+        {
+            "dep/conanfile.py": python_req.format("42"),
+            "pkg/conanfile.py": conanfile,
+            "consumer/conanfile.py": consumer,
+        }
+    )
 
     client.run("export dep --name=dep --version=0.1 --user=user --channel=channel")
     client.run("export pkg --name=pkg --version=0.1 --user=user --channel=channel")
@@ -67,12 +71,16 @@ def test_transitive_matching_revisions():
             def package_id(self):
                 self.output.info("VAR={{}}!!!".format(self.python_requires["dep"].module.some_var))
         """)
-    client.save({"dep/conanfile.py": dep.format(42),
-                 "toola/conanfile.py": tool.format("0.1"),
-                 "toolb/conanfile.py": tool.format("0.2"),
-                 "pkga/conanfile.py": pkg.format("toola"),
-                 "pkgb/conanfile.py": pkg.format("toolb"),
-                 "app/conanfile.py": GenConanfile().with_requires("pkga/0.1", "pkgb/0.1")})
+    client.save(
+        {
+            "dep/conanfile.py": dep.format(42),
+            "toola/conanfile.py": tool.format("0.1"),
+            "toolb/conanfile.py": tool.format("0.2"),
+            "pkga/conanfile.py": pkg.format("toola"),
+            "pkgb/conanfile.py": pkg.format("toolb"),
+            "app/conanfile.py": GenConanfile().with_requires("pkga/0.1", "pkgb/0.1"),
+        }
+    )
 
     client.run("export dep --name=dep --version=0.1")
     client.run("export dep --name=dep --version=0.2")

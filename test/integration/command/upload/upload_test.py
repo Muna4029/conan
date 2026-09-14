@@ -15,8 +15,14 @@ from conan.api.model import PkgReference
 from conan.api.model import RecipeReference
 from conan.internal.api.uploader import gzopen_without_timestamps
 from conan.internal.paths import EXPORT_SOURCES_TGZ_NAME, PACKAGE_TGZ_NAME
-from conan.test.utils.tools import NO_SETTINGS_PACKAGE_ID, TestClient, TestServer, \
-    GenConanfile, TestRequester, TestingResponse
+from conan.test.utils.tools import (
+    NO_SETTINGS_PACKAGE_ID,
+    TestClient,
+    TestServer,
+    GenConanfile,
+    TestRequester,
+    TestingResponse,
+)
 from conan.internal.util.files import is_dirty, save, set_dirty, sha1sum
 
 conanfile = """from conan import ConanFile
@@ -33,7 +39,6 @@ class MyPkg(ConanFile):
 
 
 class UploadTest(unittest.TestCase):
-
     @pytest.mark.artifactory_ready
     def test_upload_dirty(self):
         client = TestClient(default_server_user=True)
@@ -44,10 +49,14 @@ class UploadTest(unittest.TestCase):
         set_dirty(pkg_folder)
 
         client.run("upload * -r=default -c", assert_error=True)
-        assert "ERROR: Package hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709 i" \
-               "s corrupted, aborting upload." in client.out
-        assert "Remove it with 'conan remove hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709" \
-               in client.out
+        assert (
+            "ERROR: Package hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709 i"
+            "s corrupted, aborting upload." in client.out
+        )
+        assert (
+            "Remove it with 'conan remove hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709"
+            in client.out
+        )
 
         # Test that removeing the binary allows moving forward
         client.run("remove hello/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709 -c")
@@ -65,8 +74,7 @@ class UploadTest(unittest.TestCase):
                 def package(self):
                     copy(self, "myfile.sh", src=self.source_folder, dst=self.package_folder)
             """)
-        client.save({"conanfile.py": conanfile_,
-                    "myfile.sh": "foo"})
+        client.save({"conanfile.py": conanfile_, "myfile.sh": "foo"})
 
         client.run("export-pkg .")
         client.run("upload * --confirm -r default")
@@ -94,8 +102,14 @@ class UploadTest(unittest.TestCase):
         if platform.system() == "Linux":
             client.run("remove '*' -c")
             client.run("install --requires=hello/0.1 --deployer=full_deploy")
-            package_file_path = os.path.join(client.current_folder, "full_deploy", "host", "hello",
-                                             "0.1", "myfile.sh")
+            package_file_path = os.path.join(
+                client.current_folder,
+                "full_deploy",
+                "host",
+                "hello",
+                "0.1",
+                "myfile.sh",
+            )
             # Owner with execute permissions
             assert os.stat(package_file_path).st_mode & stat.S_IXUSR
 
@@ -111,22 +125,27 @@ class UploadTest(unittest.TestCase):
     def test_pattern_upload_no_recipes(self):
         client = TestClient(default_server_user=True)
         client.save({"conanfile.py": conanfile})
-        client.run("upload bogus/*@dummy/testing --confirm -r default", assert_error=True)
-        self.assertIn("No recipes found matching pattern 'bogus/*@dummy/testing'", client.out)
+        client.run(
+            "upload bogus/*@dummy/testing --confirm -r default", assert_error=True
+        )
+        self.assertIn(
+            "No recipes found matching pattern 'bogus/*@dummy/testing'", client.out
+        )
 
     def test_broken_sources_tgz(self):
         # https://github.com/conan-io/conan/issues/2854
         client = TestClient(default_server_user=True)
-        client.save({"conanfile.py": conanfile,
-                     "source.h": "my source"})
+        client.save({"conanfile.py": conanfile, "source.h": "my source"})
         client.run("create . --user=user --channel=testing")
         layout = client.exported_layout()
 
         def gzopen_patched(name, mode="r", fileobj=None, **kwargs):
             raise ConanException("Error gzopen %s" % name)
-        with patch('conan.internal.api.uploader.gzopen_without_timestamps', new=gzopen_patched):
-            client.run("upload * --confirm -r default --only-recipe",
-                       assert_error=True)
+
+        with patch(
+            "conan.internal.api.uploader.gzopen_without_timestamps", new=gzopen_patched
+        ):
+            client.run("upload * --confirm -r default --only-recipe", assert_error=True)
             self.assertIn("Error gzopen conan_sources.tgz", client.out)
 
             export_download_folder = layout.download_export()
@@ -143,17 +162,20 @@ class UploadTest(unittest.TestCase):
     def test_broken_package_tgz(self):
         # https://github.com/conan-io/conan/issues/2854
         client = TestClient(default_server_user=True)
-        client.save({"conanfile.py": conanfile,
-                     "source.h": "my source"})
+        client.save({"conanfile.py": conanfile, "source.h": "my source"})
         client.run("create . --user=user --channel=testing")
-        pref = client.get_latest_package_reference(RecipeReference.loads("hello0/1.2.1@user/testing"),
-                                                   NO_SETTINGS_PACKAGE_ID)
+        pref = client.get_latest_package_reference(
+            RecipeReference.loads("hello0/1.2.1@user/testing"), NO_SETTINGS_PACKAGE_ID
+        )
 
         def gzopen_patched(name, fileobj, compresslevel=None):  # noqa
             if name == PACKAGE_TGZ_NAME:
                 raise ConanException("Error gzopen %s" % name)
             return gzopen_without_timestamps(name, fileobj)
-        with patch('conan.internal.api.uploader.gzopen_without_timestamps', new=gzopen_patched):
+
+        with patch(
+            "conan.internal.api.uploader.gzopen_without_timestamps", new=gzopen_patched
+        ):
             client.run("upload * --confirm -r default", assert_error=True)
             self.assertIn("Error gzopen conan_package.tgz", client.out)
 
@@ -170,36 +192,44 @@ class UploadTest(unittest.TestCase):
     def test_corrupt_upload(self):
         client = TestClient(default_server_user=True)
 
-        client.save({"conanfile.py": conanfile,
-                     "include/hello.h": ""})
+        client.save({"conanfile.py": conanfile, "include/hello.h": ""})
         client.run("create . --user=frodo --channel=stable")
         package_folder = client.created_layout().package()
         save(os.path.join(package_folder, "added.txt"), "")
         os.remove(os.path.join(package_folder, "include/hello.h"))
-        client.run("upload hello0/1.2.1@frodo/stable --check -r default", assert_error=True)
-        self.assertIn("hello0/1.2.1@frodo/stable#3afd661184b94bdac7fb2057e7bd9baa"
-                      ":da39a3ee5e6b4b0d3255bfef95601890afd80709"
-                      "#e70e86439dec07a0d5d3414648b0b16c: ERROR", client.out)
-        self.assertIn("include/hello.h (manifest: d41d8cd98f00b204e9800998ecf8427e, file: None)",
-                      client.out)
-        self.assertIn("added.txt (manifest: None, file: d41d8cd98f00b204e9800998ecf8427e)",
-                      client.out)
-        self.assertIn("ERROR: There are corrupted artifacts, check the error logs", client.out)
+        client.run(
+            "upload hello0/1.2.1@frodo/stable --check -r default", assert_error=True
+        )
+        self.assertIn(
+            "hello0/1.2.1@frodo/stable#3afd661184b94bdac7fb2057e7bd9baa"
+            ":da39a3ee5e6b4b0d3255bfef95601890afd80709"
+            "#e70e86439dec07a0d5d3414648b0b16c: ERROR",
+            client.out,
+        )
+        self.assertIn(
+            "include/hello.h (manifest: d41d8cd98f00b204e9800998ecf8427e, file: None)",
+            client.out,
+        )
+        self.assertIn(
+            "added.txt (manifest: None, file: d41d8cd98f00b204e9800998ecf8427e)",
+            client.out,
+        )
+        self.assertIn(
+            "ERROR: There are corrupted artifacts, check the error logs", client.out
+        )
 
     @pytest.mark.artifactory_ready
     def test_upload_modified_recipe(self):
         client = TestClient(default_server_user=True)
 
-        client.save({"conanfile.py": conanfile,
-                     "hello.cpp": "int i=0"})
+        client.save({"conanfile.py": conanfile, "hello.cpp": "int i=0"})
         client.run("export . --user=frodo --channel=stable")
         rrev = client.exported_recipe_revision()
         client.run("upload hello0/1.2.1@frodo/stable -r default")
         assert "Uploading recipe 'hello0/1.2.1@frodo/stable#" in client.out
 
         client2 = TestClient(servers=client.servers, inputs=["admin", "password"])
-        client2.save({"conanfile.py": conanfile + "\r\n#end",
-                      "hello.cpp": "int i=1"})
+        client2.save({"conanfile.py": conanfile + "\r\n#end", "hello.cpp": "int i=1"})
         client2.run("export . --user=frodo --channel=stable")
         layout = client2.exported_layout()
         manifest, _ = layout.recipe_manifests()
@@ -211,8 +241,10 @@ class UploadTest(unittest.TestCase):
         # first client tries to upload again
         # The client tries to upload exactly the same revision already uploaded, so no changes
         client.run("upload hello0/1.2.1@frodo/stable -r default")
-        self.assertIn(f"'hello0/1.2.1@frodo/stable#{rrev}' already "
-                      "in server, skipping upload", client.out)
+        self.assertIn(
+            f"'hello0/1.2.1@frodo/stable#{rrev}' already in server, skipping upload",
+            client.out,
+        )
 
     @pytest.mark.artifactory_ready
     def test_upload_unmodified_recipe(self):
@@ -232,58 +264,72 @@ class UploadTest(unittest.TestCase):
         manifest.time += 10
         manifest.save(layout.export())
         client2.run("upload hello0/1.2.1@frodo/stable -r default")
-        self.assertIn(f"Recipe 'hello0/1.2.1@frodo/stable#761f54e34d59deb172d6078add7050a7' already "
-                      "in server, skipping upload", client2.out)
+        self.assertIn(
+            "Recipe 'hello0/1.2.1@frodo/stable#761f54e34d59deb172d6078add7050a7' already "
+            "in server, skipping upload",
+            client2.out,
+        )
 
         # first client tries to upload again
         client.run("upload hello0/1.2.1@frodo/stable -r default")
-        self.assertIn(f"Recipe 'hello0/1.2.1@frodo/stable#{rrev}' "
-                      "already in server, skipping upload", client.out)
+        self.assertIn(
+            f"Recipe 'hello0/1.2.1@frodo/stable#{rrev}' "
+            "already in server, skipping upload",
+            client.out,
+        )
 
     @pytest.mark.artifactory_ready
     def test_upload_unmodified_package(self):
         client = TestClient(default_server_user=True)
 
-        client.save({"conanfile.py": conanfile,
-                     "hello.cpp": ""})
+        client.save({"conanfile.py": conanfile, "hello.cpp": ""})
         ref = RecipeReference.loads("hello0/1.2.1@frodo/stable")
         client.run("create . --user=frodo --channel=stable")
         client.run("upload hello0/1.2.1@frodo/stable -r default")
 
         client2 = TestClient(servers=client.servers, inputs=["admin", "password"])
-        client2.save({"conanfile.py": conanfile,
-                      "hello.cpp": ""})
+        client2.save({"conanfile.py": conanfile, "hello.cpp": ""})
         client2.run("create . --user=frodo --channel=stable")
         refs = client2.cache.get_latest_recipe_reference(ref)
         pkgs = client2.cache.get_package_references(refs)
         prev2 = client2.cache.get_latest_package_reference(pkgs[0])
         client2.run("upload hello0/1.2.1@frodo/stable -r default")
-        self.assertIn(f"'{repr(prev2.ref)}' already "
-                      "in server, skipping upload", client2.out)
-        self.assertNotIn("Uploaded conan recipe 'hello0/1.2.1@frodo/stable' to 'default'",
-                         client2.out)
-        self.assertIn(f"'{prev2.repr_notime()}' already in server, skipping upload", client2.out)
+        self.assertIn(
+            f"'{repr(prev2.ref)}' already in server, skipping upload", client2.out
+        )
+        self.assertNotIn(
+            "Uploaded conan recipe 'hello0/1.2.1@frodo/stable' to 'default'",
+            client2.out,
+        )
+        self.assertIn(
+            f"'{prev2.repr_notime()}' already in server, skipping upload", client2.out
+        )
 
         # first client tries to upload again
         refs = client.cache.get_latest_recipe_reference(ref)
         pkgs = client.cache.get_package_references(refs)
         prev1 = client.cache.get_latest_package_reference(pkgs[0])
         client.run("upload hello0/1.2.1@frodo/stable -r default")
-        self.assertIn(f"'{repr(prev1.ref)}' already "
-                      "in server, skipping upload", client.out)
-        self.assertNotIn("Uploaded conan recipe 'hello0/1.2.1@frodo/stable' to 'default'",
-                         client.out)
-        self.assertIn(f"'{prev1.repr_notime()}' already in server, skipping upload", client2.out)
+        self.assertIn(
+            f"'{repr(prev1.ref)}' already in server, skipping upload", client.out
+        )
+        self.assertNotIn(
+            "Uploaded conan recipe 'hello0/1.2.1@frodo/stable' to 'default'", client.out
+        )
+        self.assertIn(
+            f"'{prev1.repr_notime()}' already in server, skipping upload", client2.out
+        )
 
     def test_upload_no_overwrite_all(self):
-        conanfile_new = GenConanfile("hello", "1.0").\
-            with_import("from conan.tools.files import copy").\
-            with_exports_sources(["*"]).\
-            with_package('copy(self, "*", self.source_folder, self.package_folder)')
+        conanfile_new = (
+            GenConanfile("hello", "1.0")
+            .with_import("from conan.tools.files import copy")
+            .with_exports_sources(["*"])
+            .with_package('copy(self, "*", self.source_folder, self.package_folder)')
+        )
 
         client = TestClient(default_server_user=True)
-        client.save({"conanfile.py": conanfile_new,
-                     "hello.h": ""})
+        client.save({"conanfile.py": conanfile_new, "hello.h": ""})
         client.run("create . --user=frodo --channel=stable")
         # First time upload
         client.run("upload hello/1.0@frodo/stable -r default")
@@ -292,19 +338,27 @@ class UploadTest(unittest.TestCase):
 
         # CASE: Upload again
         client.run("upload hello/1.0@frodo/stable -r default")
-        refs = client.cache.get_latest_recipe_reference(RecipeReference.loads("hello/1.0@frodo/stable"))
+        refs = client.cache.get_latest_recipe_reference(
+            RecipeReference.loads("hello/1.0@frodo/stable")
+        )
         pkgs = client.cache.get_package_references(refs)
         prev1 = client.cache.get_latest_package_reference(pkgs[0])
-        self.assertIn(f"'{repr(prev1.ref)}' already "
-                      "in server, skipping upload", client.out)
-        self.assertIn(f"'{prev1.repr_notime()}' already in server, skipping upload", client.out)
+        self.assertIn(
+            f"'{repr(prev1.ref)}' already in server, skipping upload", client.out
+        )
+        self.assertIn(
+            f"'{prev1.repr_notime()}' already in server, skipping upload", client.out
+        )
 
     def test_skip_upload(self):
-        """ Check that the option --skip does not upload anything
-        """
+        """Check that the option --skip does not upload anything"""
         client = TestClient(default_server_user=True)
-        client.save({"conanfile.py": GenConanfile("hello0", "1.2.1").with_exports("*"),
-                     "file.txt": ""})
+        client.save(
+            {
+                "conanfile.py": GenConanfile("hello0", "1.2.1").with_exports("*"),
+                "file.txt": "",
+            }
+        )
         client.run("create .")
 
         client.run("upload * --dry-run -r default -c")
@@ -326,13 +380,15 @@ class UploadTest(unittest.TestCase):
         client.save({"conanfile.py": GenConanfile()})
         client.run("create . --name=pkg --version=0.1 --user=user --channel=testing")
         client.run("upload * --confirm -r default")
-        client2 = TestClient(servers=client.servers, inputs=["admin", "password",
-                                                             "lasote", "mypass"])
+        client2 = TestClient(
+            servers=client.servers, inputs=["admin", "password", "lasote", "mypass"]
+        )
 
         client2.run("install --requires=pkg/0.1@user/testing")
         client2.run("remote remove default")
-        server2 = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")],
-                             users={"lasote": "mypass"})
+        server2 = TestServer(
+            [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"lasote": "mypass"}
+        )
         client2.servers = {"server2": server2}
         client2.update_servers()
         client2.run("upload * --confirm -r=server2")
@@ -341,8 +397,7 @@ class UploadTest(unittest.TestCase):
         assert "Uploading package 'pkg" in client.out
 
     def test_upload_login_prompt_disabled_no_user(self):
-        """ Without user info, uploads should fail when login prompt has been disabled.
-        """
+        """Without user info, uploads should fail when login prompt has been disabled."""
         files = {"conanfile.py": GenConanfile("hello0", "1.2.1")}
         client = TestClient(default_server_user=True)
         client.save(files)
@@ -391,8 +446,12 @@ class UploadTest(unittest.TestCase):
 
     def test_upload_key_error(self):
         files = {"conanfile.py": GenConanfile("hello0", "1.2.1")}
-        server1 = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"lasote": "mypass"})
-        server2 = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"lasote": "mypass"})
+        server1 = TestServer(
+            [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"lasote": "mypass"}
+        )
+        server2 = TestServer(
+            [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"lasote": "mypass"}
+        )
         servers = OrderedDict()
         servers["server1"] = server1
         servers["server2"] = server2
@@ -409,15 +468,19 @@ class UploadTest(unittest.TestCase):
         self.assertNotIn("ERROR: 'server1'", client.out)
 
     def test_upload_without_user_channel(self):
-        server = TestServer(users={"user": "password"}, write_permissions=[("*/*@*/*", "*")])
+        server = TestServer(
+            users={"user": "password"}, write_permissions=[("*/*@*/*", "*")]
+        )
         servers = {"default": server}
         client = TestClient(servers=servers, inputs=["user", "password"])
 
         client.save({"conanfile.py": GenConanfile()})
 
-        client.run('create . --name=lib --version=1.0')
-        self.assertIn("lib/1.0: Package '{}' created".format(NO_SETTINGS_PACKAGE_ID), client.out)
-        client.run('upload lib/1.0 -c -r default')
+        client.run("create . --name=lib --version=1.0")
+        self.assertIn(
+            "lib/1.0: Package '{}' created".format(NO_SETTINGS_PACKAGE_ID), client.out
+        )
+        client.run("upload lib/1.0 -c -r default")
         assert "Uploading recipe 'lib/1.0" in client.out
 
         # Verify that in the remote it is stored as "_"
@@ -429,21 +492,23 @@ class UploadTest(unittest.TestCase):
         self.assertIn("/lib/1.0/_/_/0/package", path.replace("\\", "/"))
 
         # Should be possible with explicit package
-        client.run(f'upload lib/1.0#*:{NO_SETTINGS_PACKAGE_ID} -c -r default --force')
+        client.run(f"upload lib/1.0#*:{NO_SETTINGS_PACKAGE_ID} -c -r default --force")
         self.assertIn("Uploading artifacts", client.out)
 
     def test_upload_without_cleaned_user(self):
-        """ When a user is not authenticated, uploads failed first time
+        """When a user is not authenticated, uploads failed first time
         https://github.com/conan-io/conan/issues/5878
         """
 
         class EmptyCapabilitiesResponse(object):
             def __init__(self):
                 self.ok = False
-                self.headers = {"X-Conan-Server-Capabilities": "",
-                                "Content-Type": "application/json"}
+                self.headers = {
+                    "X-Conan-Server-Capabilities": "",
+                    "Content-Type": "application/json",
+                }
                 self.status_code = 401
-                self.content = b''
+                self.content = b""
 
         class ServerCapabilitiesRequester(TestRequester):
             def __init__(self, *args, **kwargs):
@@ -461,10 +526,15 @@ class UploadTest(unittest.TestCase):
                     response = app.get(url, **kwargs)
                     return TestingResponse(response)
 
-        server = TestServer(users={"user": "password"}, write_permissions=[("*/*@*/*", "*")])
+        server = TestServer(
+            users={"user": "password"}, write_permissions=[("*/*@*/*", "*")]
+        )
         servers = {"default": server}
-        client = TestClient(requester_class=ServerCapabilitiesRequester, servers=servers,
-                            inputs=["user", "password"])
+        client = TestClient(
+            requester_class=ServerCapabilitiesRequester,
+            servers=servers,
+            inputs=["user", "password"],
+        )
         files = {"conanfile.py": GenConanfile("hello0", "1.2.1")}
         client.save(files)
         client.run("create . --user=user --channel=testing")
@@ -481,7 +551,9 @@ class UploadTest(unittest.TestCase):
                 resp.status_code = 200
                 return resp
 
-        client = TestClient(requester_class=MyHttpRequester, servers={"default": TestServer()})
+        client = TestClient(
+            requester_class=MyHttpRequester, servers={"default": TestServer()}
+        )
         client.save({"conanfile.py": GenConanfile("hello0", "1.2.1")})
         client.run("create . ")
         client.run("upload * -c -r default", assert_error=True)
@@ -496,19 +568,19 @@ def test_upload_only_without_user_channel():
     c = TestClient(default_server_user=True)
 
     c.save({"conanfile.py": GenConanfile("lib", "1.0")})
-    c.run('create .')
+    c.run("create .")
     c.run("create . --user=user --channel=channel")
     c.run("list *")
     assert "lib/1.0@user/channel" in c.out
 
-    c.run('upload */*@ -c -r=default')
+    c.run("upload */*@ -c -r=default")
     assert "Uploading recipe 'lib/1.0" in c.out  # FAILS!
     assert "lib/1.0@user/channel" not in c.out
     c.run("search * -r=default")
     assert "lib/1.0" in c.out
     assert "lib/1.0@user/channel" not in c.out
 
-    c.run('upload */*@user/channel -c -r=default')
+    c.run("upload */*@user/channel -c -r=default")
     assert "Uploading recipe 'lib/1.0@user/channel" in c.out
     c.run("search * -r=default")
     assert "lib/1.0@user/channel" in c.out
@@ -518,8 +590,14 @@ def test_upload_only_without_user_channel():
 def test_upload_with_python_requires():
     # https://github.com/conan-io/conan/issues/14503
     c = TestClient(default_server_user=True)
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1"),
-            "dep/conanfile.py": GenConanfile("dep", "0.1").with_python_requires("tool/[>=0.1]")})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1"),
+            "dep/conanfile.py": GenConanfile("dep", "0.1").with_python_requires(
+                "tool/[>=0.1]"
+            ),
+        }
+    )
     c.run("create tool")
     c.run("create dep")
     c.run("upload tool* -c -r=default")
@@ -541,75 +619,89 @@ def test_upload_list_only_recipe():
 
 def test_upload_json_output():
     c = TestClient(default_server_user=True)
-    c.save({"conanfile.py": GenConanfile("liba", "0.1").with_settings("os")
-                                                       .with_shared_option(False)})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("liba", "0.1")
+            .with_settings("os")
+            .with_shared_option(False)
+        }
+    )
     c.run("create . -s os=Linux")
     c.run("upload * -r=default -c --format=json")
     list_pkgs = json.loads(c.stdout)
-    revs = list_pkgs["default"]["liba/0.1"]["revisions"]["a565bd5defd3a99e157698fcc6e23b25"]
+    revs = list_pkgs["default"]["liba/0.1"]["revisions"][
+        "a565bd5defd3a99e157698fcc6e23b25"
+    ]
     pkg = revs["packages"]["9e0f8140f0fe6b967392f8d5da9881e232e05ff8"]
     prev = pkg["revisions"]["f50f552c6e04b1f241e5f7864bc3957f"]
     assert pkg["info"] == {"settings": {"os": "Linux"}, "options": {"shared": "False"}}
     assert revs["upload-urls"] == {
         "conanfile.py": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/files/conanfile.py",
-            "checksum": sha1sum(revs["files"]["conanfile.py"])
+            "checksum": sha1sum(revs["files"]["conanfile.py"]),
         },
         "conanmanifest.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/files/conanmanifest.txt",
-            "checksum": sha1sum(revs["files"]["conanmanifest.txt"])
-        }
+            "checksum": sha1sum(revs["files"]["conanmanifest.txt"]),
+        },
     }
     assert prev["upload-urls"] == {
         "conan_package.tgz": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conan_package.tgz",
-            "checksum": sha1sum(prev["files"]["conan_package.tgz"])
+            "checksum": sha1sum(prev["files"]["conan_package.tgz"]),
         },
         "conaninfo.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conaninfo.txt",
-            "checksum": sha1sum(prev["files"]["conaninfo.txt"])
+            "checksum": sha1sum(prev["files"]["conaninfo.txt"]),
         },
         "conanmanifest.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conanmanifest.txt",
-            "checksum": sha1sum(prev["files"]["conanmanifest.txt"])
-        }
+            "checksum": sha1sum(prev["files"]["conanmanifest.txt"]),
+        },
     }
 
 
 def test_upload_dry_run_output():
     c = TestClient(default_server_user=True)
-    c.save({"conanfile.py": GenConanfile("liba", "0.1").with_settings("os")
-                                                       .with_shared_option(False)})
+    c.save(
+        {
+            "conanfile.py": GenConanfile("liba", "0.1")
+            .with_settings("os")
+            .with_shared_option(False)
+        }
+    )
     c.run("create . -s os=Linux")
     c.run("upload * -r=default -c --dry-run --format=json")
     list_pkgs = json.loads(c.stdout)
-    revs = list_pkgs["default"]["liba/0.1"]["revisions"]["a565bd5defd3a99e157698fcc6e23b25"]
+    revs = list_pkgs["default"]["liba/0.1"]["revisions"][
+        "a565bd5defd3a99e157698fcc6e23b25"
+    ]
     pkg = revs["packages"]["9e0f8140f0fe6b967392f8d5da9881e232e05ff8"]
     prev = pkg["revisions"]["f50f552c6e04b1f241e5f7864bc3957f"]
     assert pkg["info"] == {"settings": {"os": "Linux"}, "options": {"shared": "False"}}
     assert revs["upload-urls"] == {
         "conanfile.py": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/files/conanfile.py",
-            "checksum": sha1sum(revs["files"]["conanfile.py"])
+            "checksum": sha1sum(revs["files"]["conanfile.py"]),
         },
         "conanmanifest.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/files/conanmanifest.txt",
-            "checksum": sha1sum(revs["files"]["conanmanifest.txt"])
-        }
+            "checksum": sha1sum(revs["files"]["conanmanifest.txt"]),
+        },
     }
     assert prev["upload-urls"] == {
         "conan_package.tgz": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conan_package.tgz",
-            "checksum": sha1sum(prev["files"]["conan_package.tgz"])
+            "checksum": sha1sum(prev["files"]["conan_package.tgz"]),
         },
         "conaninfo.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conaninfo.txt",
-            "checksum": sha1sum(prev["files"]["conaninfo.txt"])
+            "checksum": sha1sum(prev["files"]["conaninfo.txt"]),
         },
         "conanmanifest.txt": {
             "url": f"{c.servers['default']}/v2/conans/liba/0.1/_/_/revisions/a565bd5defd3a99e157698fcc6e23b25/packages/9e0f8140f0fe6b967392f8d5da9881e232e05ff8/revisions/f50f552c6e04b1f241e5f7864bc3957f/files/conanmanifest.txt",
-            "checksum": sha1sum(prev["files"]["conanmanifest.txt"])
-        }
+            "checksum": sha1sum(prev["files"]["conanmanifest.txt"]),
+        },
     }
 
     # check we don't have anything about the upload-urls in the text formatter

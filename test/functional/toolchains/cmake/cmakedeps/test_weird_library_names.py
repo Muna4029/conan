@@ -50,10 +50,14 @@ def client_weird_lib_name():
     src = gen_function_cpp(name="hello")
     cmake = gen_cmakelists(libname="hello_0.1", libsources=["src/hello.cpp"])
 
-    c.save({"src/hello.h": hdr,
+    c.save(
+        {
+            "src/hello.h": hdr,
             "src/hello.cpp": src,
             "CMakeLists.txt": cmake,
-            "conanfile.py": conanfile})
+            "conanfile.py": conanfile,
+        }
+    )
     c.run("create . --name=hello --version=0.1")
     return c
 

@@ -8,26 +8,26 @@ from conan.internal.util.files import load
 
 
 def exe_suffix():
-    return '.exe' if platform.system() == 'Windows' else ''
+    return ".exe" if platform.system() == "Windows" else ""
 
 
-COMPILER_MAP = {
-    'gcc': ('gcc', 'g++'),
-    'clang': ('clang', 'clang++')
-}
+COMPILER_MAP = {"gcc": ("gcc", "g++"), "clang": ("clang", "clang++")}
 
-compiler_path = "C:/opt/bin" if platform.system() == 'Windows' else "/opt/bin"
+compiler_path = "C:/opt/bin" if platform.system() == "Windows" else "/opt/bin"
 
 
-@pytest.mark.parametrize('compiler, version, system', [
-    ('gcc', '13', 'Linux'),
-    ('clang', '15', 'Linux'),
-])
+@pytest.mark.parametrize(
+    "compiler, version, system",
+    [
+        ("gcc", "13", "Linux"),
+        ("clang", "15", "Linux"),
+    ],
+)
 def test_toolchain_from_path(compiler, version, system):
     client = TestClient()
     path = client.current_folder
 
-    profile = textwrap.dedent(f'''
+    profile = textwrap.dedent(f"""
     [settings]
     compiler={compiler}
     compiler.version={version}
@@ -35,40 +35,43 @@ def test_toolchain_from_path(compiler, version, system):
     os={system}
     [buildenv]
     PATH={path}
-    ''')
+    """)
 
     cc, cxx = COMPILER_MAP[compiler]
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "compiler", "os"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
-    client.save({cc + exe_suffix(): ''})
-    client.save({cxx + exe_suffix(): ''})
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({cc + exe_suffix(): ""})
+    client.save({cxx + exe_suffix(): ""})
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
 
     settings_content = load(settings_path)
-    assert f'qbs.toolchainType:{compiler}' in settings_content
-    toolchain_path = client.current_folder.replace('\\', '/')
-    assert f'cpp.toolchainInstallPath:{toolchain_path}' in settings_content
-    assert f'cpp.compilerName:{cxx}' in settings_content
-    assert f'cpp.cCompilerName:{cc}' in settings_content
-    assert f'cpp.cxxCompilerName:{cxx}' in settings_content
+    assert f"qbs.toolchainType:{compiler}" in settings_content
+    toolchain_path = client.current_folder.replace("\\", "/")
+    assert f"cpp.toolchainInstallPath:{toolchain_path}" in settings_content
+    assert f"cpp.compilerName:{cxx}" in settings_content
+    assert f"cpp.cCompilerName:{cc}" in settings_content
+    assert f"cpp.cxxCompilerName:{cxx}" in settings_content
 
 
-@pytest.mark.parametrize('compiler, version, system, cc, cxx', [
-    ('gcc', '13', 'Linux', 'gcc', 'g++'),
-    ('clang', '15', 'Linux', 'clang', 'clang++'),
-])
+@pytest.mark.parametrize(
+    "compiler, version, system, cc, cxx",
+    [
+        ("gcc", "13", "Linux", "gcc", "g++"),
+        ("clang", "15", "Linux", "clang", "clang++"),
+    ],
+)
 def test_toolchain_from_conf(compiler, version, system, cc, cxx):
     profile = textwrap.dedent(f'''
     [settings]
@@ -80,36 +83,39 @@ def test_toolchain_from_conf(compiler, version, system, cc, cxx):
     tools.build:compiler_executables ={{"c": "{compiler_path}/{cc}", "cpp": "{compiler_path}/{cxx}"}}
     ''')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "compiler", "os"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
     client = TestClient()
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
 
     settings_content = load(settings_path)
-    assert f'qbs.toolchainType:{compiler}' in settings_content
-    assert f'cpp.toolchainInstallPath:{compiler_path}' in settings_content
-    assert f'cpp.compilerName:{cxx}' in settings_content
-    assert f'cpp.cCompilerName:{cc}' in settings_content
-    assert f'cpp.cxxCompilerName:{cxx}' in settings_content
+    assert f"qbs.toolchainType:{compiler}" in settings_content
+    assert f"cpp.toolchainInstallPath:{compiler_path}" in settings_content
+    assert f"cpp.compilerName:{cxx}" in settings_content
+    assert f"cpp.cCompilerName:{cc}" in settings_content
+    assert f"cpp.cxxCompilerName:{cxx}" in settings_content
 
 
-@pytest.mark.parametrize('compiler, version, system, cc, cxx', [
-    ('gcc', '13', 'Linux', 'gcc', 'g++'),
-    ('clang', '15', 'Linux', 'clang', 'clang++'),
-])
+@pytest.mark.parametrize(
+    "compiler, version, system, cc, cxx",
+    [
+        ("gcc", "13", "Linux", "gcc", "g++"),
+        ("clang", "15", "Linux", "clang", "clang++"),
+    ],
+)
 def test_toolchain_from_env(compiler, version, system, cc, cxx):
-    profile = textwrap.dedent(f'''
+    profile = textwrap.dedent(f"""
     [settings]
     compiler={compiler}
     compiler.version={version}
@@ -118,38 +124,41 @@ def test_toolchain_from_env(compiler, version, system, cc, cxx):
     [buildenv]
     CC={compiler_path}/{cc}
     CXX={compiler_path}/{cxx}
-    ''')
+    """)
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "compiler", "os"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
     client = TestClient()
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
 
     settings_content = load(settings_path)
-    assert f'qbs.toolchainType:{compiler}' in settings_content
-    assert f'cpp.toolchainInstallPath:{compiler_path}' in settings_content
-    assert f'cpp.compilerName:{cxx}' in settings_content
-    assert f'cpp.cCompilerName:{cc}' in settings_content
-    assert f'cpp.cxxCompilerName:{cxx}' in settings_content
+    assert f"qbs.toolchainType:{compiler}" in settings_content
+    assert f"cpp.toolchainInstallPath:{compiler_path}" in settings_content
+    assert f"cpp.compilerName:{cxx}" in settings_content
+    assert f"cpp.cCompilerName:{cc}" in settings_content
+    assert f"cpp.cxxCompilerName:{cxx}" in settings_content
 
 
-@pytest.mark.parametrize('system, compiler, version, build_type, arch, cppstd', [
-    ('Linux', 'gcc', '13', 'Release', 'x86_64', '17'),
-    ('Linux', 'gcc', '13', 'Debug', 'x86_64', '14'),
-    ('Linux', 'gcc', '13', 'Debug', 'x86', '20'),
-    ('Linux', 'gcc', '13', 'Release', 'avr', '11'),
-])
+@pytest.mark.parametrize(
+    "system, compiler, version, build_type, arch, cppstd",
+    [
+        ("Linux", "gcc", "13", "Release", "x86_64", "17"),
+        ("Linux", "gcc", "13", "Debug", "x86_64", "14"),
+        ("Linux", "gcc", "13", "Debug", "x86", "20"),
+        ("Linux", "gcc", "13", "Release", "avr", "11"),
+    ],
+)
 def test_options_from_settings(system, compiler, version, build_type, arch, cppstd):
     client = TestClient()
 
@@ -168,28 +177,28 @@ def test_options_from_settings(system, compiler, version, build_type, arch, cpps
     tools.build:compiler_executables ={{"c": "{compiler_path}/{cc}", "cpp": "{compiler_path}/{cxx}"}}
     ''')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "os", "compiler", "build_type", "arch"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
     settings_content = load(settings_path)
 
-    assert f'qbs.architecture:{arch}' in settings_content
+    assert f"qbs.architecture:{arch}" in settings_content
     build_variant = build_type.lower()
-    assert f'qbs.buildVariant:{build_variant}' in settings_content
+    assert f"qbs.buildVariant:{build_variant}" in settings_content
     target_platform = system.lower()
-    assert f'qbs.targetPlatform:{target_platform}' in settings_content
-    assert 'cpp.cxxLanguageVersion:c++' + cppstd in settings_content
+    assert f"qbs.targetPlatform:{target_platform}" in settings_content
+    assert "cpp.cxxLanguageVersion:c++" + cppstd in settings_content
     # TODO: cpp.runtimeLibrary (MSVC only)
 
 
@@ -213,19 +222,19 @@ def test_options_from_conf():
     tools.build:exelinkflags=['-Wl,-s']
     ''')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "os", "compiler", "build_type", "arch"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
     settings_content = load(settings_path)
 
@@ -251,7 +260,7 @@ def test_options_extra():
     tools.build:compiler_executables ={{"c": "{compiler_path}/gcc", "cpp": "{compiler_path}/g++"}}
     ''')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     from conan.tools.qbs import QbsProfile
     class Recipe(ConanFile):
@@ -267,13 +276,13 @@ def test_options_extra():
             profile.extra_sharedlinkflags=['-s']
             profile.extra_exelinkflags=['-Wl,-s']
             profile.generate()
-    ''')
+    """)
 
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
     settings_content = load(settings_path)
 
@@ -301,19 +310,19 @@ def test_sysroot():
     tools.build:sysroot=\\opt\\usr\\local
     ''')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     from conan import ConanFile
     class Recipe(ConanFile):
         settings = "os", "compiler", "build_type", "arch"
         name = "mylib"
         version = "0.1"
-    ''')
+    """)
 
-    client.save({'profile': profile})
-    client.save({'conanfile.py': conanfile})
-    client.run('install . -pr:a=profile -g QbsProfile')
+    client.save({"profile": profile})
+    client.save({"conanfile.py": conanfile})
+    client.run("install . -pr:a=profile -g QbsProfile")
 
-    settings_path = os.path.join(client.current_folder, 'qbs_settings.txt')
+    settings_path = os.path.join(client.current_folder, "qbs_settings.txt")
     assert os.path.exists(settings_path)
     settings_content = load(settings_path)
 

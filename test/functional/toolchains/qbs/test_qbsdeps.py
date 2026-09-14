@@ -10,7 +10,7 @@ from jinja2 import Template
 
 
 def gen_qbs_application(**context):
-    qbsfile = textwrap.dedent('''
+    qbsfile = textwrap.dedent("""
         CppApplication {
             files: [{% for s in files %} "{{s}}", {% endfor %}]
             {% for d in deps %}
@@ -20,7 +20,7 @@ def gen_qbs_application(**context):
             {% endfor %}
             qbsModuleProviders: ["conan"]
         }
-    ''')
+    """)
 
     t = Template(qbsfile)
     return t.render(**context)
@@ -31,7 +31,7 @@ def gen_qbs_application(**context):
 def test_qbsdeps_with_test_requires_header_only():
     client = TestClient()
     with client.chdir("lib"):
-        conanfile = textwrap.dedent('''
+        conanfile = textwrap.dedent("""
             from conan import ConanFile
             from conan.tools.files import copy
             import os
@@ -44,30 +44,32 @@ def test_qbsdeps_with_test_requires_header_only():
                          "hello.h",
                          src=self.source_folder,
                          dst=os.path.join(self.package_folder, "include"))
-        ''')
-        header = textwrap.dedent('''
+        """)
+        header = textwrap.dedent("""
             #pragma once
             inline int hello() { return 0; }
-        ''')
-        client.save({
-            'conanfile.py': conanfile,
-            'hello.h': header
-        })
-        client.run('create .')
+        """)
+        client.save({"conanfile.py": conanfile, "hello.h": header})
+        client.run("create .")
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         class Recipe(ConanFile):
             settings = "os", "compiler", "build_type", "arch"
             generators = "QbsDeps"
             def requirements(self):
                 self.requires('hello/0.1.0')
-        ''')
-    client.save({
-        "conanfile.py": conanfile,
-        "main.cpp": gen_function_cpp(name="main", includes=["hello"], calls=["hello"]),
-        "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
-    }, clean_first=True)
+        """)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["hello"], calls=["hello"]
+            ),
+            "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
+        },
+        clean_first=True,
+    )
     client.run("install .")
     client.run_command("qbs build moduleProviders.conan.installDirectory:.")
 
@@ -78,21 +80,26 @@ def test_qbsdeps_with_test_requires_lib():
     client = TestClient()
     with client.chdir("lib"):
         client.run("new qbs_lib -d name=hello -d version=1.0")
-        client.run("create . -tf=\"\"")
+        client.run('create . -tf=""')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         class Recipe(ConanFile):
             settings = "os", "compiler", "build_type", "arch"
             generators = "QbsDeps"
             def requirements(self):
                 self.requires('hello/1.0')
-        ''')
-    client.save({
-        "conanfile.py": conanfile,
-        "main.cpp": gen_function_cpp(name="main", includes=["hello"], calls=["hello"]),
-        "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
-    }, clean_first=True)
+        """)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["hello"], calls=["hello"]
+            ),
+            "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
+        },
+        clean_first=True,
+    )
     client.run("install .")
     client.run_command("qbs build moduleProviders.conan.installDirectory:.")
 
@@ -103,9 +110,9 @@ def test_qbsdeps_with_qbs_toolchain():
     client = TestClient()
     with client.chdir("lib"):
         client.run("new qbs_lib -d name=hello -d version=1.0")
-        client.run("create . -tf=\"\"")
+        client.run('create . -tf=""')
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.qbs import Qbs
 
@@ -130,10 +137,15 @@ def test_qbsdeps_with_qbs_toolchain():
             def install(self):
                 qbs = Qbs(self)
                 qbs.install()
-        ''')
-    client.save({
-        "conanfile.py": conanfile,
-        "main.cpp": gen_function_cpp(name="main", includes=["hello"], calls=["hello"]),
-        "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
-    }, clean_first=True)
+        """)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["hello"], calls=["hello"]
+            ),
+            "app.qbs": gen_qbs_application(files=["main.cpp"], deps=["hello"]),
+        },
+        clean_first=True,
+    )
     client.run("create .")

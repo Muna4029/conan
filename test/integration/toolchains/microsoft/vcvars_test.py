@@ -13,7 +13,8 @@ from conan.test.utils.tools import TestClient
 def test_vcvars_generator(scope):
     client = TestClient(path_with_spaces=False)
 
-    conanfile = textwrap.dedent("""
+    conanfile = textwrap.dedent(
+        """
         from conan import ConanFile
         from conan.tools.microsoft import VCVars
 
@@ -22,11 +23,14 @@ def test_vcvars_generator(scope):
 
             def generate(self):
                 VCVars(self).generate({})
-    """.format('scope="{}"'.format(scope) if scope else ""))
+    """.format('scope="{}"'.format(scope) if scope else "")
+    )
 
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler="msvc" -s compiler.version=191 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static')
+    client.run(
+        'install . -s os=Windows -s compiler="msvc" -s compiler.version=191 '
+        "-s compiler.cppstd=14 -s compiler.runtime=static"
+    )
 
     assert os.path.exists(os.path.join(client.current_folder, "conanvcvars.bat"))
 
@@ -41,14 +45,18 @@ def test_vcvars_generator_skip():
     tools.microsoft.msbuild:installation_path=disabled avoids creation of conanvcvars.bat
     """
     client = TestClient()
-    client.save({"conanfile.py": GenConanfile().with_generator("VCVars")
-                                               .with_settings("os", "compiler",
-                                                              "arch", "build_type"),
-                 "profile": 'include(default)\n[conf]\ntools.microsoft.msbuild:installation_path='})
+    client.save(
+        {
+            "conanfile.py": GenConanfile()
+            .with_generator("VCVars")
+            .with_settings("os", "compiler", "arch", "build_type"),
+            "profile": "include(default)\n[conf]\ntools.microsoft.msbuild:installation_path=",
+        }
+    )
 
     client.run('install . -c tools.microsoft.msbuild:installation_path=""')
     assert not os.path.exists(os.path.join(client.current_folder, "conanvcvars.bat"))
-    client.run('install . -pr=profile')
+    client.run("install . -pr=profile")
     assert not os.path.exists(os.path.join(client.current_folder, "conanvcvars.bat"))
 
 
@@ -58,12 +66,18 @@ def test_vcvars_generator_skip_on_linux():
     Skip creation of conanvcvars.bat on Linux build systems
     """
     client = TestClient()
-    client.save({"conanfile.py": GenConanfile().with_generator("VCVars")
-                                               .with_settings("os", "compiler",
-                                                              "arch", "build_type")})
+    client.save(
+        {
+            "conanfile.py": GenConanfile()
+            .with_generator("VCVars")
+            .with_settings("os", "compiler", "arch", "build_type")
+        }
+    )
 
-    client.run('install . -s os=Windows -s compiler=msvc -s compiler.version=193 '
-               '-s compiler.runtime=dynamic')
+    client.run(
+        "install . -s os=Windows -s compiler=msvc -s compiler.version=193 "
+        "-s compiler.runtime=dynamic"
+    )
     assert not os.path.exists(os.path.join(client.current_folder, "conanvcvars.bat"))
 
 
@@ -78,8 +92,10 @@ def test_vcvars_generator_string():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler="msvc" -s compiler.version=191 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static')
+    client.run(
+        'install . -s os=Windows -s compiler="msvc" -s compiler.version=191 '
+        "-s compiler.cppstd=14 -s compiler.runtime=static"
+    )
 
     assert os.path.exists(os.path.join(client.current_folder, "conanvcvars.bat"))
 
@@ -97,8 +113,10 @@ def test_vcvars_2015_error():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler="msvc" -s compiler.version=190 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static')
+    client.run(
+        'install . -s os=Windows -s compiler="msvc" -s compiler.version=190 '
+        "-s compiler.cppstd=14 -s compiler.runtime=static"
+    )
 
     vcvars = client.load("conanvcvars.bat")
     assert 'vcvarsall.bat"  amd64' in vcvars
@@ -117,8 +135,10 @@ def test_vcvars_platform_x86():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler="msvc" -s compiler.version=193 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static -s:b arch=x86')
+    client.run(
+        'install . -s os=Windows -s compiler="msvc" -s compiler.version=193 '
+        "-s compiler.cppstd=14 -s compiler.runtime=static -s:b arch=x86"
+    )
 
     vcvars = client.load("conanvcvars.bat")
     assert 'vcvarsall.bat"  x86_amd64' in vcvars
@@ -135,9 +155,11 @@ def test_vcvars_winsdk_version():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler=msvc -s compiler.version=193 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static '
-               '-c tools.microsoft:winsdk_version=10.0')
+    client.run(
+        "install . -s os=Windows -s compiler=msvc -s compiler.version=193 "
+        "-s compiler.cppstd=14 -s compiler.runtime=static "
+        "-c tools.microsoft:winsdk_version=10.0"
+    )
 
     vcvars = client.load("conanvcvars.bat")
     assert 'vcvarsall.bat"  amd64 10.0 -vcvars_ver=14.3' in vcvars
@@ -154,12 +176,15 @@ def test_vcvars_compiler_update():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s os=Windows -s compiler=msvc -s compiler.version=193 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static '
-               '-s compiler.update=3')
+    client.run(
+        "install . -s os=Windows -s compiler=msvc -s compiler.version=193 "
+        "-s compiler.cppstd=14 -s compiler.runtime=static "
+        "-s compiler.update=3"
+    )
 
     vcvars = client.load("conanvcvars.bat")
     assert 'vcvarsall.bat"  amd64 -vcvars_ver=14.33' in vcvars
+
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows")
 def test_vcvars_armv8_windows_store():
@@ -172,9 +197,11 @@ def test_vcvars_armv8_windows_store():
             settings = "os", "compiler", "arch", "build_type"
     """)
     client.save({"conanfile.py": conanfile})
-    client.run('install . -s:b os=Windows -s compiler="msvc" -s compiler.version=194 '
-               '-s compiler.cppstd=14 -s compiler.runtime=static -s:h arch=armv8 '
-               '-s:h os=WindowsStore -s:h os.version=10.0')
+    client.run(
+        'install . -s:b os=Windows -s compiler="msvc" -s compiler.version=194 '
+        "-s compiler.cppstd=14 -s compiler.runtime=static -s:h arch=armv8 "
+        "-s:h os=WindowsStore -s:h os.version=10.0"
+    )
 
     vcvars = client.load("conanvcvars.bat")
     assert 'vcvarsall.bat"  amd64_arm64' in vcvars

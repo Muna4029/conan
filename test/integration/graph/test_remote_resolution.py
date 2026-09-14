@@ -29,10 +29,13 @@ def test_build_requires_ranges():
                 dep = self.dependencies.build.get("cmake")
                 self.output.info("CMAKEVER: {{}}!!".format(dep.ref.version))
             """)
-    client.save({"pkgc/conanfile.py": conanfile.format("", "[*]"),
-                 "pkgb/conanfile.py": conanfile.format("requires = 'pkgc/1.0'", "1.0"),
-                 "pkga/conanfile.py": conanfile.format("requires = 'pkgb/1.0'", "[*]"),
-                 })
+    client.save(
+        {
+            "pkgc/conanfile.py": conanfile.format("", "[*]"),
+            "pkgb/conanfile.py": conanfile.format("requires = 'pkgc/1.0'", "1.0"),
+            "pkga/conanfile.py": conanfile.format("requires = 'pkgb/1.0'", "[*]"),
+        }
+    )
     client.run("export pkgc --name=pkgc --version=1.0")
     client.run("export pkgb --name=pkgb --version=1.0")
     client.run("export pkga --name=pkga --version=1.0")

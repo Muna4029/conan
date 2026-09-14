@@ -86,7 +86,7 @@ def client_setup():
 
 
 def test_single_config_centralized(client_setup):
-    """ app1 -> pkgc/0.1 -> pkgb/0.1 -> pkgawin/0.1 or pkganix/0.1
+    """app1 -> pkgc/0.1 -> pkgb/0.1 -> pkgawin/0.1 or pkganix/0.1
     all version-ranges [>0 <1.0]
     lock app1.lock to lock graph including pkgawin/0.1 and pkganix/0.1
     changes in pkgawin/0.2 and pkganix/0.2 are excluded by lockfile
@@ -99,40 +99,54 @@ def test_single_config_centralized(client_setup):
     c.run("lock create --requires=app1/0.1@  --lockfile-out=app1.lock -s os=Windows")
 
     # Do an unrelated change in A, should not be used, this is not the change we are testing
-    c.save({"pkga/myfile.txt": "ByeA World!!",
+    c.save(
+        {
+            "pkga/myfile.txt": "ByeA World!!",
             "pkgb/myfile.txt": "ByeB World!!",
-            "pkgc/myfile.txt": "ByeC World!!"})
+            "pkgc/myfile.txt": "ByeC World!!",
+        }
+    )
     c.run("export pkga --name=pkgawin --version=0.2")  # this will never be used
     c.run("export pkgc --name=pkgc --version=0.2")  # this will never be used
 
     # Test that pkgb/0.2 works
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkgawin: HelloA" in c.out
 
     # Now lets build the application, to see everything ok
-    c.run("install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
-          "--lockfile-out=app1_b_integrated.lock "
-          "--build=missing  -s os=Windows")
-    c.assert_listed_binary({"pkgawin/0.1": (pkgawin_01_id, "Cache"),
-                            "pkgb/0.2": (pkgb_01_id, "Cache"),
-                            "pkgc/0.1": (pkgc_01_id, "Build"),
-                            "app1/0.1": (pkgapp_01_id, "Build")})
+    c.run(
+        "install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
+        "--lockfile-out=app1_b_integrated.lock "
+        "--build=missing  -s os=Windows"
+    )
+    c.assert_listed_binary(
+        {
+            "pkgawin/0.1": (pkgawin_01_id, "Cache"),
+            "pkgb/0.2": (pkgb_01_id, "Cache"),
+            "pkgc/0.1": (pkgc_01_id, "Build"),
+            "app1/0.1": (pkgapp_01_id, "Build"),
+        }
+    )
     assert "pkgb/0.2" in c.out
     assert "pkgb/0.1" not in c.out
     assert "app1/0.1: DEP FILE pkgawin: HelloA" in c.out
     assert "app1/0.1: DEP FILE pkgb: ByeB World!!" in c.out
 
     # All good! We can get rid of the now unused pkgb/0.1 version in the lockfile
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
-          "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
+        "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean"
+    )
     app1_clean = c.load("app1_clean.lock")
     assert "pkgb/0.2" in app1_clean
     assert "pkgb/0.1" not in app1_clean
 
 
 def test_single_config_centralized_out_range(client_setup):
-    """ same scenario as "test_single_config_centralized()"
+    """same scenario as "test_single_config_centralized()"
     But pkgb/0.1 change version is bumped to pkgb/1.0, which doesn't fit in the consumers
     version range, so it is not used.
     Nothing to build in the app1, and the final lockfile doesn't change at all
@@ -148,33 +162,43 @@ def test_single_config_centralized_out_range(client_setup):
     c.save({"pkgb/myfile.txt": "ByeB World!!"})
 
     # Test that pkgb/1.0 works (but it is out of valid range!)
-    c.run("create pkgb --name=pkgb --version=1.0 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=1.0 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock"
+    )
     assert "pkgb/1.0: DEP FILE pkgawin: HelloA" in c.out
 
     # Now lets build the application, to see everything ok
-    c.run("install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
-          "--lockfile-out=app1_b_integrated.lock "
-          "--build=missing  -s os=Windows")
+    c.run(
+        "install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
+        "--lockfile-out=app1_b_integrated.lock "
+        "--build=missing  -s os=Windows"
+    )
     # Nothing changed, the change is outside the range, app1 not affected!!
-    c.assert_listed_binary({"pkgawin/0.1": (pkgawin_01_id, "Cache"),
-                            "pkgb/0.1": (pkgb_01_id, "Cache"),
-                            "pkgc/0.1": ("3b0c170cc929d4a1916489ce2dbb881fdad07f2e", "Cache"),
-                            "app1/0.1": ("3b0234ea72056ce9a0eb06584b4be6d73089e0e2", "Cache")})
+    c.assert_listed_binary(
+        {
+            "pkgawin/0.1": (pkgawin_01_id, "Cache"),
+            "pkgb/0.1": (pkgb_01_id, "Cache"),
+            "pkgc/0.1": ("3b0c170cc929d4a1916489ce2dbb881fdad07f2e", "Cache"),
+            "app1/0.1": ("3b0234ea72056ce9a0eb06584b4be6d73089e0e2", "Cache"),
+        }
+    )
     assert "pkgb/0.2" not in c.out
     assert "app1/0.1: DEP FILE pkgawin: HelloA" in c.out
     assert "app1/0.1: DEP FILE pkgb: HelloB" in c.out
 
     # All good! We can get rid of the now unused pkgb/1.0 version in the lockfile
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
-          "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
+        "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean"
+    )
     app1_clean = c.load("app1_clean.lock")
     assert "pkgb/0.1" in app1_clean
     assert "pkgb/1.0" not in app1_clean
 
 
 def test_single_config_centralized_change_dep(client_setup):
-    """ same scenario as "test_single_config_centralized()".
+    """same scenario as "test_single_config_centralized()".
     But pkgb/0.1 change version is bumped to pkgb/0.2, and changes dependency from pkgA=>pkgJ
     """
     c = client_setup
@@ -188,31 +212,47 @@ def test_single_config_centralized_change_dep(client_setup):
     c.run("create pkgj --name=pkgj --version=0.1 -s os=Windows")
 
     # Do a change in B, this is the change that we want to test
-    c.save({"pkgb/conanfile.py": conanfile.format(requires='requires="pkgj/[>0.0 <1.0]"'),
-            "pkgb/myfile.txt": "ByeB World!!"})
+    c.save(
+        {
+            "pkgb/conanfile.py": conanfile.format(
+                requires='requires="pkgj/[>0.0 <1.0]"'
+            ),
+            "pkgb/myfile.txt": "ByeB World!!",
+        }
+    )
 
     # Test that pkgb/0.2 works
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock --lockfile-partial")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock --lockfile-partial"
+    )
     assert "pkgb/0.2: DEP FILE pkgj: HelloJ" in c.out
     # Build new package alternative J, it won't be included, already locked in this create
     c.run("create pkgj --name=pkgj --version=0.2 -s os=Windows")
 
     # Now lets build the application, to see everything ok
-    c.run("install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
-          "--lockfile-out=app1_b_integrated.lock "
-          "--build=missing  -s os=Windows")
+    c.run(
+        "install --requires=app1/0.1@  --lockfile=app1_b_changed.lock "
+        "--lockfile-out=app1_b_integrated.lock "
+        "--build=missing  -s os=Windows"
+    )
     assert "pkga/" not in c.out
-    c.assert_listed_binary({"pkgj/0.1": (pkgawin_01_id, "Cache"),
-                            "pkgb/0.2": ("79caa65bc5877c4ada84a2b454775f47a5045d59", "Cache"),
-                            "pkgc/0.1": ("67e4e9b17f41a4c71ff449eb29eb716b8f83767b", "Build"),
-                            "app1/0.1": ("f7eb3b81ac34ddecd04301afad031ee078c5ab3c", "Build")})
+    c.assert_listed_binary(
+        {
+            "pkgj/0.1": (pkgawin_01_id, "Cache"),
+            "pkgb/0.2": ("79caa65bc5877c4ada84a2b454775f47a5045d59", "Cache"),
+            "pkgc/0.1": ("67e4e9b17f41a4c71ff449eb29eb716b8f83767b", "Build"),
+            "app1/0.1": ("f7eb3b81ac34ddecd04301afad031ee078c5ab3c", "Build"),
+        }
+    )
     assert "app1/0.1: DEP FILE pkgj: HelloJ" in c.out
     assert "app1/0.1: DEP FILE pkgb: ByeB World!!" in c.out
 
     # All good! We can get rid of the now unused pkgb/1.0 version in the lockfile
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
-          "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1_b_integrated.lock "
+        "--lockfile-out=app1_clean.lock -s os=Windows --lockfile-clean"
+    )
     app1_clean = c.load("app1_clean.lock")
     assert "pkgj/0.1" in app1_clean
     assert "pkgb/0.2" in app1_clean
@@ -220,7 +260,7 @@ def test_single_config_centralized_change_dep(client_setup):
 
 
 def test_multi_config_centralized(client_setup):
-    """ same scenario as above, but now we want to manage 2 configurations Windows & Linux
+    """same scenario as above, but now we want to manage 2 configurations Windows & Linux
     When pkgB is changed, it is built for both, and produces app1_win.lock and app2_linux.lock
     With those, app1 can be built in a single node for both configurations. After building
     app1, the 2 lockfiles can be cleaned (removing the old pkgb/0.1, leaving pkgb/0.2 in the lock)
@@ -229,8 +269,10 @@ def test_multi_config_centralized(client_setup):
     c = client_setup
     # capture the initial lockfile of our product
     c.run("lock create --requires=app1/0.1@ --lockfile-out=app1.lock -s os=Windows")
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1.lock --lockfile-out=app1.lock "
-          "-s os=Linux")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1.lock --lockfile-out=app1.lock "
+        "-s os=Linux"
+    )
 
     # Do an unrelated change in A, should not be used, this is not the change we are testing
     c.save({"pkga/myfile.txt": "ByeA World!!"})
@@ -241,48 +283,68 @@ def test_multi_config_centralized(client_setup):
     c.save({"pkgb/myfile.txt": "ByeB World!!"})
 
     # Test that pkgb/0.2 works
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_win.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_win.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkgawin: HelloA" in c.out
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Linux "
-          "--lockfile=app1.lock --lockfile-out=app1_nix.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Linux "
+        "--lockfile=app1.lock --lockfile-out=app1_nix.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkganix: HelloA" in c.out
 
     # Now lets build the application, to see everything ok
-    c.run("install --requires=app1/0.1@  --lockfile=app1_win.lock --lockfile-out=app1_win.lock "
-          "--build=missing  -s os=Windows")
-    c.assert_listed_binary({"pkgawin/0.1": (pkgawin_01_id, "Cache"),
-                            "pkgb/0.2": (pkgb_01_id, "Cache"),
-                            "pkgc/0.1": (pkgc_01_id, "Build"),
-                            "app1/0.1": (pkgapp_01_id, "Build")})
+    c.run(
+        "install --requires=app1/0.1@  --lockfile=app1_win.lock --lockfile-out=app1_win.lock "
+        "--build=missing  -s os=Windows"
+    )
+    c.assert_listed_binary(
+        {
+            "pkgawin/0.1": (pkgawin_01_id, "Cache"),
+            "pkgb/0.2": (pkgb_01_id, "Cache"),
+            "pkgc/0.1": (pkgc_01_id, "Build"),
+            "app1/0.1": (pkgapp_01_id, "Build"),
+        }
+    )
     assert "pkgb/0.2" in c.out
     assert "pkgb/0.1" not in c.out
     assert "app1/0.1: DEP FILE pkgawin: HelloA" in c.out
     assert "app1/0.1: DEP FILE pkgb: ByeB World!!" in c.out
 
     # Now lets build the application, to see everything ok
-    c.run("install --requires=app1/0.1@  --lockfile=app1_nix.lock --lockfile-out=app1_nix.lock "
-          "--build=missing  -s os=Linux")
-    c.assert_listed_binary({"pkganix/0.1": (pkganix_01_id, "Cache"),
-                            "pkgb/0.2": (pkgb_012_id, "Cache"),
-                            "pkgc/0.1": ("2a4113733176ffbce61bbcb4dd0e76ecc162439c", "Build"),
-                            "app1/0.1": ("6c198f82674d988b90eed54b52a494a5bbf09c41", "Build")})
+    c.run(
+        "install --requires=app1/0.1@  --lockfile=app1_nix.lock --lockfile-out=app1_nix.lock "
+        "--build=missing  -s os=Linux"
+    )
+    c.assert_listed_binary(
+        {
+            "pkganix/0.1": (pkganix_01_id, "Cache"),
+            "pkgb/0.2": (pkgb_012_id, "Cache"),
+            "pkgc/0.1": ("2a4113733176ffbce61bbcb4dd0e76ecc162439c", "Build"),
+            "app1/0.1": ("6c198f82674d988b90eed54b52a494a5bbf09c41", "Build"),
+        }
+    )
     assert "pkgb/0.2" in c.out
     assert "pkgb/0.1" not in c.out
     assert "app1/0.1: DEP FILE pkganix: HelloA" in c.out
     assert "app1/0.1: DEP FILE pkgb: ByeB World!!" in c.out
 
     # All good! We can get rid of the now unused pkgb/0.1 version in the lockfile
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1_win.lock "
-          "--lockfile-out=app1_win.lock -s os=Windows --lockfile-clean")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1_win.lock "
+        "--lockfile-out=app1_win.lock -s os=Windows --lockfile-clean"
+    )
     app1_clean = c.load("app1_win.lock")
     assert "pkgawin/0.1" in app1_clean
     assert "pkgb/0.2" in app1_clean
     assert "pkgb/0.1" not in app1_clean
     assert "pkgawin/0.2" not in app1_clean
     assert "pkganix/0.2" not in app1_clean
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1_nix.lock "
-          "--lockfile-out=app1_nix.lock -s os=Linux --lockfile-clean")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1_nix.lock "
+        "--lockfile-out=app1_nix.lock -s os=Linux --lockfile-clean"
+    )
     app1_clean = c.load("app1_nix.lock")
     assert "pkganix/0.1" in app1_clean
     assert "pkgb/0.2" in app1_clean
@@ -291,8 +353,10 @@ def test_multi_config_centralized(client_setup):
     assert "pkganix/0.2" not in app1_clean
 
     # Finally, merge the 2 clean lockfiles, for keeping just 1 for next iteration
-    c.run("lock merge --lockfile=app1_win.lock --lockfile=app1_nix.lock "
-          "--lockfile-out=app1_final.lock")
+    c.run(
+        "lock merge --lockfile=app1_win.lock --lockfile=app1_nix.lock "
+        "--lockfile-out=app1_final.lock"
+    )
     app1_clean = c.load("app1_final.lock")
     assert "pkgawin/0.1" in app1_clean
     assert "pkganix/0.1" in app1_clean
@@ -303,7 +367,7 @@ def test_multi_config_centralized(client_setup):
 
 
 def test_single_config_decentralized(client_setup):
-    """ same scenario as "test_single_config_centralized()", but distributing the build in
+    """same scenario as "test_single_config_centralized()", but distributing the build in
     different build servers, using the "build-order"
     """
     c = client_setup
@@ -318,13 +382,18 @@ def test_single_config_decentralized(client_setup):
     c.save({"pkgb/myfile.txt": "ByeB World!!"})
 
     # Test that pkgb/0.2 works
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_b_changed.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkgawin: HelloA" in c.out
 
     # Now lets build the application, to see everything ok
-    c.run("graph build-order --requires=app1/0.1@ --lockfile=app1_b_changed.lock "
-          "--build=missing --format=json -s os=Windows", redirect_stdout="build_order.json")
+    c.run(
+        "graph build-order --requires=app1/0.1@ --lockfile=app1_b_changed.lock "
+        "--build=missing --format=json -s os=Windows",
+        redirect_stdout="build_order.json",
+    )
     json_file = c.load("build_order.json")
 
     to_build = json.loads(json_file)
@@ -342,18 +411,25 @@ def test_single_config_decentralized(client_setup):
     for level in to_build:
         for elem in level:
             ref = RecipeReference.loads(elem["ref"])
-            for package in elem["packages"][0]:  # assumes no dependencies between packages
+            for package in elem["packages"][
+                0
+            ]:  # assumes no dependencies between packages
                 binary = package["binary"]
                 package_id = package["package_id"]
                 if binary != "Build":
                     continue
                 build_args = package["build_args"]
-                c.run(f"install {build_args} --lockfile=app1_b_changed.lock -s os=Windows")
+                c.run(
+                    f"install {build_args} --lockfile=app1_b_changed.lock -s os=Windows"
+                )
 
                 c.assert_listed_binary(
-                    {str(ref): (package_id, "Build"),
-                     "pkgawin/0.1": (pkgawin_01_id, "Cache"),
-                     "pkgb/0.2": (pkgb_01_id, "Cache")})
+                    {
+                        str(ref): (package_id, "Build"),
+                        "pkgawin/0.1": (pkgawin_01_id, "Cache"),
+                        "pkgb/0.2": (pkgb_01_id, "Cache"),
+                    }
+                )
                 assert "pkgb/0.2" in c.out
                 assert "pkgb/0.1" not in c.out
                 assert "DEP FILE pkgawin: HelloA" in c.out
@@ -364,14 +440,16 @@ def test_single_config_decentralized(client_setup):
 
 
 def test_multi_config_decentralized(client_setup):
-    """ same scenario as "test_multi_config_centralized()", but distributing the build in
+    """same scenario as "test_multi_config_centralized()", but distributing the build in
     different build servers, using the "build-order"
     """
     c = client_setup
     # capture the initial lockfile of our product
     c.run("lock create --requires=app1/0.1@ --lockfile-out=app1.lock -s os=Windows")
-    c.run("lock create --requires=app1/0.1@ --lockfile=app1.lock --lockfile-out=app1.lock "
-          "-s os=Linux")
+    c.run(
+        "lock create --requires=app1/0.1@ --lockfile=app1.lock --lockfile-out=app1.lock "
+        "-s os=Linux"
+    )
 
     # Do an unrelated change in A, should not be used, this is not the change we are testing
     c.save({"pkga/myfile.txt": "ByeA World!!"})
@@ -382,20 +460,33 @@ def test_multi_config_decentralized(client_setup):
     c.save({"pkgb/myfile.txt": "ByeB World!!"})
 
     # Test that pkgb/0.2 works
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Windows "
-          "--lockfile=app1.lock --lockfile-out=app1_win.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Windows "
+        "--lockfile=app1.lock --lockfile-out=app1_win.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkgawin: HelloA" in c.out
-    c.run("create pkgb --name=pkgb --version=0.2 -s os=Linux "
-          "--lockfile=app1.lock --lockfile-out=app1_nix.lock")
+    c.run(
+        "create pkgb --name=pkgb --version=0.2 -s os=Linux "
+        "--lockfile=app1.lock --lockfile-out=app1_nix.lock"
+    )
     assert "pkgb/0.2: DEP FILE pkganix: HelloA" in c.out
 
     # Now lets build the application, to see everything ok, for all the configs
-    c.run("graph build-order --requires=app1/0.1@ --lockfile=app1_win.lock "
-          "--build=missing --format=json -s os=Windows", redirect_stdout="app1_win.json")
-    c.run("graph build-order --requires=app1/0.1@ --lockfile=app1_nix.lock "
-          "--build=missing --format=json -s os=Linux", redirect_stdout="app1_nix.json")
-    c.run("graph build-order-merge --file=app1_win.json --file=app1_nix.json"
-          " --format=json", redirect_stdout="build_order.json")
+    c.run(
+        "graph build-order --requires=app1/0.1@ --lockfile=app1_win.lock "
+        "--build=missing --format=json -s os=Windows",
+        redirect_stdout="app1_win.json",
+    )
+    c.run(
+        "graph build-order --requires=app1/0.1@ --lockfile=app1_nix.lock "
+        "--build=missing --format=json -s os=Linux",
+        redirect_stdout="app1_nix.json",
+    )
+    c.run(
+        "graph build-order-merge --file=app1_win.json --file=app1_nix.json"
+        " --format=json",
+        redirect_stdout="build_order.json",
+    )
 
     json_file = c.load("build_order.json")
     to_build = json.loads(json_file)
@@ -417,7 +508,9 @@ def test_multi_config_decentralized(client_setup):
         for elem in level:
             ref = elem["ref"]
             ref_without_rev = ref.split("#")[0]
-            for package in elem["packages"][0]:  # Assumes no dependencies between packages
+            for package in elem["packages"][
+                0
+            ]:  # Assumes no dependencies between packages
                 binary = package["binary"]
                 package_id = package["package_id"]
                 if binary != "Build":
@@ -426,22 +519,30 @@ def test_multi_config_decentralized(client_setup):
                 filenames = package["filenames"]
                 lockfile = filenames[0] + ".lock"
                 the_os = "Windows" if "win" in lockfile else "Linux"
-                c.run("install --requires=%s --build=%s --lockfile=%s -s os=%s"
-                      % (ref, ref, lockfile, the_os))
+                c.run(
+                    "install --requires=%s --build=%s --lockfile=%s -s os=%s"
+                    % (ref, ref, lockfile, the_os)
+                )
                 c.assert_listed_binary({ref_without_rev: (package_id, "Build")})
 
                 if the_os == "Windows":
                     c.assert_listed_binary(
-                        {"pkgawin/0.1": (pkgawin_01_id, "Cache"),
-                         "pkgb/0.2": (pkgb_01_id, "Cache")})
+                        {
+                            "pkgawin/0.1": (pkgawin_01_id, "Cache"),
+                            "pkgb/0.2": (pkgb_01_id, "Cache"),
+                        }
+                    )
                     assert "pkgb/0.2" in c.out
                     assert "pkgb/0.1" not in c.out
                     assert "DEP FILE pkgawin: HelloA" in c.out
                     assert "DEP FILE pkgb: ByeB World!!" in c.out
                 else:
                     c.assert_listed_binary(
-                        {"pkganix/0.1": (pkganix_01_id, "Cache"),
-                         "pkgb/0.2": (pkgb_012_id, "Cache")})
+                        {
+                            "pkganix/0.1": (pkganix_01_id, "Cache"),
+                            "pkgb/0.2": (pkgb_012_id, "Cache"),
+                        }
+                    )
                     assert "pkgb/0.2" in c.out
                     assert "pkgb/0.1" not in c.out
                     assert "DEP FILE pkganix: HelloA" in c.out
@@ -452,7 +553,7 @@ def test_multi_config_decentralized(client_setup):
 
 
 def test_single_config_decentralized_overrides():
-    r""" same scenario as "test_single_config_centralized()", but distributing the build in
+    r"""same scenario as "test_single_config_centralized()", but distributing the build in
     different build servers, using the "build-order"
     Now with overrides
 
@@ -463,21 +564,30 @@ def test_single_config_decentralized_overrides():
     pkgc -> toola/3.0 -> toolb/1.0 -> toolc/1.0
     """
     c = TestClient()
-    c.save({"toolc/conanfile.py": GenConanfile("toolc"),
+    c.save(
+        {
+            "toolc/conanfile.py": GenConanfile("toolc"),
             "toolb/conanfile.py": GenConanfile("toolb").with_requires("toolc/1.0"),
-            "toola/conanfile.py": GenConanfile("toola", "1.0").with_requirement("toolb/1.0")
-                                                              .with_requirement("toolc/2.0",
-                                                                                override=True),
-            "toola2/conanfile.py": GenConanfile("toola", "2.0").with_requirement("toolb/1.0")
-                                                               .with_requirement("toolc/3.0",
-                                                                                 override=True),
-            "toola3/conanfile.py": GenConanfile("toola", "3.0").with_requirement("toolb/1.0"),
-            "pkga/conanfile.py": GenConanfile("pkga", "1.0").with_tool_requires("toola/1.0"),
-            "pkgb/conanfile.py": GenConanfile("pkgb", "1.0").with_requires("pkga/1.0")
-                                                            .with_tool_requires("toola/2.0"),
-            "pkgc/conanfile.py": GenConanfile("pkgc", "1.0").with_requires("pkgb/1.0")
-                                                            .with_tool_requires("toola/3.0"),
-            })
+            "toola/conanfile.py": GenConanfile("toola", "1.0")
+            .with_requirement("toolb/1.0")
+            .with_requirement("toolc/2.0", override=True),
+            "toola2/conanfile.py": GenConanfile("toola", "2.0")
+            .with_requirement("toolb/1.0")
+            .with_requirement("toolc/3.0", override=True),
+            "toola3/conanfile.py": GenConanfile("toola", "3.0").with_requirement(
+                "toolb/1.0"
+            ),
+            "pkga/conanfile.py": GenConanfile("pkga", "1.0").with_tool_requires(
+                "toola/1.0"
+            ),
+            "pkgb/conanfile.py": GenConanfile("pkgb", "1.0")
+            .with_requires("pkga/1.0")
+            .with_tool_requires("toola/2.0"),
+            "pkgc/conanfile.py": GenConanfile("pkgc", "1.0")
+            .with_requires("pkgb/1.0")
+            .with_tool_requires("toola/3.0"),
+        }
+    )
     c.run("export toolc --version=1.0")
     c.run("export toolc --version=2.0")
     c.run("export toolc --version=3.0")
@@ -499,11 +609,15 @@ def test_single_config_decentralized_overrides():
     assert len(lock["overrides"]) == 1
     assert set(lock["overrides"]["toolc/1.0"]) == {"toolc/3.0", "toolc/2.0", None}
 
-    c.run("graph build-order pkgc --lockfile=pkgc/conan.lock --format=json --build=missing")
+    c.run(
+        "graph build-order pkgc --lockfile=pkgc/conan.lock --format=json --build=missing"
+    )
     to_build = json.loads(c.stdout)
     for level in to_build:
         for elem in level:
-            for package in elem["packages"][0]:  # assumes no dependencies between packages
+            for package in elem["packages"][
+                0
+            ]:  # assumes no dependencies between packages
                 binary = package["binary"]
                 assert binary == "Build"  # All nodes in this case have to be built
                 build_args = package["build_args"]

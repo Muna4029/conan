@@ -43,8 +43,4 @@ cmakelists = textwrap.dedent("""
 
 
 def create_library(client):
-    client.save({
-        'hello.h': lib_h,
-        'hello.cpp': lib_cpp,
-        'CMakeLists.txt': cmakelists
-    })
+    client.save({"hello.h": lib_h, "hello.cpp": lib_cpp, "CMakeLists.txt": cmakelists})

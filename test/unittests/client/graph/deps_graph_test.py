@@ -7,9 +7,8 @@ from conan.api.model import RecipeReference
 
 
 class TestDepsGraph:
-
     def test_node(self):
-        """ nodes are different even if contain same values,
+        """nodes are different even if contain same values,
         so they can be repeated if necessary in the graph (common
         static libraries)
         """
@@ -60,7 +59,6 @@ class TestDepsGraph:
         assert [[n31, n32], [n2], [n1]] == deps.by_levels()
 
     def test_multi_levels_2(self):
-
         ref1 = RecipeReference.loads("hello/1.0@user/stable")
         ref2 = RecipeReference.loads("hello/2.0@user/stable")
         ref5 = RecipeReference.loads("hello/5.0@user/stable")
@@ -85,7 +83,6 @@ class TestDepsGraph:
         assert [[n31, n32, n5], [n2], [n1]] == deps.by_levels()
 
     def test_multi_levels_3(self):
-
         ref1 = RecipeReference.loads("hello/1.0@user/stable")
         ref2 = RecipeReference.loads("hello/2.0@user/stable")
         ref5 = RecipeReference.loads("hello/5.0@user/stable")

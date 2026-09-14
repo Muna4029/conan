@@ -21,7 +21,7 @@ def client():
     """)
 
     t = TestClient()
-    t.save({'conanfile.py': lib_conanfile})
+    t.save({"conanfile.py": lib_conanfile})
     t.run("create .")
     return t
 
@@ -42,7 +42,7 @@ app_conanfile = textwrap.dedent("""
 
 
 # needs at least 3.23.3 because of error with "empty identity"
-# https://stackoverflow.com/questions/72746725/xcode-14-beta-cmake-not-able-to-resolve-cmake-c-compiler-and-cmake-cxx-compiler
+# https://stackoverflow.com/questions/72746725/xcode-14-beta-cmake-not-able-to-resolve-cmake-c-compiler-and-cmake-cxx-compiler
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
 @pytest.mark.tool("cmake", "3.23")
 def test_apple_framework_xcode(client):
@@ -54,8 +54,7 @@ def test_apple_framework_xcode(client):
         message(">>> foolib_FRAMEWORKS_FOUND_RELEASE: ${foolib_FRAMEWORKS_FOUND_RELEASE}")
     """)
 
-    client.save({'conanfile.py': app_conanfile,
-                 'CMakeLists.txt': app_cmakelists})
+    client.save({"conanfile.py": app_conanfile, "CMakeLists.txt": app_cmakelists})
 
     client.run("build . -c tools.cmake.cmaketoolchain:generator=Xcode")
     assert "/System/Library/Frameworks/Foundation.framework;" in client.out
@@ -195,10 +194,18 @@ timer_cpp = textwrap.dedent("""
 
 @pytest.mark.tool("cmake")
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
-@pytest.mark.parametrize("settings",
-         [('',),
-          ('-pr:b default -s os=iOS -s os.sdk=iphoneos -s os.version=10.0 -s arch=armv8',),
-          ("-pr:b default -s os=tvOS -s os.sdk=appletvos -s os.version=11.0 -s arch=armv8",)])
+@pytest.mark.parametrize(
+    "settings",
+    [
+        ("",),
+        (
+            "-pr:b default -s os=iOS -s os.sdk=iphoneos -s os.version=10.0 -s arch=armv8",
+        ),
+        (
+            "-pr:b default -s os=tvOS -s os.sdk=appletvos -s os.version=11.0 -s arch=armv8",
+        ),
+    ],
+)
 def test_apple_own_framework_cross_build(settings):
     client = TestClient()
 
@@ -249,19 +256,23 @@ def test_apple_own_framework_cross_build(settings):
                     self.run(cmd, env="conanrunenv")
         """)
 
-    client.save({'conanfile.py': conanfile,
-                 "src/CMakeLists.txt": cmake,
-                 "src/hello.h": hello_h,
-                 "src/hello.cpp": hello_cpp,
-                 "src/Info.plist": infoplist,
-                 "test_package/conanfile.py": test_conanfile,
-                 'test_package/CMakeLists.txt': test_cmake,
-                 "test_package/timer.cpp": timer_cpp})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "src/CMakeLists.txt": cmake,
+            "src/hello.h": hello_h,
+            "src/hello.cpp": hello_cpp,
+            "src/Info.plist": infoplist,
+            "test_package/conanfile.py": test_conanfile,
+            "test_package/CMakeLists.txt": test_cmake,
+            "test_package/timer.cpp": timer_cpp,
+        }
+    )
     # First build it as build_require in the build-context, no testing
     # the UX could be improved, but the simplest could be:
     #  - Have users 2 test_packages, one for the host and other for the build, with some naming
     #    convention. CI launches one after the other if found
-    client.run("create . %s -tf=\"\" --build-require" % settings)
+    client.run('create . %s -tf="" --build-require' % settings)
     client.run("create . %s" % settings)
     if not len(settings):
         assert "Hello World Release!" in client.out
@@ -319,11 +330,15 @@ def test_apple_own_framework_cmake_deps():
             def test(self):
                 self.run(os.path.join(str(self.settings.build_type), "timer"), env="conanrunenv")
         """)
-    client.save({'conanfile.py': conanfile,
-                 "src/CMakeLists.txt": cmake,
-                 "src/hello.h": hello_h,
-                 "src/hello.cpp": hello_cpp,
-                 "src/Info.plist": infoplist})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "src/CMakeLists.txt": cmake,
+            "src/hello.h": hello_h,
+            "src/hello.cpp": hello_cpp,
+            "src/Info.plist": infoplist,
+        }
+    )
     client.run("export . --name=mylibrary --version=1.0")
     client.run("create . --name=mylibrary --version=1.0 -s build_type=Debug")
     client.run("create . --name=mylibrary --version=1.0 -s build_type=Release")
@@ -333,10 +348,14 @@ def test_apple_own_framework_cmake_deps():
         [conf]
         tools.cmake.cmaketoolchain:generator=Xcode
         """)
-    client.save({"conanfile.py": test_conanfile,
-                 'CMakeLists.txt': test_cmake,
-                 "timer.cpp": timer_cpp,
-                 "profile": profile})
+    client.save(
+        {
+            "conanfile.py": test_conanfile,
+            "CMakeLists.txt": test_cmake,
+            "timer.cpp": timer_cpp,
+            "profile": profile,
+        }
+    )
 
     client.run("install . -s build_type=Debug -pr=profile")
     client.run("install . -s build_type=Release -pr=profile")
@@ -382,14 +401,18 @@ def test_apple_own_framework_cmake_find_package_multi():
             def test(self):
                 self.run("bin/timer", env="conanrunenv")
         """)
-    client.save({'conanfile.py': conanfile,
-                 "src/CMakeLists.txt": cmake,
-                 "src/hello.h": hello_h,
-                 "src/hello.cpp": hello_cpp,
-                 "src/Info.plist": infoplist,
-                 "test_package/conanfile.py": test_conanfile,
-                 'test_package/CMakeLists.txt': test_cmake,
-                 "test_package/timer.cpp": timer_cpp})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "src/CMakeLists.txt": cmake,
+            "src/hello.h": hello_h,
+            "src/hello.cpp": hello_cpp,
+            "src/Info.plist": infoplist,
+            "test_package/conanfile.py": test_conanfile,
+            "test_package/CMakeLists.txt": test_cmake,
+            "test_package/timer.cpp": timer_cpp,
+        }
+    )
     client.run("create .")
     assert "Hello World Release!" in client.out
 
@@ -510,13 +533,17 @@ add_executable(${PROJECT_NAME} test_package.cpp)
 target_link_libraries(${PROJECT_NAME} hello::libhello)
         """)
     t = TestClient()
-    t.save({'conanfile.py': conanfile_py,
-            'hello.cpp': hello_cpp,
-            'hello.h': hello_h,
-            'CMakeLists.txt': cmakelists_txt,
-            'test_package/conanfile.py': test_conanfile_py,
-            'test_package/CMakeLists.txt': test_cmakelists_txt,
-            'test_package/test_package.cpp': test_test_package_cpp})
+    t.save(
+        {
+            "conanfile.py": conanfile_py,
+            "hello.cpp": hello_cpp,
+            "hello.h": hello_h,
+            "CMakeLists.txt": cmakelists_txt,
+            "test_package/conanfile.py": test_conanfile_py,
+            "test_package/CMakeLists.txt": test_cmakelists_txt,
+            "test_package/test_package.cpp": test_test_package_cpp,
+        }
+    )
     t.run("create . --name=hello --version=1.0")
 
 
@@ -535,7 +562,7 @@ def test_iphoneos_crossbuild():
     client = TestClient(path_with_spaces=False)
     client.save({"ios-armv8": profile}, clean_first=True)
     client.run("new cmake_lib -d name=hello -d version=0.1")
-    client.run("create . --profile:build=default --profile:host=ios-armv8 -tf=\"\"")
+    client.run('create . --profile:build=default --profile:host=ios-armv8 -tf=""')
 
     main = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
     # FIXME: The crossbuild for iOS etc is failing with find_package because cmake ignore the
@@ -570,10 +597,15 @@ def test_iphoneos_crossbuild():
                 cmake.build()
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "CMakeLists.txt": cmakelists,
-                 "main.cpp": main,
-                 "ios-armv8": profile}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "CMakeLists.txt": cmakelists,
+            "main.cpp": main,
+            "ios-armv8": profile,
+        },
+        clean_first=True,
+    )
     client.run("install . --profile:build=default --profile:host=ios-armv8")
     client.run("build . --profile:build=default --profile:host=ios-armv8")
     main_path = "./main.app/main"

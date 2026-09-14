@@ -6,7 +6,12 @@ from conan.internal.internal_tools import is_universal_arch
 from conan.errors import ConanException
 from conan.test.utils.mocks import ConanFileMock, MockSettings, MockOptions
 from conan.test.utils.test_files import temp_folder
-from conan.tools.apple import is_apple_os, to_apple_arch, fix_apple_shared_install_name, XCRun
+from conan.tools.apple import (
+    is_apple_os,
+    to_apple_arch,
+    fix_apple_shared_install_name,
+    XCRun,
+)
 from conan.tools.apple.apple import _get_dylib_install_name
 
 
@@ -70,25 +75,30 @@ def test_get_dylib_install_name():
     """)
 
     for mock_output in (single_arch, universal_binary):
-        with mock.patch("conan.tools.apple.apple.check_output_runner") as mock_output_runner:
+        with mock.patch(
+            "conan.tools.apple.apple.check_output_runner"
+        ) as mock_output_runner:
             mock_output_runner.return_value = mock_output
             install_name = _get_dylib_install_name("otool", "/path/to/libwebp.7.dylib")
             assert "/absolute/path/lib/libwebp.7.dylib" == install_name
 
 
-@pytest.mark.parametrize("settings_value,valid_definitions,result", [
-    ("arm64|x86_64", ["arm64", "x86_64", "armv7", "x86"], True),
-    ("x86_64|arm64", ["arm64", "x86_64", "armv7", "x86"], None),
-    ("armv7|x86", ["arm64", "x86_64", "armv7", "x86"], True),
-    ("x86|armv7", ["arm64", "x86_64", "armv7", "x86"], None),
-    (None, ["arm64", "x86_64", "armv7", "x86"], False),
-    ("arm64|armv7|x86_64", ["arm64", "x86_64", "armv7", "x86"], True),
-    ("x86|arm64", ["arm64", "x86_64", "armv7", "x86"], None),
-    ("arm64|ppc32", None, False),
-    (None, None, False),
-    ("armv7|x86", None, False),
-    ("arm64", ["arm64", "x86_64"], False),
-])
+@pytest.mark.parametrize(
+    "settings_value,valid_definitions,result",
+    [
+        ("arm64|x86_64", ["arm64", "x86_64", "armv7", "x86"], True),
+        ("x86_64|arm64", ["arm64", "x86_64", "armv7", "x86"], None),
+        ("armv7|x86", ["arm64", "x86_64", "armv7", "x86"], True),
+        ("x86|armv7", ["arm64", "x86_64", "armv7", "x86"], None),
+        (None, ["arm64", "x86_64", "armv7", "x86"], False),
+        ("arm64|armv7|x86_64", ["arm64", "x86_64", "armv7", "x86"], True),
+        ("x86|arm64", ["arm64", "x86_64", "armv7", "x86"], None),
+        ("arm64|ppc32", None, False),
+        (None, None, False),
+        ("armv7|x86", None, False),
+        ("arm64", ["arm64", "x86_64"], False),
+    ],
+)
 # None is for the exception case
 def test_is_universal_arch(settings_value, valid_definitions, result):
     if result is None:

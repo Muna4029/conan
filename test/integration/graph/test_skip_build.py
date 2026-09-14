@@ -17,10 +17,14 @@ def test_graph_skip_build_test():
             test_requires = "gtest/1.0"
             tool_requires = "cmake/1.0"
         """)
-    c.save({"gtest/conanfile.py": GenConanfile("gtest", "1.0"),
+    c.save(
+        {
+            "gtest/conanfile.py": GenConanfile("gtest", "1.0"),
             "cmake/conanfile.py": GenConanfile("cmake", "1.0"),
             "pkg/conanfile.py": pkg,
-            "app/conanfile.py": GenConanfile("app", "1.0").with_requires("pkg/1.0")})
+            "app/conanfile.py": GenConanfile("app", "1.0").with_requires("pkg/1.0"),
+        }
+    )
     c.run("create gtest")
     c.run("create cmake")
     c.run("create pkg")
@@ -45,8 +49,10 @@ def test_graph_skip_build_test():
     assert "gtest" not in c.out
 
     c.run("install app -c tools.graph:skip_build=True --build=pkg/*", assert_error=True)
-    assert "ERROR: Package pkg/1.0 skipped its test/tool requires with tools.graph:skip_build, " \
-           "but was marked to be built " in c.out
+    assert (
+        "ERROR: Package pkg/1.0 skipped its test/tool requires with tools.graph:skip_build, "
+        "but was marked to be built " in c.out
+    )
 
 
 def test_skip():
@@ -57,9 +63,17 @@ def test_skip():
         tools.build:skip_test=True
         """)
     c.save_home({"global.conf": global_conf})
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "1.0.0"),
-            "pkgb/conanfile.py": GenConanfile("pkgb", "1.0.0").with_test_requires("pkga/1.0.0"),
-            "pkgc/conanfile.py": GenConanfile("pkgc", "1.0.0").with_test_requires("pkgb/1.0.0")})
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "1.0.0"),
+            "pkgb/conanfile.py": GenConanfile("pkgb", "1.0.0").with_test_requires(
+                "pkga/1.0.0"
+            ),
+            "pkgc/conanfile.py": GenConanfile("pkgc", "1.0.0").with_test_requires(
+                "pkgb/1.0.0"
+            ),
+        }
+    )
     c.run("create pkga")
     c.run("create pkgb")
 

@@ -26,7 +26,9 @@ def test_build_different_folders():
         client.run("install ..")
     # Try relative to cwd
     client.run("build . --output-folder build2")
-    assert "Build folder=>%s" % os.path.join(client.current_folder, "build2") in client.out
+    assert (
+        "Build folder=>%s" % os.path.join(client.current_folder, "build2") in client.out
+    )
     assert "Src folder=>%s" % client.current_folder in client.out
 
 
@@ -39,11 +41,15 @@ def test_build_dots_names():
             pass
     """)
     client.save({"conanfile.py": conanfile_dep})
-    client.run("create . --name=hello.pkg --version=0.1 --user=lasote --channel=testing --format=json",
-               redirect_stdout="hello.pkg.json")
+    client.run(
+        "create . --name=hello.pkg --version=0.1 --user=lasote --channel=testing --format=json",
+        redirect_stdout="hello.pkg.json",
+    )
     hellopkg_result = json.loads(client.load("hello.pkg.json"))
-    client.run("create . --name=hello-tools --version=0.1 --user=lasote --channel=testing --format=json",
-               redirect_stdout="hello-tools.json")
+    client.run(
+        "create . --name=hello-tools --version=0.1 --user=lasote --channel=testing --format=json",
+        redirect_stdout="hello-tools.json",
+    )
     hellotools_result = json.loads(client.load("hello-tools.json"))
     conanfile_scope_env = textwrap.dedent("""
         from conan import ConanFile
@@ -136,9 +142,16 @@ def test_debug_build_release_deps():
                                  % (self.name, self.settings.build_type))
         """)
     client.save({"conanfile.py": conanfile.format(name="dep", requires="")})
-    client.run("create . --name=dep --version=0.1 --user=user --channel=testing -s build_type=Release")
-    client.save({"conanfile.py": conanfile.format(name="mypkg", requires="requires = 'dep/0.1@user/testing'")})
+    client.run(
+        "create . --name=dep --version=0.1 --user=user --channel=testing -s build_type=Release"
+    )
+    client.save(
+        {
+            "conanfile.py": conanfile.format(
+                name="mypkg", requires="requires = 'dep/0.1@user/testing'"
+            )
+        }
+    )
     client.run("build . -s mypkg/*:build_type=Debug -s build_type=Release")
     assert "dep/0.1@user/testing: PACKAGE_INFO: dep BuildType=Release!" in client.out
     assert "conanfile.py (mypkg/None): BUILD: mypkg BuildType=Debug!" in client.out
-

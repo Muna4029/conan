@@ -54,12 +54,17 @@ def test_cmake_virtualenv(matrix_client):
         target_link_libraries(app matrix::matrix)
         """)
 
-    client.save({"cmakewrapper/conanfile.py": cmakewrapper,
-                 "consumer/conanfile.py": consumer,
-                 "consumer/main.cpp": gen_function_cpp(name="main", includes=["matrix"],
-                                                       calls=["matrix"]),
-                 "consumer/CMakeLists.txt": cmakelists},
-                clean_first=True)
+    client.save(
+        {
+            "cmakewrapper/conanfile.py": cmakewrapper,
+            "consumer/conanfile.py": consumer,
+            "consumer/main.cpp": gen_function_cpp(
+                name="main", includes=["matrix"], calls=["matrix"]
+            ),
+            "consumer/CMakeLists.txt": cmakelists,
+        },
+        clean_first=True,
+    )
 
     client.run("create cmakewrapper --name=cmakewrapper --version=0.1")
     client.run("create consumer --name=consumer --version=0.1")
@@ -74,8 +79,9 @@ def test_complete():
     client.run("create . -o myopenssl/*:shared=True")
     client.run("create . -o myopenssl/*:shared=True -s build_type=Debug")
 
-    mycmake_main = gen_function_cpp(name="main", msg="mycmake",
-                                    includes=["myopenssl"], calls=["myopenssl"])
+    mycmake_main = gen_function_cpp(
+        name="main", msg="mycmake", includes=["myopenssl"], calls=["myopenssl"]
+    )
     mycmake_conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
@@ -111,19 +117,30 @@ def test_complete():
         add_executable(mycmake main.cpp)
         target_link_libraries(mycmake PRIVATE myopenssl::myopenssl)
         """)
-    client.save({"conanfile.py": mycmake_conanfile,
-                 "CMakeLists.txt": mycmake_cmakelists,
-                 "main.cpp": mycmake_main}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": mycmake_conanfile,
+            "CMakeLists.txt": mycmake_cmakelists,
+            "main.cpp": mycmake_main,
+        },
+        clean_first=True,
+    )
     client.run("create . --name=mycmake --version=1.0", assert_error=True)
-    assert "The usage of package names `myopenssl:shared` in options is deprecated, " \
-           "use a pattern like `myopenssl/*:shared` instead" in client.out
+    assert (
+        "The usage of package names `myopenssl:shared` in options is deprecated, "
+        "use a pattern like `myopenssl/*:shared` instead" in client.out
+    )
 
-    client.run("create . --name=mycmake --version=1.0 -o=:shared=True", assert_error=True)
+    client.run(
+        "create . --name=mycmake --version=1.0 -o=:shared=True", assert_error=True
+    )
     assert "Invalid empty package" in client.out
 
     # Fix the default options and repeat the create
-    fixed_cf = mycmake_conanfile.replace('default_options = {"myopenssl:shared": True}',
-                                         'default_options = {"myopenssl*:shared": True}')
+    fixed_cf = mycmake_conanfile.replace(
+        'default_options = {"myopenssl:shared": True}',
+        'default_options = {"myopenssl*:shared": True}',
+    )
     client.save({"conanfile.py": fixed_cf})
     client.run("create . --name=mycmake --version=1.0")
 
@@ -163,13 +180,20 @@ def test_complete():
         target_link_libraries(myapp myopenssl::myopenssl)
         """)
 
-    client.save({"conanfile.py": mylib,
-                 "main.cpp": gen_function_cpp(name="main", msg="myapp", includes=["myopenssl"],
-                                              calls=["myopenssl"]),
-                 "CMakeLists.txt": cmakelists},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": mylib,
+            "main.cpp": gen_function_cpp(
+                name="main", msg="myapp", includes=["myopenssl"], calls=["myopenssl"]
+            ),
+            "CMakeLists.txt": cmakelists,
+        },
+        clean_first=True,
+    )
 
-    client.run("create . --name=myapp --version=0.1 -s:b build_type=Release -s:h build_type=Debug")
+    client.run(
+        "create . --name=myapp --version=0.1 -s:b build_type=Release -s:h build_type=Debug"
+    )
     first, last = str(client.out).split("RUNNING MYAPP")
     assert "mycmake: Release!" in first
     assert "myopenssl/1.0: Hello World Release!" in first

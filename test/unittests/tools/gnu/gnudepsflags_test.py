@@ -13,11 +13,15 @@ def test_framework_flags_only_for_apple_os(os_):
     """
     # Issue: https://github.com/conan-io/conan/issues/10651
     # Issue: https://github.com/conan-io/conan/issues/10640
-    settings = MockSettings({"build_type": "Release",
-                             "compiler": "gcc",
-                             "compiler.version": "10.2",
-                             "os": os_,
-                             "arch": "x86_64"})
+    settings = MockSettings(
+        {
+            "build_type": "Release",
+            "compiler": "gcc",
+            "compiler.version": "10.2",
+            "os": os_,
+            "arch": "x86_64",
+        }
+    )
     conanfile = ConanFileMock()
     conanfile.settings = settings
     cpp_info = MagicMock()
@@ -28,6 +32,6 @@ def test_framework_flags_only_for_apple_os(os_):
     expected_framework_path = []
     if is_apple_os(conanfile):
         expected_framework = ["-framework Foundation"]
-        expected_framework_path = ["-F\"Framework\""]
+        expected_framework_path = ['-F"Framework"']
     assert gnudepsflags.frameworks == expected_framework
     assert gnudepsflags.framework_paths == expected_framework_path

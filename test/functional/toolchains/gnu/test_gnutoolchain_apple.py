@@ -11,13 +11,17 @@ from conan.test.utils.tools import TestClient
 
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
-@pytest.mark.parametrize("config", [("x86_64", "Macos", "10.14", None),
-                                    ("armv8", "iOS", "10.0", "iphoneos"),
-                                    ("armv7", "iOS", "10.0", "iphoneos"),
-                                    ("x86", "iOS", "10.0", "iphonesimulator"),
-                                    ("x86_64", "iOS", "10.0", "iphonesimulator"),
-                                    ("armv8", "Macos", "10.14", None)  # M1
-                                    ])
+@pytest.mark.parametrize(
+    "config",
+    [
+        ("x86_64", "Macos", "10.14", None),
+        ("armv8", "iOS", "10.0", "iphoneos"),
+        ("armv7", "iOS", "10.0", "iphoneos"),
+        ("x86", "iOS", "10.0", "iphonesimulator"),
+        ("x86_64", "iOS", "10.0", "iphonesimulator"),
+        ("armv8", "Macos", "10.14", None),  # M1
+    ],
+)
 def test_makefile_arch(config):
     makefile = gen_makefile(apps=["app"], libs=["hello"])
     conanfile_py = textwrap.dedent("""
@@ -50,20 +54,28 @@ def test_makefile_arch(config):
                 {os_sdk}
                 os.version = {os_version}
                 arch = {arch}
-                """).format(os=os_, arch=arch,
-                            os_version=os_version, os_sdk="os.sdk = " + os_sdk if os_sdk else "")
+                """).format(
+        os=os_,
+        arch=arch,
+        os_version=os_version,
+        os_sdk="os.sdk = " + os_sdk if os_sdk else "",
+    )
 
     t = TestClient()
     hello_h = gen_function_h(name="hello")
     hello_cpp = gen_function_cpp(name="hello")
     main_cpp = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
 
-    t.save({"Makefile": makefile,
+    t.save(
+        {
+            "Makefile": makefile,
             "hello.h": hello_h,
             "hello.cpp": hello_cpp,
             "app.cpp": main_cpp,
             "conanfile.py": conanfile_py,
-            "profile": profile})
+            "profile": profile,
+        }
+    )
 
     t.run("install . --profile:host=profile --profile:build=default")
     t.run("build . --profile:host=profile --profile:build=default")

@@ -29,11 +29,15 @@ def client():
     """
     client.save({"conanfile.py": conanfile})
     client.run("create .")
-    client.save_home({"global.conf": "tools.env.virtualenv:powershell=powershell.exe\n"})
+    client.save_home(
+        {"global.conf": "tools.env.virtualenv:powershell=powershell.exe\n"}
+    )
     return client
 
 
-@pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows powershell")
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="Requires Windows powershell"
+)
 def test_virtualenv(client):
     conanfile = textwrap.dedent("""
         import os
@@ -58,13 +62,17 @@ def test_virtualenv(client):
     assert not os.path.exists(os.path.join(client.current_folder, "conanbuildenv.bat"))
     assert not os.path.exists(os.path.join(client.current_folder, "conanrunenv.sh"))
     assert not os.path.exists(os.path.join(client.current_folder, "conanrunenv.bat"))
-    with open(os.path.join(client.current_folder, "conanbuildenv.ps1"), "r", encoding="utf-16") as f:
+    with open(
+        os.path.join(client.current_folder, "conanbuildenv.ps1"), "r", encoding="utf-16"
+    ) as f:
         buildenv = f.read()
     assert '$env:MYPATH1="c:/path/to/ar"' in buildenv
     build = client.load("conanbuild.ps1")
     assert "conanbuildenv.ps1" in build
 
-    with open(os.path.join(client.current_folder, "conanrunenv.ps1"), "r", encoding="utf-16") as f:
+    with open(
+        os.path.join(client.current_folder, "conanrunenv.ps1"), "r", encoding="utf-16"
+    ) as f:
         run_contents = f.read()
     assert '$env:MYVAR1="some nice content`" with quotes"' in run_contents
 
@@ -73,10 +81,12 @@ def test_virtualenv(client):
     assert 'MYVAR1=some nice content" with quotes' in client.out
 
 
-@pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows powershell")
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="Requires Windows powershell"
+)
 @pytest.mark.parametrize("powershell", [True, "powershell.exe", "pwsh"])
 def test_virtualenv_test_package(powershell):
-    """ The test_package could crash if not cleaning correctly the test_package
+    """The test_package could crash if not cleaning correctly the test_package
     output folder. This will still crassh if the layout is not creating different build folders
     https://github.com/conan-io/conan/issues/12764
     """
@@ -103,8 +113,12 @@ def test_virtualenv_test_package(powershell):
                 self.run("set MYVC_CUSTOMVAR1")
                 self.run("set MYVC_CUSTOMVAR2")
             """)
-    client.save({"conanfile.py": GenConanfile("pkg", "1.0"),
-                 "test_package/conanfile.py": test_package})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0"),
+            "test_package/conanfile.py": test_package,
+        }
+    )
     client.run("create .")
     assert "hello world" in client.out
     assert "MYENV!!!" in client.out
@@ -119,7 +133,10 @@ def test_virtualenv_test_package(powershell):
     assert "MYVC_CUSTOMVAR1=PATATA1" in client.out
     assert "MYVC_CUSTOMVAR2=PATATA2" in client.out
 
-@pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows powershell")
+
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="Requires Windows powershell"
+)
 @pytest.mark.parametrize("powershell", [True, "powershell.exe", "pwsh"])
 def test_vcvars(powershell):
     client = TestClient()
@@ -143,29 +160,43 @@ def test_vcvars(powershell):
     """)
     hello_cpp = gen_function_cpp(name="main")
     cmakelists = gen_cmakelists(appname="hello", appsources=["hello.cpp"])
-    client.save({"conanfile.py": conanfile, "hello.cpp": hello_cpp, "CMakeLists.txt": cmakelists})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "hello.cpp": hello_cpp,
+            "CMakeLists.txt": cmakelists,
+        }
+    )
     powershell_exe = "powershell.exe" if powershell == "powershell" else "pwsh"
-    client.run(f"build . -c tools.env.virtualenv:powershell={powershell} -c tools.cmake.cmaketoolchain:generator=Ninja")
-    client.run_command(rf'{powershell_exe} -Command ".\build\Release\generators\conanbuild.ps1; dir env:"')
-    #check the conanbuid.ps1 activation message
+    client.run(
+        f"build . -c tools.env.virtualenv:powershell={powershell} -c tools.cmake.cmaketoolchain:generator=Ninja"
+    )
+    client.run_command(
+        rf'{powershell_exe} -Command ".\build\Release\generators\conanbuild.ps1; dir env:"'
+    )
+    # check the conanbuid.ps1 activation message
     assert "conanvcvars.ps1: Activated environment" in client.out
-    #check that the new env variables are set
+    # check that the new env variables are set
     assert "VSCMD_ARG_VCVARS_VER" in client.out
 
-    client.run_command(rf'{powershell_exe} -Command ".\build\Release\generators\conanvcvars.ps1"')
+    client.run_command(
+        rf'{powershell_exe} -Command ".\build\Release\generators\conanvcvars.ps1"'
+    )
     assert client.out.strip() == "conanvcvars.ps1: Activated environment"
 
     conanbuild = client.load(r".\build\Release\generators\conanbuild.ps1")
     vcvars_ps1 = client.load(r".\build\Release\generators\conanvcvars.ps1")
-    #check that the conanvcvars.ps1 is being added to the conanbuild.ps1
+    # check that the conanvcvars.ps1 is being added to the conanbuild.ps1
     assert "conanvcvars.ps1" in conanbuild
-    #check that the conanvcvars.ps1 is setting the environment
+    # check that the conanvcvars.ps1 is setting the environment
     assert "conanvcvars.bat&set" in vcvars_ps1
 
 
-
 @pytest.mark.skipif(platform.system() != "Windows", reason="Test for powershell")
-@pytest.mark.parametrize("powershell", [True, "powershell.exe", "pwsh", "powershell.exe -NoProfile", "pwsh -NoProfile"])
+@pytest.mark.parametrize(
+    "powershell",
+    [True, "powershell.exe", "pwsh", "powershell.exe -NoProfile", "pwsh -NoProfile"],
+)
 def test_concatenate_build_and_run_env(powershell):
     # this tests that if we have both build and run env, they are concatenated correctly when using
     # powershell
@@ -184,8 +215,12 @@ def test_concatenate_build_and_run_env(powershell):
 
     num_deps = 2
     for i in range(num_deps):
-        client.save({"conanfile.py": conanfile,
-                     "mycompiler{}.bat".format(i): compiler_bat.format(i)})
+        client.save(
+            {
+                "conanfile.py": conanfile,
+                "mycompiler{}.bat".format(i): compiler_bat.format(i),
+            }
+        )
         client.run("create . --name=pkg{} --version=0.1".format(i))
 
     conanfile = textwrap.dedent("""\
@@ -201,13 +236,21 @@ def test_concatenate_build_and_run_env(powershell):
     client.run(f'install . -c tools.env.virtualenv:powershell="{powershell}"')
     conanfile = ConanFileMock()
     conanfile.conf.define("tools.env.virtualenv:powershell", powershell)
-    cmd = environment_wrap_command(conanfile,["conanrunenv", "conanbuildenv"],
-                                   client.current_folder,"mycompiler0.bat")
+    cmd = environment_wrap_command(
+        conanfile,
+        ["conanrunenv", "conanbuildenv"],
+        client.current_folder,
+        "mycompiler0.bat",
+    )
     client.run_command(cmd)
     assert "MYTOOL 0!!" in client.out
 
-    cmd = environment_wrap_command(conanfile,["conanrunenv", "conanbuildenv"],
-                                   client.current_folder,"mycompiler1.bat")
+    cmd = environment_wrap_command(
+        conanfile,
+        ["conanrunenv", "conanbuildenv"],
+        client.current_folder,
+        "mycompiler1.bat",
+    )
     client.run_command(cmd)
     assert "MYTOOL 1!!" in client.out
 
@@ -224,13 +267,23 @@ def test_powershell_deprecated_message(powershell):
         """)
 
     client.save({"conanfile.py": conanfile})
-    powershell_arg = f'-c tools.env.virtualenv:powershell={powershell}' if powershell is not None else ""
-    client.run(f'install . {powershell_arg}')
+    powershell_arg = (
+        f"-c tools.env.virtualenv:powershell={powershell}"
+        if powershell is not None
+        else ""
+    )
+    client.run(f"install . {powershell_arg}")
     # only show message if the value is set to False or True if not set do not show message
     if powershell is not None:
-        assert "Boolean values for 'tools.env.virtualenv:powershell' are deprecated" in client.out
+        assert (
+            "Boolean values for 'tools.env.virtualenv:powershell' are deprecated"
+            in client.out
+        )
     else:
-        assert "Boolean values for 'tools.env.virtualenv:powershell' are deprecated" not in client.out
+        assert (
+            "Boolean values for 'tools.env.virtualenv:powershell' are deprecated"
+            not in client.out
+        )
 
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Test for powershell")
@@ -248,7 +301,7 @@ def test_powershell_quoting(powershell):
         """)
 
     client.save({"conanfile.py": conanfile})
-    client.run(f'create . -c tools.env.virtualenv:powershell={powershell}')
+    client.run(f"create . -c tools.env.virtualenv:powershell={powershell}")
     assert "Hello World" in client.out
 
 
@@ -256,8 +309,10 @@ def test_powershell_quoting(powershell):
 def test_verbosity_flag():
     tc = TestClient()
     tc.run("new cmake_lib -d name=pkg -d version=1.0")
-    tc.run('create . -tf="" -c tools.build:verbosity=verbose '
-           '-c tools.env.virtualenv:powershell=powershell.exe')
+    tc.run(
+        'create . -tf="" -c tools.build:verbosity=verbose '
+        "-c tools.env.virtualenv:powershell=powershell.exe"
+    )
 
     assert "/verbosity:Detailed" in tc.out
     assert "-verbosity:Detailed" not in tc.out

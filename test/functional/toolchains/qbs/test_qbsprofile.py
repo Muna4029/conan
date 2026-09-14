@@ -11,7 +11,7 @@ from conan.test.assets.sources import gen_function_cpp
 def test_qbsprofile():
     client = TestClient()
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.qbs import Qbs
 
@@ -33,19 +33,22 @@ def test_qbsprofile():
             def package(self):
                 qbs = Qbs(self)
                 qbs.install()
-        ''')
+        """)
 
-    qbsfile = textwrap.dedent('''
+    qbsfile = textwrap.dedent("""
         CppApplication {
             files: ["main.cpp"]
         }
-    ''')
+    """)
 
-    client.save({
-        "conanfile.py": conanfile,
-        "main.cpp": gen_function_cpp(name="main"),
-        "app.qbs": qbsfile,
-    }, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": gen_function_cpp(name="main"),
+            "app.qbs": qbsfile,
+        },
+        clean_first=True,
+    )
     client.run("create .")
 
     assert "qbs resolve --settings-dir" in client.out

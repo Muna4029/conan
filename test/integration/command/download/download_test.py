@@ -4,15 +4,24 @@ from collections import OrderedDict
 from unittest import mock
 
 from conan.api.model import RecipeReference
-from conan.test.utils.tools import TestClient, TestServer, NO_SETTINGS_PACKAGE_ID, GenConanfile
+from conan.test.utils.tools import (
+    TestClient,
+    TestServer,
+    NO_SETTINGS_PACKAGE_ID,
+    GenConanfile,
+)
 from conan.internal.util.files import load
 
 
 def test_download_with_sources():
     client = TestClient(default_server_user=True)
-    client.save({"conanfile.py": GenConanfile("pkg", "0.1").with_exports_sources("*"),
-                 "file.h": "myfile.h",
-                 "otherfile.cpp": "C++code"})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "0.1").with_exports_sources("*"),
+            "file.h": "myfile.h",
+            "otherfile.cpp": "C++code",
+        }
+    )
     client.run("export . --user=lasote --channel=stable")
 
     ref = RecipeReference.loads("pkg/0.1@lasote/stable")
@@ -35,16 +44,22 @@ def test_no_user_channel():
     client.run("remove * -c")
 
     client.run("download pkg/1.0:{} -r default".format(NO_SETTINGS_PACKAGE_ID))
-    assert f"Downloading package 'pkg/1.0#4d670581ccb765839f2239cc8dff8fbd:{NO_SETTINGS_PACKAGE_ID}" in client.out
+    assert (
+        f"Downloading package 'pkg/1.0#4d670581ccb765839f2239cc8dff8fbd:{NO_SETTINGS_PACKAGE_ID}"
+        in client.out
+    )
 
     # All
     client.run("remove * -c")
     client.run("download pkg/1.0#*:* -r default")
-    assert f"Downloading package 'pkg/1.0#4d670581ccb765839f2239cc8dff8fbd:{NO_SETTINGS_PACKAGE_ID}" in client.out
+    assert (
+        f"Downloading package 'pkg/1.0#4d670581ccb765839f2239cc8dff8fbd:{NO_SETTINGS_PACKAGE_ID}"
+        in client.out
+    )
 
 
 def test_download_with_python_requires():
-    """ In the past,
+    """In the past,
     when having a python_require in a different repo, it cannot be ``conan download``
     as the download runs from a single repo.
 
@@ -52,12 +67,17 @@ def test_download_with_python_requires():
     really need to load conanfile, so it doesn't fail because of this.
     """
     # https://github.com/conan-io/conan/issues/9548
-    servers = OrderedDict([("tools", TestServer()),
-                           ("pkgs", TestServer())])
+    servers = OrderedDict([("tools", TestServer()), ("pkgs", TestServer())])
     c = TestClient(servers=servers, inputs=["admin", "password", "admin", "password"])
 
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1"),
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_python_requires("tool/0.1")})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1"),
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_python_requires(
+                "tool/0.1"
+            ),
+        }
+    )
     c.run("export tool")
     c.run("create pkg")
     c.run("upload tool* -r tools -c")
@@ -75,7 +95,9 @@ def test_download_with_python_requires():
 def test_download_verify_ssl_conf():
     client = TestClient()
 
-    client.save({"conanfile.py": textwrap.dedent("""
+    client.save(
+        {
+            "conanfile.py": textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.files import download
 
@@ -86,15 +108,18 @@ def test_download_verify_ssl_conf():
             def source(self):
                 download(self, "http://verify.true", "", verify=True)
                 download(self, "http://verify.false", "", verify=False)
-        """)})
+        """)
+        }
+    )
 
     did_verify = {}
 
     def custom_download(this, url, filepath, *args, **kwargs):
         did_verify[url] = args[2]
 
-    with mock.patch("conan.internal.rest.file_downloader.FileDownloader.download",
-                    custom_download):
+    with mock.patch(
+        "conan.internal.rest.file_downloader.FileDownloader.download", custom_download
+    ):
         client.run("create . -c tools.files.download:verify=True")
         assert did_verify["http://verify.true"]
         assert did_verify["http://verify.false"]

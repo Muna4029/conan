@@ -5,7 +5,6 @@ from conan.test.utils.tools import TestClient, TestServer
 
 
 class TestVersionRangesUpdatingTest:
-
     def test_update_remote(self):
         # https://github.com/conan-io/conan/issues/5333
         client = TestClient(light=True, default_server_user=True)
@@ -31,8 +30,12 @@ class TestVersionRangesUpdatingTest:
     def test_update(self):
         client = TestClient(light=True, default_server_user=True)
 
-        client.save({"pkg/conanfile.py": GenConanfile("pkg"),
-                     "app/conanfile.py": GenConanfile().with_requirement("pkg/[~1]")})
+        client.save(
+            {
+                "pkg/conanfile.py": GenConanfile("pkg"),
+                "app/conanfile.py": GenConanfile().with_requirement("pkg/[~1]"),
+            }
+        )
         client.run("create pkg --version=1.1")
         client.run("create pkg --version=1.2")
         client.run("upload * -r=default --confirm")
@@ -68,14 +71,21 @@ class TestVersionRangesUpdatingTest:
 
 
 class TestVersionRangesMultiRemote:
-
     def test_multi_remote(self):
         servers = OrderedDict()
         servers["default"] = TestServer()
         servers["other"] = TestServer()
-        client = TestClient(light=True, servers=servers, inputs=2*["admin", "password"])
-        client.save({"hello0/conanfile.py": GenConanfile("hello0"),
-                     "hello1/conanfile.py": GenConanfile("hello1").with_requires("hello0/[*]")})
+        client = TestClient(
+            light=True, servers=servers, inputs=2 * ["admin", "password"]
+        )
+        client.save(
+            {
+                "hello0/conanfile.py": GenConanfile("hello0"),
+                "hello1/conanfile.py": GenConanfile("hello1").with_requires(
+                    "hello0/[*]"
+                ),
+            }
+        )
         client.run("export hello0 --version=0.1")
         client.run("export hello0 --version=0.2")
         client.run("upload * -r=default -c")

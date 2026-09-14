@@ -15,14 +15,23 @@ def test_lock_packages(requires):
           And that the lockfile is still usable
     """
     client = TestClient(light=True)
-    client.save({"pkg/conanfile.py": GenConanfile().with_package_file("file.txt", env_var="MYVAR"),
-                 "consumer/conanfile.txt": f"[{requires}]\npkg/[>0.0]"})
+    client.save(
+        {
+            "pkg/conanfile.py": GenConanfile().with_package_file(
+                "file.txt", env_var="MYVAR"
+            ),
+            "consumer/conanfile.txt": f"[{requires}]\npkg/[>0.0]",
+        }
+    )
     with environment_update({"MYVAR": "MYVALUE"}):
         client.run("create pkg --name=pkg --version=0.1")
     prev = client.created_package_revision("pkg/0.1")
 
     client.run("lock create consumer/conanfile.txt --lockfile-packages")
-    assert "ERROR: The --lockfile-packages arg is private and shouldn't be used" in client.out
+    assert (
+        "ERROR: The --lockfile-packages arg is private and shouldn't be used"
+        in client.out
+    )
     assert "pkg/0.1#" in client.out
     lock = client.load("consumer/conan.lock")
     assert NO_SETTINGS_PACKAGE_ID in lock

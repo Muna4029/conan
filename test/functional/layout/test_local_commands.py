@@ -8,8 +8,8 @@ from conan.test.utils.tools import TestClient
 
 def test_local_static_generators_folder():
     """If we configure a generators folder in the layout, the generator files:
-      - If belong to new generators: go to the specified folder: "my_generators"
-      - If belong to old generators or txt: remains in the install folder
+    - If belong to new generators: go to the specified folder: "my_generators"
+    - If belong to old generators or txt: remains in the install folder
     """
     client = TestClient()
     conan_file = str(GenConanfile().with_settings("build_type"))
@@ -23,23 +23,30 @@ def test_local_static_generators_folder():
     client.run("install . -of=my_install")
 
     old_install_folder = os.path.join(client.current_folder, "my_install")
-    cmake_toolchain_generator_path = os.path.join(old_install_folder, "conan_toolchain.cmake")
+    cmake_toolchain_generator_path = os.path.join(
+        old_install_folder, "conan_toolchain.cmake"
+    )
     assert not os.path.exists(cmake_toolchain_generator_path)
 
     build_folder = os.path.join(client.current_folder, "my_install", "build-Release")
     generators_folder = os.path.join(build_folder, "generators")
-    cmake_toolchain_generator_path = os.path.join(generators_folder, "conan_toolchain.cmake")
+    cmake_toolchain_generator_path = os.path.join(
+        generators_folder, "conan_toolchain.cmake"
+    )
     assert os.path.exists(cmake_toolchain_generator_path)
 
 
 def test_local_dynamic_generators_folder():
     """If we configure a generators folder in the layout, the generator files:
-      - If belong to new generators: go to the specified folder: "my_generators"
-      - "txt" and old ones always to the install folder
+    - If belong to new generators: go to the specified folder: "my_generators"
+    - "txt" and old ones always to the install folder
     """
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type").
-                     with_import("from conan.tools.cmake import CMakeToolchain, CMake"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("from conan.tools.cmake import CMakeToolchain, CMake")
+    )
     conan_file += """
     def generate(self):
         tc = CMakeToolchain(self)
@@ -52,22 +59,29 @@ def test_local_dynamic_generators_folder():
     client.run("install . -of=my_install")
 
     old_install_folder = os.path.join(client.current_folder, "my_install")
-    cmake_toolchain_generator_path = os.path.join(old_install_folder, "conan_toolchain.cmake")
+    cmake_toolchain_generator_path = os.path.join(
+        old_install_folder, "conan_toolchain.cmake"
+    )
     assert not os.path.exists(cmake_toolchain_generator_path)
 
     build_folder = os.path.join(client.current_folder, "my_install", "build-Release")
     generators_folder = os.path.join(build_folder, "generators")
-    cmake_toolchain_generator_path = os.path.join(generators_folder, "conan_toolchain.cmake")
+    cmake_toolchain_generator_path = os.path.join(
+        generators_folder, "conan_toolchain.cmake"
+    )
     assert os.path.exists(cmake_toolchain_generator_path)
 
 
 def test_no_layout_generators_folder():
     """If we don't configure a generators folder in the layout, the generator files:
-      - all go to the install_folder
+    - all go to the install_folder
     """
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type").
-                     with_import("from conan.tools.cmake import CMakeToolchain, CMake"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("from conan.tools.cmake import CMakeToolchain, CMake")
+    )
     conan_file += """
     def generate(self):
         tc = CMakeToolchain(self)
@@ -77,13 +91,17 @@ def test_no_layout_generators_folder():
     client.run("install . -of=my_install")
 
     old_install_folder = os.path.join(client.current_folder, "my_install")
-    cmake_toolchain_generator_path = os.path.join(old_install_folder, "conan_toolchain.cmake")
+    cmake_toolchain_generator_path = os.path.join(
+        old_install_folder, "conan_toolchain.cmake"
+    )
 
     # In the install_folder
     assert os.path.exists(cmake_toolchain_generator_path)
 
     # But not in the base folder
-    assert not os.path.exists(os.path.join(client.current_folder, "conan_toolchain.cmake"))
+    assert not os.path.exists(
+        os.path.join(client.current_folder, "conan_toolchain.cmake")
+    )
 
 
 def test_local_build():
@@ -102,7 +120,9 @@ def test_local_build():
 """
     client.save({"conanfile.py": conan_file})
     client.run("build . --output-folder=my_install")
-    dll = os.path.join(client.current_folder, "my_install", "my_build", "build_file.dll")
+    dll = os.path.join(
+        client.current_folder, "my_install", "my_build", "build_file.dll"
+    )
     assert os.path.exists(dll)
 
 
@@ -126,8 +146,7 @@ def test_local_build_change_base():
 
 
 def test_local_source():
-    """The "conan source" is NOT affected by the --output-folder
-    """
+    """The "conan source" is NOT affected by the --output-folder"""
     client = TestClient()
     conan_file = str(GenConanfile().with_import("from conan.tools.files import save"))
     conan_file += """
@@ -144,10 +163,13 @@ def test_local_source():
 
 
 def test_export_pkg():
-    """The export-pkg, calling the "package" method, follows the layout if `cache_package_layout` """
+    """The export-pkg, calling the "package" method, follows the layout if `cache_package_layout`"""
     client = TestClient()
-    conan_file = str(GenConanfile("lib", "1.0")
-                     .with_import("from conan.tools.files import copy, save"))
+    conan_file = str(
+        GenConanfile("lib", "1.0").with_import(
+            "from conan.tools.files import copy, save"
+        )
+    )
     conan_file += """
     no_copy_source = True
     def layout(self):
@@ -180,8 +202,11 @@ def test_export_pkg():
 def test_export_pkg_local():
     """The export-pkg, without calling "package" method, with local package, follows the layout"""
     client = TestClient()
-    conan_file = str(GenConanfile("lib", "1.0")
-                     .with_import("from conan.tools.files import copy, save"))
+    conan_file = str(
+        GenConanfile("lib", "1.0").with_import(
+            "from conan.tools.files import copy, save"
+        )
+    )
     conan_file += """
     no_copy_source = True
     def layout(self):
@@ -240,8 +265,7 @@ def test_start_dir_failure():
 
 
 def test_local_folders_without_layout():
-    """ Test that the "conan install" can report the local source and build folder
-    """
+    """Test that the "conan install" can report the local source and build folder"""
     # https://github.com/conan-io/conan/issues/10566
     client = TestClient()
     conan_file = textwrap.dedent("""
@@ -261,5 +285,11 @@ def test_local_folders_without_layout():
 
     client.save({"conanfile.py": conan_file})
     client.run("install .")
-    assert "conanfile.py (test/1.2.3): generate sf: {}".format(client.current_folder) in client.out
-    assert "conanfile.py (test/1.2.3): generate bf: {}".format(client.current_folder) in client.out
+    assert (
+        "conanfile.py (test/1.2.3): generate sf: {}".format(client.current_folder)
+        in client.out
+    )
+    assert (
+        "conanfile.py (test/1.2.3): generate bf: {}".format(client.current_folder)
+        in client.out
+    )

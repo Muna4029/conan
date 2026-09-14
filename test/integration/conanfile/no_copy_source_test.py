@@ -5,7 +5,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_no_copy_source():
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.files import copy, save, load
         import os
@@ -27,11 +27,10 @@ def test_no_copy_source():
             def package(self):
                 copy(self, "*", self.source_folder, self.package_folder)
                 copy(self, "*", self.build_folder, self.package_folder)
-        ''')
+        """)
 
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "file.h": "myfile.h contents"})
+    client.save({"conanfile.py": conanfile, "file.h": "myfile.h contents"})
     client.run("create .")
     assert "Source files: myfile.h contents" in client.out
     layout = client.created_layout()

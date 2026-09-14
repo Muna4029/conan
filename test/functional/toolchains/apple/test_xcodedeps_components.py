@@ -26,7 +26,7 @@ def test_xcodedeps_components():
     client = TestClient(path_with_spaces=False)
 
     client.run("new cmake_lib -d name=tcp -d version=1.0")
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
 
     header = textwrap.dedent("""
         #pragma once
@@ -118,18 +118,29 @@ def test_xcodedeps_components():
         self.cpp_info.components["server"].requires.extend(["core", "tcp::tcp"])
     """
 
-    client.save({
-        "include/core.h": header.format(name="core"),
-        "include/server.h": header.format(name="server"),
-        "include/client.h": header.format(name="client"),
-        "src/core.cpp": source.format(name="core", include="", call=""),
-        "src/server.cpp": source.format(name="server", include='#include "core.h"\n#include "tcp.h"',
-                                        call="core(); tcp();"),
-        "src/client.cpp": source.format(name="client", include='#include "core.h"\n#include "tcp.h"',
-                                        call="core(); tcp();"),
-        "conanfile.py": conanfile_py.format(requires='requires= "tcp/1.0"', package_info=network_pi),
-        "CMakeLists.txt": cmakelists,
-    }, clean_first=True)
+    client.save(
+        {
+            "include/core.h": header.format(name="core"),
+            "include/server.h": header.format(name="server"),
+            "include/client.h": header.format(name="client"),
+            "src/core.cpp": source.format(name="core", include="", call=""),
+            "src/server.cpp": source.format(
+                name="server",
+                include='#include "core.h"\n#include "tcp.h"',
+                call="core(); tcp();",
+            ),
+            "src/client.cpp": source.format(
+                name="client",
+                include='#include "core.h"\n#include "tcp.h"',
+                call="core(); tcp();",
+            ),
+            "conanfile.py": conanfile_py.format(
+                requires='requires= "tcp/1.0"', package_info=network_pi
+            ),
+            "CMakeLists.txt": cmakelists,
+        },
+        clean_first=True,
+    )
 
     client.run("create . --name=network --version=1.0")
 
@@ -154,13 +165,19 @@ def test_xcodedeps_components():
         install(TARGETS chat)
         """)
 
-    client.save({
-        "include/chat.h": header.format(name="chat"),
-        "src/chat.cpp": source.format(name="chat", include='#include "client.h"', call="client();"),
-        "conanfile.py": conanfile_py.format(requires='requires= "network/1.0"',
-                                            package_info=chat_pi),
-        "CMakeLists.txt": cmakelists_chat,
-    }, clean_first=True)
+    client.save(
+        {
+            "include/chat.h": header.format(name="chat"),
+            "src/chat.cpp": source.format(
+                name="chat", include='#include "client.h"', call="client();"
+            ),
+            "conanfile.py": conanfile_py.format(
+                requires='requires= "network/1.0"', package_info=chat_pi
+            ),
+            "CMakeLists.txt": cmakelists_chat,
+        },
+        clean_first=True,
+    )
 
     client.run("create . --name=chat --version=1.0")
 
@@ -179,23 +196,32 @@ def test_xcodedeps_components():
               Release: conan/conan_config.xcconfig
         """)
 
-    client.save({
-        "src/main.cpp": '#include "chat.h"\nint main(){chat();return 0;}',
-        "project.yml": xcode_project
-    }, clean_first=True)
+    client.save(
+        {
+            "src/main.cpp": '#include "chat.h"\nint main(){chat();return 0;}',
+            "project.yml": xcode_project,
+        },
+        clean_first=True,
+    )
 
     client.run("install --requires=chat/1.0@ -g XcodeDeps --output-folder=conan")
-    client.run("install --requires=chat/1.0@ -g XcodeDeps --output-folder=conan "
-               "-s build_type=Debug --build=missing")
+    client.run(
+        "install --requires=chat/1.0@ -g XcodeDeps --output-folder=conan "
+        "-s build_type=Debug --build=missing"
+    )
     chat_xcconfig = client.load(os.path.join("conan", "conan_chat_chat.xcconfig"))
     assert '#include "conan_network_client_test.xcconfig"' in chat_xcconfig
     assert '#include "conan_network_server.xcconfig"' not in chat_xcconfig
     assert '#include "conan_network_network.xcconfig"' not in chat_xcconfig
-    host_arch = client.get_default_host_profile().settings['arch']
+    host_arch = client.get_default_host_profile().settings["arch"]
     arch = "arm64" if host_arch == "armv8" else host_arch
     client.run_command("xcodegen generate")
-    client.run_command(f"xcodebuild -project ChatApp.xcodeproj -configuration Release -arch {arch}")
-    client.run_command(f"xcodebuild -project ChatApp.xcodeproj -configuration Debug -arch {arch}")
+    client.run_command(
+        f"xcodebuild -project ChatApp.xcodeproj -configuration Release -arch {arch}"
+    )
+    client.run_command(
+        f"xcodebuild -project ChatApp.xcodeproj -configuration Debug -arch {arch}"
+    )
     client.run_command("build/Debug/chat")
     assert "core/1.0: Hello World Debug!" in client.out
     assert "tcp/1.0: Hello World Debug!" in client.out
@@ -285,22 +311,27 @@ def test_cpp_info_require_whole_package():
 def test_xcodedeps_test_require():
     client = TestClient()
     client.run("new cmake_lib -d name=gtest -d version=1.0")
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
 
     # Create library having build and test requires
-    conanfile = textwrap.dedent(r'''
+    conanfile = textwrap.dedent(r"""
         from conan import ConanFile
         class HelloLib(ConanFile):
             settings = "os", "compiler", "build_type", "arch"
             def build_requirements(self):
                 self.test_requires('gtest/1.0')
-        ''')
+        """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("install . -g XcodeDeps")
-    host_arch = client.get_default_host_profile().settings['arch']
+    host_arch = client.get_default_host_profile().settings["arch"]
     arch = "arm64" if host_arch == "armv8" else host_arch
     assert os.path.isfile(os.path.join(client.current_folder, "conan_gtest.xcconfig"))
-    assert os.path.isfile(os.path.join(client.current_folder, "conan_gtest_gtest.xcconfig"))
-    assert os.path.isfile(os.path.join(client.current_folder,
-                                       f"conan_gtest_gtest_release_{arch}.xcconfig"))
+    assert os.path.isfile(
+        os.path.join(client.current_folder, "conan_gtest_gtest.xcconfig")
+    )
+    assert os.path.isfile(
+        os.path.join(
+            client.current_folder, f"conan_gtest_gtest_release_{arch}.xcconfig"
+        )
+    )
     assert '#include "conan_gtest.xcconfig"' in client.load("conandeps.xcconfig")

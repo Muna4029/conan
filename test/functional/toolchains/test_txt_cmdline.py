@@ -8,7 +8,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestTxtCommandLine(unittest.TestCase):
-
     def test_declarative(self):
         conanfile = textwrap.dedent("""
             [generators]
@@ -21,8 +20,12 @@ class TestTxtCommandLine(unittest.TestCase):
         self._check(client)
 
     def _check(self, client):
-        self.assertIn("conanfile.txt: Generator 'CMakeToolchain' calling 'generate()'", client.out)
-        self.assertIn("conanfile.txt: Generator 'MesonToolchain' calling 'generate()'", client.out)
+        self.assertIn(
+            "conanfile.txt: Generator 'CMakeToolchain' calling 'generate()'", client.out
+        )
+        self.assertIn(
+            "conanfile.txt: Generator 'MesonToolchain' calling 'generate()'", client.out
+        )
         toolchain = client.load("conan_toolchain.cmake")
         self.assertIn("Conan automatically generated toolchain file", toolchain)
         toolchain = client.load("conan_meson_native.ini")
@@ -38,7 +41,6 @@ class TestTxtCommandLine(unittest.TestCase):
 @pytest.mark.tool("visual_studio")
 @pytest.mark.skipif(platform.system() != "Windows", reason="Only for windows")
 class TestTxtCommandLineMSBuild(unittest.TestCase):
-
     def test_declarative(self):
         conanfile = textwrap.dedent("""
             [generators]
@@ -50,7 +52,10 @@ class TestTxtCommandLineMSBuild(unittest.TestCase):
         self._check(client)
 
     def _check(self, client):
-        self.assertIn("conanfile.txt: Generator 'MSBuildToolchain' calling 'generate()'", client.out)
+        self.assertIn(
+            "conanfile.txt: Generator 'MSBuildToolchain' calling 'generate()'",
+            client.out,
+        )
         toolchain = client.load("conantoolchain.props")
         self.assertIn("<?xml version", toolchain)
 

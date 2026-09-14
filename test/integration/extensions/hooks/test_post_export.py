@@ -8,8 +8,8 @@ from conan.internal.util.files import save
 
 
 def test_called_before_digest():
-    """ Test that 'post_export' hook is called before computing the digest of the
-        exported folders
+    """Test that 'post_export' hook is called before computing the digest of the
+    exported folders
     """
     t = TestClient()
     complete_hook = textwrap.dedent("""\
@@ -20,7 +20,7 @@ def test_called_before_digest():
         """)
     hook_path = os.path.join(t.paths.hooks_path, "complete_hook", "hook_complete.py")
     save(hook_path, complete_hook)
-    t.save({'conanfile.py': GenConanfile("pkg", "0.1")})
+    t.save({"conanfile.py": GenConanfile("pkg", "0.1")})
     t.run("export .")
     ref_layout = t.exported_layout()
     manifest = FileTreeManifest.load(ref_layout.export())

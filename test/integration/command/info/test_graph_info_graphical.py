@@ -7,7 +7,6 @@ from conan.test.utils.tools import TestClient, GenConanfile
 
 
 class InfoTest(unittest.TestCase):
-
     def _create(self, name, version, deps=None, export=True):
         conanfile = textwrap.dedent("""
             from conan import ConanFile
@@ -23,8 +22,9 @@ class InfoTest(unittest.TestCase):
         if deps:
             requires = "requires = {}".format(", ".join('"{}"'.format(d) for d in deps))
 
-        conanfile = conanfile.format(name=name, version=version, requires=requires,
-                                     license='"MIT"')
+        conanfile = conanfile.format(
+            name=name, version=version, requires=requires, license='"MIT"'
+        )
 
         self.client.save({"conanfile.py": conanfile}, clean_first=True)
         if export:
@@ -104,15 +104,20 @@ class InfoTest(unittest.TestCase):
 
 
 def test_user_templates():
-    """ Test that a user can override the builtin templates putting templates/graph.html and
+    """Test that a user can override the builtin templates putting templates/graph.html and
     templates/graph.dot in the home
     """
     c = TestClient()
-    c.save({'lib.py': GenConanfile("lib", "0.1")})
+    c.save({"lib.py": GenConanfile("lib", "0.1")})
     c.run("create lib.py")
-    template_folder = os.path.join(c.cache_folder, 'templates')
-    c.save({"graph.html": '{{ base_template_path }}',
-            "graph.dot": '{{ base_template_path }}'}, path=template_folder)
+    template_folder = os.path.join(c.cache_folder, "templates")
+    c.save(
+        {
+            "graph.html": "{{ base_template_path }}",
+            "graph.dot": "{{ base_template_path }}",
+        },
+        path=template_folder,
+    )
     c.run("graph info --requires=lib/0.1 --format=html")
     assert template_folder in c.stdout
     c.run("graph info --requires=lib/0.1 --format=dot")
@@ -121,26 +126,41 @@ def test_user_templates():
 
 def test_graph_info_html_error_reporting_output():
     tc = TestClient()
-    tc.save({"lib/conanfile.py": GenConanfile("lib"),
-             "ui/conanfile.py": GenConanfile("ui", "1.0").with_requirement("lib/1.0"),
-             "math/conanfile.py": GenConanfile("math", "1.0").with_requirement("lib/2.0")})
+    tc.save(
+        {
+            "lib/conanfile.py": GenConanfile("lib"),
+            "ui/conanfile.py": GenConanfile("ui", "1.0").with_requirement("lib/1.0"),
+            "math/conanfile.py": GenConanfile("math", "1.0").with_requirement(
+                "lib/2.0"
+            ),
+        }
+    )
     tc.run("export lib/ --version=1.0")
     tc.run("export lib/ --version=2.0")
     tc.run("export ui")
     tc.run("export math")
 
-    tc.run("graph info --requires=math/1.0 --requires=ui/1.0 --format=html", assert_error=True,
-           redirect_stdout="graph.html")
+    tc.run(
+        "graph info --requires=math/1.0 --requires=ui/1.0 --format=html",
+        assert_error=True,
+        redirect_stdout="graph.html",
+    )
     assert "ERROR: Version conflict:" in tc.out  # check that it doesn't crash
 
     # change order,  just in case
-    tc.run("graph info --requires=ui/1.0 --requires=math/1.0 --format=html", assert_error=True,
-           redirect_stdout="graph.html")
+    tc.run(
+        "graph info --requires=ui/1.0 --requires=math/1.0 --format=html",
+        assert_error=True,
+        redirect_stdout="graph.html",
+    )
     assert "ERROR: Version conflict:" in tc.out  # check that it doesn't crash
 
     # direct conflict also doesn't crash
-    tc.run("graph info --requires=ui/1.0 --requires=lib/2.0 --format=html", assert_error=True,
-           redirect_stdout="graph.html")
+    tc.run(
+        "graph info --requires=ui/1.0 --requires=lib/2.0 --format=html",
+        assert_error=True,
+        redirect_stdout="graph.html",
+    )
     assert "ERROR: Version conflict:" in tc.out  # check that it doesn't crash
     # Check manually
     # tc.run_command(f"{tc.current_folder}/graph.html")
@@ -148,16 +168,28 @@ def test_graph_info_html_error_reporting_output():
 
 def test_graph_conflict_diamond():
     c = TestClient()
-    c.save({"math/conanfile.py": GenConanfile("math"),
-            "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires("math/1.0"),
+    c.save(
+        {
+            "math/conanfile.py": GenConanfile("math"),
+            "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires(
+                "math/1.0"
+            ),
             "ai/conanfile.py": GenConanfile("ai", "1.0").with_requires("math/1.0.1"),
-            "game/conanfile.py": GenConanfile("game", "1.0").with_requires("engine/1.0", "ai/1.0"),
-            })
+            "game/conanfile.py": GenConanfile("game", "1.0").with_requires(
+                "engine/1.0", "ai/1.0"
+            ),
+        }
+    )
     c.run("create math --version=1.0")
     c.run("create math --version=1.0.1")
     c.run("create math --version=1.0.2")
     c.run("create engine")
     c.run("create ai")
-    c.run("graph info game --format=html", assert_error=True, redirect_stdout="graph.html")
+    c.run(
+        "graph info game --format=html", assert_error=True, redirect_stdout="graph.html"
+    )
     # check that it doesn't crash
-    assert "ERROR: Version conflict: Conflict between math/1.0.1 and math/1.0 in the graph." in c.out
+    assert (
+        "ERROR: Version conflict: Conflict between math/1.0.1 and math/1.0 in the graph."
+        in c.out
+    )

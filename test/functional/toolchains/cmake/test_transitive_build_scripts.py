@@ -70,12 +70,16 @@ def test_transitive_build_scripts():
         find_package(scriptsb)
         myfunctionB()
     """)
-    c.save({"scriptsa/conanfile.py": scriptsa,
+    c.save(
+        {
+            "scriptsa/conanfile.py": scriptsa,
             "scriptsa/Findscriptsa.cmake": scriptsa_cmake,
             "scriptsb/conanfile.py": scriptsb,
             "scriptsb/Findscriptsb.cmake": scriptsb_cmake,
             "app/conanfile.py": app,
-            "app/CMakeLists.txt": app_cmake})
+            "app/CMakeLists.txt": app_cmake,
+        }
+    )
 
     c.run("create scriptsa")
     c.run("create scriptsb")
@@ -134,13 +138,16 @@ def test_reuse_macro_from_dep():
         include(Macros)
         pkg_macro()
     """)
-    c.save({"pkg/conanfile.py": pkg,
+    c.save(
+        {
+            "pkg/conanfile.py": pkg,
             "pkg/Macros.cmake": pkg_macros,
             "app/conanfile.py": app,
-            "app/CMakeLists.txt": app_cmake})
+            "app/CMakeLists.txt": app_cmake,
+        }
+    )
 
     c.run("create pkg")
     c.run("build app")
 
     assert "PKG MACRO WORKING!!!" in c.out
-

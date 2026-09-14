@@ -18,8 +18,14 @@ def test_deploy_method():
             def deploy(self):
                 copy(self, "*", src=self.package_folder, dst=self.deploy_folder)
             """)
-    c.save({"dep/conanfile.py": conanfile.format(name="dep", requires=""),
-            "pkg/conanfile.py": conanfile.format(name="pkg", requires="requires='dep/0.1'")})
+    c.save(
+        {
+            "dep/conanfile.py": conanfile.format(name="dep", requires=""),
+            "pkg/conanfile.py": conanfile.format(
+                name="pkg", requires="requires='dep/0.1'"
+            ),
+        }
+    )
     c.run("create dep")
     assert "Executing deploy()" not in c.out
     c.run("create pkg")
@@ -41,7 +47,9 @@ def test_deploy_method():
     assert c.load("mydeploy/mypkgfile.txt") == "HELLO!!!!"
 
     # install can deploy only "pkg"
-    c.run("install --requires=pkg/0.1 --deployer-package=pkg/* --deployer-folder=mydeploy")
+    c.run(
+        "install --requires=pkg/0.1 --deployer-package=pkg/* --deployer-folder=mydeploy"
+    )
     assert "dep/0.1: Executing deploy()" not in c.out
     assert "pkg/0.1: Executing deploy()" in c.out
 
@@ -117,12 +125,13 @@ def test_deploy_method_tool_requires():
                     ext = "bat" if self.settings.os == "Windows" else "sh"
                     self.run(f"mytool.{ext}")
         """)
-    c.save({"tool/conanfile.py": tool,
-            "pkg/conanfile.py": conanfile})
+    c.save({"tool/conanfile.py": tool, "pkg/conanfile.py": conanfile})
 
     c.run("create tool")
     c.run("create pkg")
 
     # install can deploy all
-    c.run("install --requires=pkg/0.1 -c:b tools.graph:skip_binaries=False --deployer-package=*")
+    c.run(
+        "install --requires=pkg/0.1 -c:b tools.graph:skip_binaries=False --deployer-package=*"
+    )
     assert "MYTOOL RUNNING!!" in c.out

@@ -9,12 +9,14 @@ from conan.test.utils.tools import GenConanfile, TestClient
 
 
 class TestProvidesTest(GraphManagerTest):
-
     def test_direct_conflict(self):
         # app (provides feature)-> libb0.1 (provides feature)
         self.recipe_conanfile("libb/0.1", GenConanfile().with_provides("feature"))
-        consumer = self.consumer_conanfile(GenConanfile("app", "0.1").with_provides("feature").
-                                           with_requires("libb/0.1"))
+        consumer = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_provides("feature")
+            .with_requires("libb/0.1")
+        )
         deps_graph = self.build_consumer(consumer, install=False)
 
         assert type(deps_graph.error) == GraphProvidesError
@@ -30,8 +32,11 @@ class TestProvidesTest(GraphManagerTest):
         # app (provides feature)-> libb0.1 -> libc/0.1 (provides feature)
         self.recipe_conanfile("libc/0.1", GenConanfile().with_provides("feature"))
         self.recipe_conanfile("libb/0.1", GenConanfile().with_requires("libc/0.1"))
-        consumer = self.consumer_conanfile(GenConanfile("app", "0.1").with_provides("feature").
-                                           with_requires("libb/0.1"))
+        consumer = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_provides("feature")
+            .with_requires("libb/0.1")
+        )
         deps_graph = self.build_consumer(consumer, install=False)
 
         assert type(deps_graph.error) == GraphProvidesError
@@ -52,12 +57,15 @@ class TestProvidesTest(GraphManagerTest):
         self.recipe_conanfile("libc/0.1", GenConanfile().with_provides("feature"))
         self.recipe_conanfile("libb/0.1", GenConanfile().with_provides("feature"))
         if private:
-            consumer = self.consumer_conanfile(GenConanfile("app", "0.1").
-                                               with_requirement("libb/0.1", visible=False).
-                                               with_requirement("libc/0.1", visible=False))
+            consumer = self.consumer_conanfile(
+                GenConanfile("app", "0.1")
+                .with_requirement("libb/0.1", visible=False)
+                .with_requirement("libc/0.1", visible=False)
+            )
         else:
-            consumer = self.consumer_conanfile(GenConanfile("app", "0.1").
-                                               with_requires("libb/0.1", "libc/0.1"))
+            consumer = self.consumer_conanfile(
+                GenConanfile("app", "0.1").with_requires("libb/0.1", "libc/0.1")
+            )
         deps_graph = self.build_consumer(consumer, install=False)
 
         assert type(deps_graph.error) == GraphProvidesError
@@ -74,10 +82,14 @@ class TestProvidesTest(GraphManagerTest):
     def test_private_no_conflict(self):
         # app (provides libjpeg) -(private)-> br/v1 -(private)-> br_lib/v1(provides libjpeg)
         self.recipe_conanfile("br_lib/0.1", GenConanfile().with_provides("libjpeg"))
-        self.recipe_conanfile("br/0.1", GenConanfile().with_requirement("br_lib/0.1", visible=False))
-        path = self.consumer_conanfile(GenConanfile("app", "0.1").
-                                       with_requirement("br/0.1", visible=False).
-                                       with_provides("libjpeg"))
+        self.recipe_conanfile(
+            "br/0.1", GenConanfile().with_requirement("br_lib/0.1", visible=False)
+        )
+        path = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_requirement("br/0.1", visible=False)
+            .with_provides("libjpeg")
+        )
 
         deps_graph = self.build_consumer(path)
         self.assertEqual(3, len(deps_graph.nodes))
@@ -151,8 +163,11 @@ class ProvidesBuildRequireTest(GraphManagerTest):
         # app (provides libjpeg) -(build)-> br/v1 -> br_lib/v1(provides libjpeg)
         self.recipe_conanfile("br_lib/0.1", GenConanfile().with_provides("libjpeg"))
         self.recipe_cache("br/0.1", ["br_lib/0.1"])
-        path = self.consumer_conanfile(GenConanfile("app", "0.1").with_tool_requires("br/0.1").
-                                       with_provides("libjpeg"))
+        path = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_tool_requires("br/0.1")
+            .with_provides("libjpeg")
+        )
 
         deps_graph = self.build_consumer(path)
         self.assertEqual(3, len(deps_graph.nodes))
@@ -173,8 +188,9 @@ class ProvidesBuildRequireTest(GraphManagerTest):
         # app (provides libjpeg) -> lib/v1 -(br)-> br/v1(provides libjpeg)
         self.recipe_conanfile("br/0.1", GenConanfile().with_provides("libjpeg"))
         self.recipe_conanfile("lib/0.1", GenConanfile().with_tool_requires("br/0.1"))
-        path = self.consumer_conanfile(GenConanfile("app", "0.1").with_requires("lib/0.1").
-                                       with_provides("libjpeg"))
+        path = self.consumer_conanfile(
+            GenConanfile("app", "0.1").with_requires("lib/0.1").with_provides("libjpeg")
+        )
 
         deps_graph = self.build_consumer(path)
         self.assertEqual(3, len(deps_graph.nodes))
@@ -195,8 +211,11 @@ class ProvidesBuildRequireTest(GraphManagerTest):
         # app (provides libjpeg) -(test)-> br/v1 -> br_lib/v1(provides libjpeg)
         self.recipe_conanfile("br_lib/0.1", GenConanfile().with_provides("libjpeg"))
         self.recipe_cache("br/0.1", ["br_lib/0.1"])
-        path = self.consumer_conanfile(GenConanfile("app", "0.1").with_test_requires("br/0.1").
-                                       with_provides("libjpeg"))
+        path = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_test_requires("br/0.1")
+            .with_provides("libjpeg")
+        )
 
         deps_graph = self.build_consumer(path, install=False)
 
@@ -217,8 +236,9 @@ class ProvidesBuildRequireTest(GraphManagerTest):
         #   \ -(build)-> br2/v1 (provides libjpeg)
         self.recipe_conanfile("br1/0.1", GenConanfile().with_provides("libjpeg"))
         self.recipe_conanfile("br2/0.1", GenConanfile().with_provides("libjpeg"))
-        path = self.consumer_conanfile(GenConanfile("app", "0.1")
-                                       .with_tool_requires("br1/0.1", "br2/0.1"))
+        path = self.consumer_conanfile(
+            GenConanfile("app", "0.1").with_tool_requires("br1/0.1", "br2/0.1")
+        )
         deps_graph = self.build_consumer(path, install=False)
 
         assert type(deps_graph.error) == GraphProvidesError
@@ -251,12 +271,22 @@ def test_conditional():
                 self.info.clear()
     """)
     t = TestClient(light=True)
-    t.save({'requires.py': GenConanfile("req", "v1").with_provides("libjpeg"),
-            'app.py': conanfile})
+    t.save(
+        {
+            "requires.py": GenConanfile("req", "v1").with_provides("libjpeg"),
+            "app.py": conanfile,
+        }
+    )
     t.run("create requires.py")
     t.run("install app.py --name=app --version=version")
-    t.run("install app.py --name=app --version=version -o app/*:conflict=True", assert_error=True)
-    assert "ERROR: Provide Conflict: Both 'app/version' and 'req/v1' provide 'libjpeg'" in t.out
+    t.run(
+        "install app.py --name=app --version=version -o app/*:conflict=True",
+        assert_error=True,
+    )
+    assert (
+        "ERROR: Provide Conflict: Both 'app/version' and 'req/v1' provide 'libjpeg'"
+        in t.out
+    )
 
 
 def test_self_build_require():
@@ -274,22 +304,38 @@ def test_self_build_require():
                 if cross_building(self):
                     self.tool_requires("grpc/0.1")
         """)
-    c.save({'conanfile.py': conanfile})
+    c.save({"conanfile.py": conanfile})
     c.run("create . -s os=Windows -s:b os=Windows")
-    c.assert_listed_binary({"grpc/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build")})
+    c.assert_listed_binary(
+        {"grpc/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build")}
+    )
     c.run("create . -s os=Linux -s:b os=Windows --build=missing")
-    c.assert_listed_binary({"grpc/0.1": ("9a4eb3c8701508aa9458b1a73d0633783ecc2270", "Build")})
-    c.assert_listed_binary({"grpc/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Cache")},
-                           build=True)
+    c.assert_listed_binary(
+        {"grpc/0.1": ("9a4eb3c8701508aa9458b1a73d0633783ecc2270", "Build")}
+    )
+    c.assert_listed_binary(
+        {"grpc/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Cache")}, build=True
+    )
 
 
 def test_name_provide_error_message():
     tc = TestClient(light=True)
-    tc.save({"libjepg/conanfile.py": GenConanfile("libjpeg", "0.1"),
-             "mozjpeg/conanfile.py": GenConanfile("mozjpeg", "0.1").with_provides("libjpeg")})
+    tc.save(
+        {
+            "libjepg/conanfile.py": GenConanfile("libjpeg", "0.1"),
+            "mozjpeg/conanfile.py": GenConanfile("mozjpeg", "0.1").with_provides(
+                "libjpeg"
+            ),
+        }
+    )
     tc.run("create libjepg")
     tc.run("create mozjpeg")
 
-    tc.run("graph info --requires=mozjpeg/0.1 --requires=libjpeg/0.1", assert_error=True)
+    tc.run(
+        "graph info --requires=mozjpeg/0.1 --requires=libjpeg/0.1", assert_error=True
+    )
     # This used to report that None was provided, but now it reports the name of the provides
-    assert "ERROR: Provide Conflict: Both 'libjpeg/0.1' and 'mozjpeg/0.1' provide '['libjpeg']'" in tc.out
+    assert (
+        "ERROR: Provide Conflict: Both 'libjpeg/0.1' and 'mozjpeg/0.1' provide '['libjpeg']'"
+        in tc.out
+    )

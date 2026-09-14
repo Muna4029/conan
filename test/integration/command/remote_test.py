@@ -9,14 +9,15 @@ from conan.internal.util.files import load
 
 
 class RemoteServerTest(unittest.TestCase):
-
     def setUp(self):
         self.servers = OrderedDict()
         for i in range(3):
             test_server = TestServer()
             self.servers["remote%d" % i] = test_server
 
-        self.client = TestClient(servers=self.servers, inputs=3 * ["admin", "password"], light=True)
+        self.client = TestClient(
+            servers=self.servers, inputs=3 * ["admin", "password"], light=True
+        )
 
     def test_list_json(self):
         self.client.run("remote list --format=json")
@@ -103,16 +104,19 @@ class RemoteServerTest(unittest.TestCase):
         self.assertIn("origin: https://myurl", lines[2])
 
     def test_duplicated_error(self):
-        """ check remote name are not duplicated
-        """
+        """check remote name are not duplicated"""
         self.client.run("remote add remote1 http://otherurl", assert_error=True)
-        self.assertIn("ERROR: Remote 'remote1' already exists in remotes (use --force to continue)",
-                      self.client.out)
+        self.assertIn(
+            "ERROR: Remote 'remote1' already exists in remotes (use --force to continue)",
+            self.client.out,
+        )
 
         self.client.run("remote list")
         assert "otherurl" not in self.client.out
         self.client.run("remote add remote1 http://otherurl --force")
-        self.assertIn("WARN: Remote 'remote1' already exists in remotes", self.client.out)
+        self.assertIn(
+            "WARN: Remote 'remote1' already exists in remotes", self.client.out
+        )
 
         self.client.run("remote list")
         assert "remote1: http://otherurl" in self.client.out
@@ -123,14 +127,18 @@ class RemoteServerTest(unittest.TestCase):
 
     def test_invalid_url(self):
         self.client.run("remote add foobar foobar.com")
-        self.assertIn("WARN: The URL 'foobar.com' is invalid. It must contain scheme and hostname.",
-                      self.client.out)
+        self.assertIn(
+            "WARN: The URL 'foobar.com' is invalid. It must contain scheme and hostname.",
+            self.client.out,
+        )
         self.client.run("remote list")
         self.assertIn("foobar.com", self.client.out)
 
         self.client.run("remote update foobar --url pepe.org")
-        self.assertIn("WARN: The URL 'pepe.org' is invalid. It must contain scheme and hostname.",
-                      self.client.out)
+        self.assertIn(
+            "WARN: The URL 'pepe.org' is invalid. It must contain scheme and hostname.",
+            self.client.out,
+        )
         self.client.run("remote list")
         self.assertIn("pepe.org", self.client.out)
 
@@ -139,7 +147,9 @@ class RemoteServerTest(unittest.TestCase):
         self.assertIn("ERROR: Remote 'origin' doesn't exist", self.client.out)
 
         self.client.run("remote remove origin", assert_error=True)
-        self.assertIn("ERROR: Remote 'origin' can't be found or is disabled", self.client.out)
+        self.assertIn(
+            "ERROR: Remote 'origin' can't be found or is disabled", self.client.out
+        )
 
 
 class RemoteModificationTest(unittest.TestCase):
@@ -237,8 +247,14 @@ class RemoteModificationTest(unittest.TestCase):
 
         # check that they are still listed, as disabled
         client.run("remote list")
-        assert "my-remote0: http://someurl0 [Verify SSL: True, Enabled: False]" in client.out
-        assert "my-remote3: http://someurl3 [Verify SSL: True, Enabled: False]" in client.out
+        assert (
+            "my-remote0: http://someurl0 [Verify SSL: True, Enabled: False]"
+            in client.out
+        )
+        assert (
+            "my-remote3: http://someurl3 [Verify SSL: True, Enabled: False]"
+            in client.out
+        )
 
         client.run("remote disable * --format=json")
 
@@ -289,7 +305,10 @@ class RemoteModificationTest(unittest.TestCase):
 
     def test_verify_ssl_error(self):
         client = TestClient(light=True)
-        client.run("remote add my-remote http://someurl some_invalid_option=foo", assert_error=True)
+        client.run(
+            "remote add my-remote http://someurl some_invalid_option=foo",
+            assert_error=True,
+        )
 
         self.assertIn("unrecognized arguments: some_invalid_option=foo", client.out)
         data = json.loads(load(client.paths.remotes_path))
@@ -297,8 +316,7 @@ class RemoteModificationTest(unittest.TestCase):
 
 
 def test_add_duplicated_url():
-    """ allow duplicated URL with --force
-    """
+    """allow duplicated URL with --force"""
     c = TestClient(light=True)
     c.run("remote add remote1 http://url")
     c.run("remote add remote2 http://url", assert_error=True)
@@ -320,8 +338,8 @@ def test_add_duplicated_url():
 
 
 def test_add_duplicated_name_url():
-    """ do not add extra remote with same name and same url
-        # https://github.com/conan-io/conan/issues/13569
+    """do not add extra remote with same name and same url
+    # https://github.com/conan-io/conan/issues/13569
     """
     c = TestClient(light=True)
     c.run("remote add remote1 http://url")
@@ -332,42 +350,64 @@ def test_add_duplicated_name_url():
 
 
 def test_add_wrong_conancenter():
-    """ Avoid common error of adding the wrong ConanCenter URL
-    """
+    """Avoid common error of adding the wrong ConanCenter URL"""
     c = TestClient(light=True)
     c.run("remote add whatever https://conan.io/center", assert_error=True)
-    assert "Wrong ConanCenter remote URL. You are adding the web https://conan.io/center" in c.out
+    assert (
+        "Wrong ConanCenter remote URL. You are adding the web https://conan.io/center"
+        in c.out
+    )
     assert "the correct remote API is https://center2.conan.io" in c.out
     c.run("remote add conancenter https://center2.conan.io")
     c.run("remote update conancenter --url=https://conan.io/center", assert_error=True)
-    assert "Wrong ConanCenter remote URL. You are adding the web https://conan.io/center" in c.out
+    assert (
+        "Wrong ConanCenter remote URL. You are adding the web https://conan.io/center"
+        in c.out
+    )
     assert "the correct remote API is https://center2.conan.io" in c.out
 
 
 def test_using_frozen_center():
-    """ If the legacy center.conan.io is in the remote list warn about it.
-    """
+    """If the legacy center.conan.io is in the remote list warn about it."""
     c = TestClient(light=True)
     c.run("remote add whatever https://center.conan.io")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        in c.out
+    )
     assert 'conan remote update whatever --url="https://center2.conan.io"' in c.out
 
     c.run("remote list")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        in c.out
+    )
 
     c.run("remote remove whatever")
 
     c.run("remote add conancenter https://center2.conan.io")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." not in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        not in c.out
+    )
 
     c.run("remote list")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." not in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        not in c.out
+    )
 
     c.run("remote update conancenter --url=https://center.conan.io")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        in c.out
+    )
 
     c.run("remote disable conancenter")
-    assert "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'." not in c.out
+    assert (
+        "The remote 'https://center.conan.io' is now frozen and has been replaced by 'https://center2.conan.io'."
+        not in c.out
+    )
 
 
 def test_wrong_remotes_json_file():
@@ -379,10 +419,14 @@ def test_wrong_remotes_json_file():
 
 def test_allowed_packages_remotes():
     tc = TestClient(light=True, default_server_user=True)
-    tc.save({"conanfile.py": GenConanfile(),
-             "app/conanfile.py": GenConanfile("app", "1.0")
+    tc.save(
+        {
+            "conanfile.py": GenConanfile(),
+            "app/conanfile.py": GenConanfile("app", "1.0")
             .with_requires("liba/1.0")
-            .with_requires("libb/[>=1.0]")})
+            .with_requires("libb/[>=1.0]"),
+        }
+    )
     tc.run("create . --name=liba --version=1.0")
     tc.run("create . --name=libb --version=1.0")
     tc.run("create app")
@@ -390,41 +434,78 @@ def test_allowed_packages_remotes():
     tc.run("remove * -c")
 
     tc.run("install --requires=app/1.0 -r=default")
-    assert "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
-    assert "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" in tc.out
+    assert (
+        "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
+    )
+    assert (
+        "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        in tc.out
+    )
     tc.run("remove * -c")
 
     # lib/2.* pattern does not match the one being required by app, should not be found
-    tc.run('remote update default --allowed-packages="app/*" --allowed-packages="liba/2.*"')
+    tc.run(
+        'remote update default --allowed-packages="app/*" --allowed-packages="liba/2.*"'
+    )
 
     tc.run("install --requires=app/1.0 -r=default", assert_error=True)
-    assert "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
-    assert "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" not in tc.out
-    assert "ERROR: Package 'liba/1.0' not resolved: Unable to find 'liba/1.0' in remotes" in tc.out
+    assert (
+        "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
+    )
+    assert (
+        "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        not in tc.out
+    )
+    assert (
+        "ERROR: Package 'liba/1.0' not resolved: Unable to find 'liba/1.0' in remotes"
+        in tc.out
+    )
     tc.run("remove * -c")
 
-    tc.run('remote update default --allowed-packages="liba/*" --allowed-packages="app/*"')
+    tc.run(
+        'remote update default --allowed-packages="liba/*" --allowed-packages="app/*"'
+    )
     tc.run("remote list -f=json")
     assert "app/*" in tc.out
 
     tc.run("install --requires=app/1.0 -r=default", assert_error=True)
-    assert "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
-    assert "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" in tc.out
+    assert (
+        "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
+    )
+    assert (
+        "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        in tc.out
+    )
     assert "ERROR: Package 'libb/[>=1.0]' not resolved" in tc.out
     tc.run("remove * -c")
 
-    tc.run('remote update default --allowed-packages="liba/*" --allowed-packages="app/*"')
+    tc.run(
+        'remote update default --allowed-packages="liba/*" --allowed-packages="app/*"'
+    )
     tc.run("install --requires=app/1.0 -r=default", assert_error=True)
-    assert "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
-    assert "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" in tc.out
+    assert (
+        "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
+    )
+    assert (
+        "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        in tc.out
+    )
     assert "ERROR: Package 'libb/[>=1.0]' not resolved" in tc.out
     tc.run("remove * -c")
 
     tc.run('remote update default --allowed-packages="*"')
     tc.run("install --requires=app/1.0 -r=default")
-    assert "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
-    assert "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" in tc.out
-    assert "libb/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd" in tc.out
+    assert (
+        "app/1.0: Downloaded recipe revision 04ab3bc4b945a2ee44285962c277906d" in tc.out
+    )
+    assert (
+        "liba/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        in tc.out
+    )
+    assert (
+        "libb/1.0: Downloaded recipe revision 4d670581ccb765839f2239cc8dff8fbd"
+        in tc.out
+    )
 
 
 def test_remote_allowed_packages_new():
@@ -448,4 +529,7 @@ def test_remote_allowed_negation():
     assert "lib/1.0: Downloaded recipe revision" in tc.out
 
     tc.run("install --requires=config/1.0 -r=default", assert_error=True)
-    assert "ERROR: Package 'config/1.0' not resolved: Unable to find 'config/1.0' in remotes" in tc.out
+    assert (
+        "ERROR: Package 'config/1.0' not resolved: Unable to find 'config/1.0' in remotes"
+        in tc.out
+    )

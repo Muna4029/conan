@@ -8,7 +8,8 @@ from conan.internal.util.files import save
 
 
 class TestPackageTestCase(unittest.TestCase):
-    conanfile_tpl = Template(textwrap.dedent("""
+    conanfile_tpl = Template(
+        textwrap.dedent("""
         from conan import ConanFile
         import os
         from conan.tools.env import VirtualBuildEnv
@@ -37,12 +38,14 @@ class TestPackageTestCase(unittest.TestCase):
                 pass
             {% endraw %}
 
-    """))
+    """)
+    )
 
     conanfile_br = conanfile_tpl.render()
     conanfile = conanfile_tpl.render(build_requires='build_requires = "br1/version"')
-    conanfile_test = conanfile_tpl.render(build_requires='build_requires = "br2/version"',
-                                          test=True)
+    conanfile_test = conanfile_tpl.render(
+        build_requires='build_requires = "br2/version"', test=True
+    )
 
     settings_yml = textwrap.dedent("""
         os:
@@ -53,18 +56,26 @@ class TestPackageTestCase(unittest.TestCase):
     def test_command(self):
         t = TestClient()
         save(t.paths.settings_path, self.settings_yml)
-        t.save({'br.py': self.conanfile_br,
-                'conanfile.py': self.conanfile,
-                'test_package/conanfile.py': self.conanfile_test,
-                'profile_host': '[settings]\nos=Host',
-                'profile_build': '[settings]\nos=Build', })
+        t.save(
+            {
+                "br.py": self.conanfile_br,
+                "conanfile.py": self.conanfile,
+                "test_package/conanfile.py": self.conanfile_test,
+                "profile_host": "[settings]\nos=Host",
+                "profile_build": "[settings]\nos=Build",
+            }
+        )
         t.run("export br.py --name=br1 --version=version")
         # It is necessary to build first the test_package build_requires br2
-        t.run("create br.py --name=br2 --version=version -tf=\"\" --build-require "
-              "--profile:host=profile_host --profile:build=profile_build")
+        t.run(
+            'create br.py --name=br2 --version=version -tf="" --build-require '
+            "--profile:host=profile_host --profile:build=profile_build"
+        )
 
-        t.run("create conanfile.py --name=name --version=version --build=missing"
-              " --profile:host=profile_host --profile:build=profile_build")
+        t.run(
+            "create conanfile.py --name=name --version=version --build=missing"
+            " --profile:host=profile_host --profile:build=profile_build"
+        )
 
         # Build requires are built in the 'build' context:
         self.assertIn("br1/version: >> settings.os: Build", t.out)
@@ -78,9 +89,13 @@ class TestPackageTestCase(unittest.TestCase):
         self.assertIn("name/version (test package): >> settings.os: Host", t.out)
         self.assertIn("name/version (test package): >> settings_build.os: Build", t.out)
 
-        t.run("test test_package/conanfile.py name/version@ "
-              "--profile:host=profile_host --profile:build=profile_build")
+        t.run(
+            "test test_package/conanfile.py name/version@ "
+            "--profile:host=profile_host --profile:build=profile_build"
+        )
 
         assert "name/version (test package): >> settings.os: Host" in t.out
         assert "name/version (test package): >> settings_build.os: Build" in t.out
-        assert "name/version (test package): >> tools.get_env('INFO'): br2-Build" in t.out
+        assert (
+            "name/version (test package): >> tools.get_env('INFO'): br2-Build" in t.out
+        )

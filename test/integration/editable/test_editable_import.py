@@ -6,9 +6,8 @@ from conan.test.utils.tools import TestClient
 
 
 class TestEditableImport:
-
     def test_copy_from_dep_in_generate(self):
-        """ as we are removing the imports explicit functionality, test if the editable
+        """as we are removing the imports explicit functionality, test if the editable
         can still work for the "imports" case. It seem possible if:
 
         - "dep" package, both in cache and editable mode, defines correctly its layout
@@ -43,16 +42,20 @@ class TestEditableImport:
                     resdir = dep.cpp_info.resdirs[0]
                     copy(self, "*", resdir, os.path.join(self.build_folder, "imports"))
             """)
-        t.save({'dep/conanfile.py': dep,
-                'dep/src/res/myfile.txt': "mydata",
-                "consumer/conanfile.py": consumer})
+        t.save(
+            {
+                "dep/conanfile.py": dep,
+                "dep/src/res/myfile.txt": "mydata",
+                "consumer/conanfile.py": consumer,
+            }
+        )
 
         t.run("create dep --name=dep --version=0.1")
         t.run("install consumer")
         assert t.load("consumer/imports/myfile.txt") == "mydata"
 
         t.run("remove * -c")
-        t.run('editable add dep --name=dep --version=0.1')
+        t.run("editable add dep --name=dep --version=0.1")
         shutil.rmtree(os.path.join(t.current_folder, "consumer", "imports"))
         t.run("install consumer")
         assert t.load("consumer/imports/myfile.txt") == "mydata"

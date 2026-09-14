@@ -7,23 +7,35 @@ from conan.test.utils.tools import TestClient
 class TestTestRequiresDiamond:
     def test_test_requires_linear(self):
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires("zlib/1.0"),
-                "engine/conanfile.py": GenConanfile("engine", "1.0").with_test_requires("gtest/1.0")
-                })
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "engine/conanfile.py": GenConanfile("engine", "1.0").with_test_requires(
+                    "gtest/1.0"
+                ),
+            }
+        )
         c.run("create zlib")
         c.run("create gtest")
         c.run("install engine")
-        c.assert_listed_require({"gtest/1.0": "Cache",
-                                 "zlib/1.0": "Cache"}, test=True)
+        c.assert_listed_require({"gtest/1.0": "Cache", "zlib/1.0": "Cache"}, test=True)
 
     def test_test_requires_half_diamond(self):
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires("zlib/1.0"),
-                "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires("zlib/1.0")
-                                                                    .with_test_requires("gtest/1.0")
-                })
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "engine/conanfile.py": GenConanfile("engine", "1.0")
+                .with_requires("zlib/1.0")
+                .with_test_requires("gtest/1.0"),
+            }
+        )
         c.run("create zlib")
         c.run("create gtest")
         c.run("install engine")
@@ -39,10 +51,15 @@ class TestTestRequiresDiamond:
                     self.requires("zlib/1.0")
             """)
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires("zlib/1.0"),
-                "engine/conanfile.py": engine
-                })
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "engine/conanfile.py": engine,
+            }
+        )
         c.run("create zlib")
         c.run("create gtest")
         c.run("install engine")
@@ -51,18 +68,25 @@ class TestTestRequiresDiamond:
 
     def test_test_requires_diamond(self):
         c = TestClient(light=True)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires("zlib/1.0"),
-                "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires("zlib/1.0"),
-                "game/conanfile.py": GenConanfile().with_requires("engine/1.0")
-                                                   .with_test_requires("gtest/1.0")
-                })
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "game/conanfile.py": GenConanfile()
+                .with_requires("engine/1.0")
+                .with_test_requires("gtest/1.0"),
+            }
+        )
         c.run("create zlib")
         c.run("create gtest")
         c.run("create engine")
         c.run("install game")
-        c.assert_listed_require({"zlib/1.0": "Cache",
-                                 "engine/1.0": "Cache"})
+        c.assert_listed_require({"zlib/1.0": "Cache", "engine/1.0": "Cache"})
         c.assert_listed_require({"gtest/1.0": "Cache"}, test=True)
 
     def test_test_requires_diamond_change_order(self):
@@ -74,17 +98,23 @@ class TestTestRequiresDiamond:
                    self.test_requires("gtest/1.0")
                    self.requires("engine/1.0")
            """)
-        c.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires("zlib/1.0"),
-                "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires("zlib/1.0"),
-                "game/conanfile.py": game
-                })
+        c.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "gtest/conanfile.py": GenConanfile("gtest", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "engine/conanfile.py": GenConanfile("engine", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "game/conanfile.py": game,
+            }
+        )
         c.run("create zlib")
         c.run("create gtest")
         c.run("create engine")
         c.run("install game")
-        c.assert_listed_require({"zlib/1.0": "Cache",
-                                 "engine/1.0": "Cache"})
+        c.assert_listed_require({"zlib/1.0": "Cache", "engine/1.0": "Cache"})
         c.assert_listed_require({"gtest/1.0": "Cache"}, test=True)
 
     def test_test_requires_conflict_force(self):
@@ -96,11 +126,15 @@ class TestTestRequiresDiamond:
                    self.test_requires("gtest/1.0", force=True)
                    self.test_requires("rapidcheck/1.0")
            """)
-        c.save({"gtest/conanfile.py": GenConanfile("gtest"),
-                "rapidcheck/conanfile.py":
-                    GenConanfile("rapidcheck", "1.0").with_requires("gtest/1.1"),
-                "game/conanfile.py": game
-                })
+        c.save(
+            {
+                "gtest/conanfile.py": GenConanfile("gtest"),
+                "rapidcheck/conanfile.py": GenConanfile(
+                    "rapidcheck", "1.0"
+                ).with_requires("gtest/1.1"),
+                "game/conanfile.py": game,
+            }
+        )
         c.run("create gtest --version=1.0")
         c.run("create gtest --version=1.1")
         c.run("create rapidcheck")
@@ -129,8 +163,7 @@ def test_require_options():
             def build_requirements(self):
                 self.test_requires("gtest/1.0", options={"myoption": "2"})
         """)
-    c.save({"gtest/conanfile.py": gtest,
-            "engine/conanfile.py": engine})
+    c.save({"gtest/conanfile.py": gtest, "engine/conanfile.py": engine})
     c.run("create gtest")
     c.run("create gtest -o gtest*:myoption=2")
     c.run("create gtest -o gtest*:myoption=3")
@@ -141,7 +174,7 @@ def test_require_options():
 
 
 def test_requires_components():
-    """ this test used to fail with "gtest" not required by components
+    """this test used to fail with "gtest" not required by components
     It is important to have at least 1 external ``requires`` because with
     no requires at all it doesn't fail.
     https://github.com/conan-io/conan/issues/13187
@@ -160,9 +193,13 @@ def test_requires_components():
             def package_info(self):
                 self.cpp_info.components["mylib"].requires = ["openssl::openssl"]
         """)
-    c.save({"gtest/conanfile.py": GenConanfile("gtest", "1.0"),
+    c.save(
+        {
+            "gtest/conanfile.py": GenConanfile("gtest", "1.0"),
             "openssl/conanfile.py": GenConanfile("openssl", "1.1"),
-            "pkg/conanfile.py": conanfile})
+            "pkg/conanfile.py": conanfile,
+        }
+    )
     c.run("create gtest")
     c.run("create openssl")
     c.run("create pkg")
@@ -188,9 +225,13 @@ def test_requires_transitive_diamond_components():
                  self.cpp_info.components["comp"].libs = ["libc"]
                  self.cpp_info.components["comp"].requires.append("libb::libb")
         """)
-    c.save({"liba/conanfile.py": GenConanfile("liba", "1.0"),
+    c.save(
+        {
+            "liba/conanfile.py": GenConanfile("liba", "1.0"),
             "libb/conanfile.py": GenConanfile("libb", "1.0").with_requires("liba/1.0"),
-            "libc/conanfile.py": libc})
+            "libc/conanfile.py": libc,
+        }
+    )
     c.run("create liba")
     c.run("create libb")
     c.run("create libc")
@@ -222,9 +263,13 @@ def test_requires_transitive_diamond_components_order():
                  self.cpp_info.components["comp"].libs = ["libc"]
                  self.cpp_info.components["comp"].requires.append("libb::libb")
         """)
-    c.save({"liba/conanfile.py": GenConanfile("liba", "1.0"),
+    c.save(
+        {
+            "liba/conanfile.py": GenConanfile("liba", "1.0"),
             "libb/conanfile.py": GenConanfile("libb", "1.0").with_requires("liba/1.0"),
-            "libc/conanfile.py": libc})
+            "libc/conanfile.py": libc,
+        }
+    )
     c.run("create liba")
     c.run("create libb")
     c.run("create libc")
@@ -233,7 +278,7 @@ def test_requires_transitive_diamond_components_order():
 
 
 def test_wrong_requirement_test_requires():
-    """ https://github.com/conan-io/conan/issues/17312
+    """https://github.com/conan-io/conan/issues/17312
 
     app --------> etas --------------> enum
       \\-->hwinfo-/---(test_requires)---/
@@ -260,8 +305,9 @@ def test_wrong_requirement_test_requires():
     files = {
         "enum/conanfile.py": GenConanfile("enum", "0.1"),
         "etas/conanfile.py": GenConanfile("etas", "0.1").with_requirement("enum/0.1"),
-        "hwinfo/conanfile.py": GenConanfile("hwinfo", "0.1").with_requirement("etas/0.1")
-                                                            .with_test_requires("enum/0.1"),
+        "hwinfo/conanfile.py": GenConanfile("hwinfo", "0.1")
+        .with_requirement("etas/0.1")
+        .with_test_requires("enum/0.1"),
         "app/conanfile.py": app,
     }
     c.save(files)
@@ -275,29 +321,50 @@ def test_wrong_requirement_test_requires():
 
 
 def test_test_requires_options():
-    """ the default_options = {} values also propagate to ``test_requires()`` """
+    """the default_options = {} values also propagate to ``test_requires()``"""
     c = TestClient(light=True)
-    c.save({"test/conanfile.py": GenConanfile("test", "0.1").with_option("myoption", [1, 2, 3]),
-            "consumer/conanfile.py": GenConanfile().with_test_requires("test/0.1")
-                                                   .with_default_option("test/*:myoption", "2")})
+    c.save(
+        {
+            "test/conanfile.py": GenConanfile("test", "0.1").with_option(
+                "myoption", [1, 2, 3]
+            ),
+            "consumer/conanfile.py": GenConanfile()
+            .with_test_requires("test/0.1")
+            .with_default_option("test/*:myoption", "2"),
+        }
+    )
     c.run("create test -o myoption=2")
-    c.assert_listed_binary({"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Build")})
+    c.assert_listed_binary(
+        {"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Build")}
+    )
 
     c.run("install consumer")
     c.assert_listed_require({"test/0.1": "Cache"}, test=True)
-    c.assert_listed_binary({"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Cache")},
-                           test=True)
+    c.assert_listed_binary(
+        {"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Cache")}, test=True
+    )
 
 
 def test_invisible_requires_options():
-    """ the default_options = {} values also propagate to ``requires(visible=False)`` """
+    """the default_options = {} values also propagate to ``requires(visible=False)``"""
     c = TestClient(light=True)
-    c.save({"test/conanfile.py": GenConanfile("test", "0.1").with_option("myoption", [1, 2, 3]),
-            "consumer/conanfile.py": GenConanfile().with_requirement("test/0.1", visible=False)
-                                                   .with_default_option("test/*:myoption", "2")})
+    c.save(
+        {
+            "test/conanfile.py": GenConanfile("test", "0.1").with_option(
+                "myoption", [1, 2, 3]
+            ),
+            "consumer/conanfile.py": GenConanfile()
+            .with_requirement("test/0.1", visible=False)
+            .with_default_option("test/*:myoption", "2"),
+        }
+    )
     c.run("create test -o myoption=2")
-    c.assert_listed_binary({"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Build")})
+    c.assert_listed_binary(
+        {"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Build")}
+    )
 
     c.run("install consumer")
     c.assert_listed_require({"test/0.1": "Cache"})
-    c.assert_listed_binary({"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Cache")})
+    c.assert_listed_binary(
+        {"test/0.1": ("a3cb1345b8297bfdffea4ef4bb1b2694c54d1d69", "Cache")}
+    )

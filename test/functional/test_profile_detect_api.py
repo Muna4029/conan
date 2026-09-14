@@ -11,7 +11,6 @@ class TestProfileDetectAPI:
     @pytest.mark.skipif(platform.system() != "Windows", reason="Only for windows")
     @pytest.mark.tool("visual_studio", "17")
     def test_profile_detect_compiler(self):
-
         client = TestClient()
         tpl1 = textwrap.dedent("""
             {% set compiler, version, compiler_exe = detect_api.detect_default_compiler() %}
@@ -49,6 +48,9 @@ class TestProfileDetectAPI:
     @pytest.mark.skipif(platform.system() != "Linux", reason="Only linux")
     def test_profile_detect_libc(self):
         client = TestClient()
+        compiler, version, _ = detect_api.detect_gcc_compiler()
+        if compiler is None:
+            pytest.skip("No GCC compiler detected")
         tpl1 = textwrap.dedent("""
             {% set compiler, version, _ = detect_api.detect_gcc_compiler() %}
             {% set libc, libc_version = detect_api.detect_libc() %}

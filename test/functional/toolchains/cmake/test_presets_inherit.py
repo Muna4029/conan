@@ -8,15 +8,16 @@ from conan.test.utils.tools import TestClient
 
 @pytest.mark.tool("cmake", "3.23")
 def test_cmake_presets_with_user_presets_file():
-    """ Test the integration of the generated one with a user root CMakePresets.json
-    """
+    """Test the integration of the generated one with a user root CMakePresets.json"""
     c = TestClient()
     c.run("new cmake_exe -d name=foo -d version=1.0")
     conanfile = c.load("conanfile.py")
-    conanfile = conanfile.replace("tc = CMakeToolchain(self)",
-                                  "tc = CMakeToolchain(self)\n"
-                                  "        tc.user_presets_path = 'ConanPresets.json'\n"
-                                  "        tc.presets_prefix = 'conan'\n")
+    conanfile = conanfile.replace(
+        "tc = CMakeToolchain(self)",
+        "tc = CMakeToolchain(self)\n"
+        "        tc.user_presets_path = 'ConanPresets.json'\n"
+        "        tc.presets_prefix = 'conan'\n",
+    )
     cmake_presets = textwrap.dedent("""
         {
         "version": 4,
@@ -65,11 +66,10 @@ def test_cmake_presets_with_user_presets_file():
             }
         ]
         }""")
-    c.save({"conanfile.py": conanfile,
-            "CMakePresets.json": cmake_presets})
+    c.save({"conanfile.py": conanfile, "CMakePresets.json": cmake_presets})
 
-    c.run(f"install . ")
-    c.run(f"install . -s build_type=Debug")
+    c.run("install . ")
+    c.run("install . -s build_type=Debug")
 
     if platform.system() != "Windows":
         c.run_command("cmake --preset debug")

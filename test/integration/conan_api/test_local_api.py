@@ -15,4 +15,6 @@ def test_local_api():
     api = ConanAPI(cache_folder)
     assert api.local.editable_packages.edited_refs == {}
     api.local.editable_add(".", cwd=current_folder)
-    assert list(api.local.editable_packages.edited_refs) == [RecipeReference.loads("foo/1.0")]
+    assert list(api.local.editable_packages.edited_refs) == [
+        RecipeReference.loads("foo/1.0")
+    ]

@@ -5,7 +5,6 @@ from conan.test.utils.tools import TestClient
 
 
 class ConanfileRepeatedGeneratorsTestCase(unittest.TestCase):
-
     def test_conanfile_txt(self):
         conanfile = textwrap.dedent("""
             [generators]
@@ -14,9 +13,11 @@ class ConanfileRepeatedGeneratorsTestCase(unittest.TestCase):
         """)
 
         t = TestClient()
-        t.save({'conanfile.txt': conanfile})
+        t.save({"conanfile.txt": conanfile})
         t.run("install conanfile.txt")
-        self.assertEqual(str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1)
+        self.assertEqual(
+            str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1
+        )
 
     def test_conanfile_py(self):
         conanfile = textwrap.dedent("""
@@ -27,9 +28,11 @@ class ConanfileRepeatedGeneratorsTestCase(unittest.TestCase):
                 generators = "CMakeDeps", "CMakeDeps"
         """)
         t = TestClient()
-        t.save({'conanfile.py': conanfile})
+        t.save({"conanfile.py": conanfile})
         t.run("install conanfile.py")
-        self.assertEqual(str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1)
+        self.assertEqual(
+            str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1
+        )
 
     def test_python_requires_inheritance(self):
         pyreq = textwrap.dedent("""
@@ -57,10 +60,12 @@ class ConanfileRepeatedGeneratorsTestCase(unittest.TestCase):
         """)
 
         t = TestClient()
-        t.save({'pyreq.py': pyreq, 'conanfile.py': conanfile})
+        t.save({"pyreq.py": pyreq, "conanfile.py": conanfile})
         t.run("export pyreq.py --name=base --version=1.0")
         t.run("install conanfile.py")
-        self.assertEqual(str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1)
+        self.assertEqual(
+            str(t.out).count("Generator 'CMakeDeps' calling 'generate()'"), 1
+        )
 
     def test_duplicated_generator_in_member_and_attribue(self):
         """
@@ -80,7 +85,7 @@ class ConanfileRepeatedGeneratorsTestCase(unittest.TestCase):
         """)
 
         t = TestClient()
-        t.save({'conanfile.py': conanfile})
+        t.save({"conanfile.py": conanfile})
         # This used to not throw any errors
         t.run("install .", assert_error=True)
         assert "was instantiated in the generate() method too" in t.out

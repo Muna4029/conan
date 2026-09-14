@@ -11,11 +11,14 @@ from conan.internal.util.files import save, load
 
 @pytest.fixture
 def conanfile():
-    conanfile = str(GenConanfile()
-                    .with_import("import os")
-                    .with_setting("build_type").with_setting("arch")
-                    .with_import("from conan.tools.microsoft import vs_layout")
-                    .with_import("from conan.tools.files import AutoPackager, save"))
+    conanfile = str(
+        GenConanfile()
+        .with_import("import os")
+        .with_setting("build_type")
+        .with_setting("arch")
+        .with_import("from conan.tools.microsoft import vs_layout")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
 
     conanfile += """
     def source(self):
@@ -48,7 +51,9 @@ def test_layout_in_cache(conanfile, build_type, arch):
     libpath = "{}{}".format(libarch + "/" if libarch else "", build_type)
 
     client.save({"conanfile.py": conanfile.format(libpath=libpath)})
-    client.run(f"create . --name=lib --version=1.0 -s build_type={build_type} -s arch={arch}")
+    client.run(
+        f"create . --name=lib --version=1.0 -s build_type={build_type} -s arch={arch}"
+    )
 
     layout = client.created_layout()
     bf = layout.build()
@@ -66,20 +71,29 @@ def test_layout_in_cache(conanfile, build_type, arch):
 @pytest.mark.parametrize("build_type", ["Debug", "Release"])
 def test_layout_with_local_methods(conanfile, build_type, arch):
     """The layout in the cache is used too, always relative to the "base" folders that the cache
-        requires. But by the default, the "package" is not followed
-        """
+    requires. But by the default, the "package" is not followed
+    """
     client = TestClient()
     libarch = subfolders_arch.get(arch)
     libpath = "{}{}".format(libarch + "/" if libarch else "", build_type)
     client.save({"conanfile.py": conanfile.format(libpath=libpath)})
-    client.run("install . --name=lib --version=1.0 -s build_type={} -s arch={}".format(build_type, arch))
+    client.run(
+        "install . --name=lib --version=1.0 -s build_type={} -s arch={}".format(
+            build_type, arch
+        )
+    )
     client.run("source .")
     # Check the source folder (release)
     assert os.path.exists(os.path.join(client.current_folder, "include", "myheader.h"))
-    client.run("build . --name=lib --version=1.0 -s build_type={} -s arch={}".format(build_type,
-                                                                                     arch))
+    client.run(
+        "build . --name=lib --version=1.0 -s build_type={} -s arch={}".format(
+            build_type, arch
+        )
+    )
     # Check the build folder (release)
-    assert os.path.exists(os.path.join(os.path.join(client.current_folder, libpath), "mylib.lib"))
+    assert os.path.exists(
+        os.path.join(os.path.join(client.current_folder, libpath), "mylib.lib")
+    )
 
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Removing msvc compiler")
@@ -106,10 +120,12 @@ def test_error_no_msvc():
     client = TestClient()
     client.save({"conanfile.py": conanfile})
     save(client.paths.settings_path, settings_yml)
-    client.run('install . -s os=Windows -s build_type=Release -s arch=x86_64 '
-               '-s compiler=gcc -s compiler.version=8 '
-               '-s:b os=Windows -s:b build_type=Release -s:b arch=x86_64 '
-               '-s:b compiler=gcc -s:b compiler.version=8')
+    client.run(
+        "install . -s os=Windows -s build_type=Release -s arch=x86_64 "
+        "-s compiler=gcc -s compiler.version=8 "
+        "-s:b os=Windows -s:b build_type=Release -s:b arch=x86_64 "
+        "-s:b compiler=gcc -s:b compiler.version=8"
+    )
     assert "Installing" in client.out
 
 
@@ -126,8 +142,11 @@ def test_error_no_build_type():
 
     client = TestClient()
     client.save({"conanfile.py": conanfile})
-    client.run('install .',  assert_error=True)
-    assert " 'build_type' setting not defined, it is necessary for cmake_layout()" in client.out
+    client.run("install .", assert_error=True)
+    assert (
+        " 'build_type' setting not defined, it is necessary for cmake_layout()"
+        in client.out
+    )
 
 
 def test_cmake_layout_external_sources():
@@ -165,12 +184,17 @@ def test_cmake_layout_external_sources():
 
     # Local flow
     client.run("install . --name=foo --version=1.0 -s os=Linux")
-    assert os.path.exists(os.path.join(client.current_folder,
-                                       "build", "Release", "generators", "generate.txt"))
+    assert os.path.exists(
+        os.path.join(
+            client.current_folder, "build", "Release", "generators", "generate.txt"
+        )
+    )
     client.run("source .")
     assert os.path.exists(os.path.join(client.current_folder, "src", "source.txt"))
     client.run("build .")
-    contents = load(os.path.join(client.current_folder, "build", "Release", "build.txt"))
+    contents = load(
+        os.path.join(client.current_folder, "build", "Release", "build.txt")
+    )
     assert contents == "fooexported_contents"
     client.run("export-pkg . --name=foo --version=1.0")
     assert "Packaged 1 '.txt' file: build.txt" in client.out
@@ -216,7 +240,9 @@ def test_basic_layout_external_sources(with_build_type):
     # Local flow
     build_folder = "build-release" if with_build_type else "build"
     client.run("install . --name=foo --version=1.0 -s os=Linux")
-    assert os.path.exists(os.path.join(client.current_folder, build_folder, "conan", "generate.txt"))
+    assert os.path.exists(
+        os.path.join(client.current_folder, build_folder, "conan", "generate.txt")
+    )
     client.run("source .")
     assert os.path.exists(os.path.join(client.current_folder, "src", "source.txt"))
     client.run("build .")
@@ -265,7 +291,9 @@ def test_basic_layout_no_external_sources(with_build_type):
     client.run("install . --name=foo --version=1.0 -s os=Linux")
 
     build_folder = "build-release" if with_build_type else "build"
-    assert os.path.exists(os.path.join(client.current_folder, build_folder, "conan", "generate.txt"))
+    assert os.path.exists(
+        os.path.join(client.current_folder, build_folder, "conan", "generate.txt")
+    )
 
     client.run("build .")
     contents = load(os.path.join(client.current_folder, build_folder, "build.txt"))
@@ -289,5 +317,8 @@ def test_cmake_layout_custom_build_folder():
     client = TestClient()
     client.save({"conanfile.py": conanfile})
     client.run("install .")
-    assert os.path.exists(os.path.join(client.current_folder,
-                                       "mybuild/Release/generators/conan_toolchain.cmake"))
+    assert os.path.exists(
+        os.path.join(
+            client.current_folder, "mybuild/Release/generators/conan_toolchain.cmake"
+        )
+    )

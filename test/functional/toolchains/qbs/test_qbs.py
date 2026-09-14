@@ -15,7 +15,7 @@ def gen_file(template, **context):
     return t.render(**context)
 
 
-@pytest.mark.parametrize('shared', [False, True])
+@pytest.mark.parametrize("shared", [False, True])
 @pytest.mark.skipif(platform.system() != "Linux", reason="QBS only for Linux now")
 @pytest.mark.tool("qbs")
 def test_api_qbs_create_lib(shared):
@@ -30,13 +30,9 @@ def test_api_qbs_create_lib(shared):
 def test_qbs_all_products():
     client = TestClient()
 
-    context = {
-        "name": "hello",
-        "version": "2.0",
-        "package_name": "hello"
-    }
+    context = {"name": "hello", "version": "2.0", "package_name": "hello"}
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     import os
 
     from conan import ConanFile
@@ -53,14 +49,17 @@ def test_qbs_all_products():
             qbs = Qbs(self)
             qbs.resolve()
             qbs.build_all()
-        ''')
+        """)
 
-    client.save({
-        "conanfile.py": conanfile,
-        "hello.cpp": gen_file(source_cpp, **context),
-        "hello.h": gen_file(source_h, **context),
-        "hello.qbs": gen_file(qbs_lib_file, **context),
-    }, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "hello.cpp": gen_file(source_cpp, **context),
+            "hello.h": gen_file(source_h, **context),
+            "hello.qbs": gen_file(qbs_lib_file, **context),
+        },
+        clean_first=True,
+    )
 
     client.run("create .")
     assert "--all-products" in client.out
@@ -71,13 +70,9 @@ def test_qbs_all_products():
 def test_qbs_specific_products():
     client = TestClient()
 
-    context = {
-        "name": "hello",
-        "version": "2.0",
-        "package_name": "hello"
-    }
+    context = {"name": "hello", "version": "2.0", "package_name": "hello"}
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     import os
 
     from conan import ConanFile
@@ -94,14 +89,17 @@ def test_qbs_specific_products():
             qbs = Qbs(self)
             qbs.resolve()
             qbs.build(products=["hello", "hello"])
-        ''')
+        """)
 
-    client.save({
-        "conanfile.py": conanfile,
-        "hello.cpp": gen_file(source_cpp, **context),
-        "hello.h": gen_file(source_h, **context),
-        "hello.qbs": gen_file(qbs_lib_file, **context),
-    }, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "hello.cpp": gen_file(source_cpp, **context),
+            "hello.h": gen_file(source_h, **context),
+            "hello.qbs": gen_file(qbs_lib_file, **context),
+        },
+        clean_first=True,
+    )
 
     client.run("create .")
     assert "--products hello,hello" in client.out
@@ -112,13 +110,9 @@ def test_qbs_specific_products():
 def test_qbs_multiple_configurations():
     client = TestClient()
 
-    context = {
-        "name": "hello",
-        "version": "2.0",
-        "package_name": "hello"
-    }
+    context = {"name": "hello", "version": "2.0", "package_name": "hello"}
 
-    conanfile = textwrap.dedent('''
+    conanfile = textwrap.dedent("""
     import os
 
     from conan import ConanFile
@@ -137,14 +131,17 @@ def test_qbs_multiple_configurations():
             qbs.add_configuration("debug", {"qbs.debugInformation": True})
             qbs.resolve()
             qbs.build()
-        ''')
+        """)
 
-    client.save({
-        "conanfile.py": conanfile,
-        "hello.cpp": gen_file(source_cpp, **context),
-        "hello.h": gen_file(source_h, **context),
-        "hello.qbs": gen_file(qbs_lib_file, **context),
-    }, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "hello.cpp": gen_file(source_cpp, **context),
+            "hello.h": gen_file(source_h, **context),
+            "hello.qbs": gen_file(qbs_lib_file, **context),
+        },
+        clean_first=True,
+    )
 
     client.run("create .")
     build_folder = client.created_layout().build()

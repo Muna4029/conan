@@ -10,7 +10,6 @@ from conan.test.utils.test_files import temp_folder
 from conan.test.utils.tools import redirect_output
 
 
-
 def test_run_install_component():
     """
     Testing that the proper component is installed.
@@ -40,9 +39,13 @@ def test_run_install_component():
     assert "--component foo" in conanfile.command
 
 
-@pytest.mark.parametrize("config, deprecated",
-                         [("tools.cmake:install_strip", True),
-                          ("tools.build:install_strip", False),])
+@pytest.mark.parametrize(
+    "config, deprecated",
+    [
+        ("tools.cmake:install_strip", True),
+        ("tools.build:install_strip", False),
+    ],
+)
 def test_run_install_strip(config, deprecated):
     """
     Testing that the install/strip rule is called
@@ -74,11 +77,14 @@ def test_run_install_strip(config, deprecated):
         cmake.install(stdout=stdout, stderr=stderr)
 
     if deprecated:
-        assert "WARN: deprecated: The 'tools.cmake:install_strip' configuration is deprecated, use"\
-               " 'tools.build:install_strip' instead" in stderr
+        assert (
+            "WARN: deprecated: The 'tools.cmake:install_strip' configuration is deprecated, use"
+            " 'tools.build:install_strip' instead" in stderr
+        )
     else:
         assert "tools.cmake:install_strip" not in stderr
     assert "--strip" in conanfile.command
+
 
 def test_run_install_cli_args():
     """

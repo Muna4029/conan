@@ -6,7 +6,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_require_different_versions():
-    """ this test demostrates that it is possible to tool_require different versions
+    """this test demostrates that it is possible to tool_require different versions
     of the same thing, deactivating run=False (as long as their executables are not called the same)
 
     https://github.com/conan-io/conan/issues/13521
@@ -46,8 +46,7 @@ def test_require_different_versions():
                 self.run(f"mygcc1.0.{ext}")
                 self.run(f"mygcc2.0.{ext}")
             """)
-    c.save({"gcc/conanfile.py": gcc,
-            "wine/conanfile.py": wine})
+    c.save({"gcc/conanfile.py": gcc, "wine/conanfile.py": wine})
 
     c.run("create gcc --version=1.0")
     c.run("create gcc --version=2.0")
@@ -63,8 +62,7 @@ def test_require_different_versions():
 
 
 def test_require_different_versions_profile_override():
-    """ same as above but what if the profile is the one overriding the version?
-    """
+    """same as above but what if the profile is the one overriding the version?"""
     c = TestClient()
     gcc = textwrap.dedent(r"""
         import os
@@ -93,9 +91,13 @@ def test_require_different_versions_profile_override():
                 self.run(f"mygcc1.0.{ext}")
                 self.run(f"mygcc2.0.{ext}")
             """)
-    c.save({"gcc/conanfile.py": gcc,
+    c.save(
+        {
+            "gcc/conanfile.py": gcc,
             "wine/conanfile.py": wine,
-            "profile": "[tool_requires]\ngcc/2.0"})
+            "profile": "[tool_requires]\ngcc/2.0",
+        }
+    )
 
     c.run("create gcc --version=1.0")
     c.run("create gcc --version=2.0")
@@ -111,15 +113,19 @@ def test_require_different_versions_profile_override():
 
 
 def test_require_different_versions_profile_override_build_script():
-    """ build-scripts by default do the right thing, because they have run=True
+    """build-scripts by default do the right thing, because they have run=True
     (they could be runnable shell scripts)
     """
     c = TestClient(light=True)
     buildscripts = GenConanfile("buildscripts").with_package_type("build-scripts")
     wine = GenConanfile("wine", "1.0").with_tool_requirement("buildscripts/1.0")
-    c.save({"buildscripts/conanfile.py": buildscripts,
+    c.save(
+        {
+            "buildscripts/conanfile.py": buildscripts,
             "wine/conanfile.py": wine,
-            "profile": "[tool_requires]\nbuildscripts/2.0"})
+            "profile": "[tool_requires]\nbuildscripts/2.0",
+        }
+    )
 
     c.run("create buildscripts --version=2.0")
 
@@ -132,7 +138,7 @@ def test_require_different_versions_profile_override_build_script():
 
 
 def test_require_different_options():
-    """ this test demostrates that it is possible to tool_require different options
+    """this test demostrates that it is possible to tool_require different options
     of the same thing, deactivating run=False (as long as their executables are not called the same)
 
     https://github.com/conan-io/conan/issues/13521
@@ -174,8 +180,7 @@ def test_require_different_options():
                 self.run(f"mygcc1.{ext}")
                 self.run(f"mygcc2.{ext}")
             """)
-    c.save({"gcc/conanfile.py": gcc,
-            "wine/conanfile.py": wine})
+    c.save({"gcc/conanfile.py": gcc, "wine/conanfile.py": wine})
 
     c.run("create gcc -o myoption=1")
     c.run("create gcc -o myoption=2")
@@ -247,9 +252,13 @@ def test_require_different_versions_transitive():
                 self.run(f'snippy {qemu_snippy}')
         """)
 
-    c.save({"qemu/conanfile.py": qemu,
+    c.save(
+        {
+            "qemu/conanfile.py": qemu,
             "tool/conanfile.py": mytool,
-            "consumer/conanfile.py": consumer})
+            "consumer/conanfile.py": consumer,
+        }
+    )
 
     c.run("create qemu --version=1.0")
     c.run("create qemu --version=2.0")
@@ -263,7 +272,11 @@ def test_require_different_versions_transitive():
 
     c.run("upload * -r=default -c")
     # The "tools.graph:skip_binaries" shouldn't affect the result, it is never skipped
-    for skip in ("-c tools.graph:skip_binaries=True", "-c tools.graph:skip_binaries=False", ""):
+    for skip in (
+        "-c tools.graph:skip_binaries=True",
+        "-c tools.graph:skip_binaries=False",
+        "",
+    ):
         c.run("remove * -c")
         # Re-downloads and it works
         c.run(f"build consumer {skip}")
@@ -276,4 +289,6 @@ def test_require_different_versions_transitive():
     c.run("upload consumer/1.0 -r=default -c")
     c.run("remove * -c")
     c.run("install --requires=consumer/1.0")
-    assert re.search(r"Skipped binaries(\s*)myqemu/1.0, myqemu/2.0, snippy/1.0, valgrind/1.0", c.out)
+    assert re.search(
+        r"Skipped binaries(\s*)myqemu/1.0, myqemu/2.0, snippy/1.0, valgrind/1.0", c.out
+    )

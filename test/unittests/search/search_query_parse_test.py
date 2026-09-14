@@ -1,9 +1,7 @@
-
 from conan.internal.api.list.query_parse import _evaluate_postfix, _infix_to_postfix
 
 
 class TestQueryParse:
-
     def test_get_postfix(self):
         r = _infix_to_postfix("")
         assert r == []
@@ -21,11 +19,11 @@ class TestQueryParse:
         assert r == ["a=2", "b=3", "|", "j=34", "j=45", "&", "a=1", "&", "|"]
 
         import pytest
+
         with pytest.raises(Exception, match="Invalid expression: 2"):
             r = _infix_to_postfix("a= 2 OR b=3")
 
     def test_evaluate_postfix(self):
-
         def evaluator(expr):
             return expr in ("a=2", "j=45")
 

@@ -6,8 +6,14 @@ import pytest
 from conan.test.utils.tools import TestClient
 from conan.test.assets.sources import gen_function_cpp
 
-@pytest.mark.skipif(platform.system() != "Linux", reason="Premake only installed on Linux CI machines")
-@pytest.mark.skipif(platform.machine() != "x86_64", reason="Premake Legacy generator only supports x86_64 machines")
+
+@pytest.mark.skipif(
+    platform.system() != "Linux", reason="Premake only installed on Linux CI machines"
+)
+@pytest.mark.skipif(
+    platform.machine() != "x86_64",
+    reason="Premake Legacy generator only supports x86_64 machines",
+)
 @pytest.mark.tool("premake")
 def test_premake_legacy(matrix_client):
     c = matrix_client
@@ -60,9 +66,15 @@ def test_premake_legacy(matrix_client):
            filter "platforms:x86_64"
               architecture "x86_64"
           """)
-    c.save({"conanfile.py": conanfile,
+    c.save(
+        {
+            "conanfile.py": conanfile,
             "premake5.lua": premake,
-            "main.cpp": gen_function_cpp(name="main", includes=["matrix"], calls=["matrix"])})
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["matrix"], calls=["matrix"]
+            ),
+        }
+    )
     c.run("build .")
     assert "main: Release!" in c.out
     assert "matrix/1.0: Hello World Release!" in c.out
@@ -73,7 +85,6 @@ def test_premake_legacy(matrix_client):
     c.run("build . -s build_type=Debug --build=missing")
     assert "main: Debug!" in c.out
     assert "matrix/1.0: Hello World Debug!" in c.out
-
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="Only for Linux now")
@@ -98,4 +109,3 @@ def test_premake_shared_lib():
     c.run("create lib -o '&:shared=True'")
     assert "lib/0.1: package(): Packaged 1 '.so' file: liblib.so" in c.out
     assert "lib/0.1: package(): Packaged 1 '.a' file: liblib.a" not in c.out
-

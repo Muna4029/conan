@@ -7,7 +7,6 @@ from conan.test.utils.tools import NO_SETTINGS_PACKAGE_ID, TestClient, GenConanf
 
 
 class TestBasicCliOutput:
-
     def test_info_settings(self):
         client = TestClient()
         conanfile = textwrap.dedent("""
@@ -28,7 +27,9 @@ class TestBasicCliOutput:
                 default_options = {"shared": False, "fPIC": True}
             """)
         client.save({"conanfile.py": conanfile})
-        client.run("graph info . -s build_type=Debug -s compiler=gcc -s compiler.version=11")
+        client.run(
+            "graph info . -s build_type=Debug -s compiler=gcc -s compiler.version=11"
+        )
         assert "build_type: Debug" in client.out
         assert "context: host" in client.out
         assert "license: MIT" in client.out
@@ -47,13 +48,16 @@ class TestBasicCliOutput:
         # Now, let's create another consumer requiring the previous package
         client.save({"conanfile.txt": "[requires]\npkg/0.2"}, clean_first=True)
         client.run("graph info .")
-        assert textwrap.dedent(f"""
+        assert (
+            textwrap.dedent(f"""
             {repr(pref.ref)}:
               ref: {repr(pref.ref)}
               id: 1
               recipe: Cache
               package_id: {pref.package_id}
-              prev: {pref.revision}""") in client.out
+              prev: {pref.revision}""")
+            in client.out
+        )
 
     def test_nontuple_topics(self):
         client = TestClient()
@@ -121,14 +125,17 @@ class TestConanfilePath:
 
 
 class TestFilters:
-
     def test_filter_fields(self):
         # The --filter arg should work, specifying which fields to show only
         c = TestClient()
-        c.save({"conanfile.py": GenConanfile()
-               .with_class_attribute("author = 'myself'")
-               .with_class_attribute("license = 'MIT'")
-               .with_class_attribute("url = 'http://url.com'")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile()
+                .with_class_attribute("author = 'myself'")
+                .with_class_attribute("license = 'MIT'")
+                .with_class_attribute("url = 'http://url.com'")
+            }
+        )
         c.run("graph info . ")
         assert "license: MIT" in c.out
         assert "author: myself" in c.out
@@ -145,10 +152,14 @@ class TestFilters:
     def test_filter_fields_json(self):
         # The --filter arg should work, specifying which fields to show only
         c = TestClient()
-        c.save({"conanfile.py": GenConanfile()
-               .with_class_attribute("author = 'myself'")
-               .with_class_attribute("license = 'MIT'")
-               .with_class_attribute("url = 'http://url.com'")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile()
+                .with_class_attribute("author = 'myself'")
+                .with_class_attribute("license = 'MIT'")
+                .with_class_attribute("url = 'http://url.com'")
+            }
+        )
         c.run("graph info . --filter=license --format=json")
         assert "author" not in c.out
         assert '"license": "MIT"' in c.out
@@ -178,17 +189,23 @@ class TestJsonOutput:
 
     def test_json_info_requirements(self):
         c = TestClient()
-        c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
-                "app/conanfile.py": GenConanfile().with_require("pkg/[>=0.0 <1.0]")})
+        c.save(
+            {
+                "pkg/conanfile.py": GenConanfile("pkg", "0.1"),
+                "app/conanfile.py": GenConanfile().with_require("pkg/[>=0.0 <1.0]"),
+            }
+        )
         c.run("create pkg")
         c.run("graph info app --format=json")
         graph = json.loads(c.stdout)
-        assert graph["graph"]["nodes"]["0"]["dependencies"]["1"]["require"] == "pkg/[>=0.0 <1.0]"
+        assert (
+            graph["graph"]["nodes"]["0"]["dependencies"]["1"]["require"]
+            == "pkg/[>=0.0 <1.0]"
+        )
 
 
 class TestAdvancedCliOutput:
-    """ Testing more advanced fields output, like SCM or PYTHON-REQUIRES
-    """
+    """Testing more advanced fields output, like SCM or PYTHON-REQUIRES"""
 
     def test_python_requires(self):
         # https://github.com/conan-io/conan/issues/9277
@@ -204,7 +221,10 @@ class TestAdvancedCliOutput:
         client.save({"conanfile.py": conanfile})
 
         client.run("graph info .")
-        assert "python_requires:\n    tool/0.1#4d670581ccb765839f2239cc8dff8fbd" in client.out
+        assert (
+            "python_requires:\n    tool/0.1#4d670581ccb765839f2239cc8dff8fbd"
+            in client.out
+        )
 
         client.run("graph info . --format=json")
         info = json.loads(client.stdout)
@@ -232,7 +252,9 @@ class TestAdvancedCliOutput:
             """)
         client.save({"conanfile.py": conanfile})
         client.run("export .")
-        client.save({"conanfile.py": GenConanfile().with_requires("pkg/0.1")}, clean_first=True)
+        client.save(
+            {"conanfile.py": GenConanfile().with_requires("pkg/0.1")}, clean_first=True
+        )
         client.run("graph info . -s build_type=Release")
         assert "build_id: ec0cd314abe055f7de86cd6493e31977d2b87884" in client.out
         assert "package_id: efa83b160a55b033c4ea706ddb980cd708e3ba1b" in client.out
@@ -253,8 +275,12 @@ class TestEditables:
                     self.folders.source = "."
                     self.folders.build = "."
             """)
-        c.save({"pkg/conanfile.py": conanfile,
-                "consumer/conanfile.py": GenConanfile().with_require("pkg/0.1")})
+        c.save(
+            {
+                "pkg/conanfile.py": conanfile,
+                "consumer/conanfile.py": GenConanfile().with_require("pkg/0.1"),
+            }
+        )
         c.run("editable add pkg --name=pkg --version=0.1")
         # TODO: Check this --package-filter with *
         c.run("graph info consumer --package-filter=pkg*")
@@ -284,12 +310,13 @@ class TestInfoTestPackage:
 
         for args in ["", " --build=*"]:
             client.run("graph info . " + args)
-            assert "AttributeError: 'HelloConan' object has no attribute 'tested_reference_str'"\
-                   not in client.out
+            assert (
+                "AttributeError: 'HelloConan' object has no attribute 'tested_reference_str'"
+                not in client.out
+            )
 
 
 class TestDeployers:
-
     def test_custom_deploy(self):
         c = TestClient()
         conanfile = GenConanfile("pkg", "0.1").with_class_attribute("license = 'MIT'")
@@ -308,9 +335,14 @@ class TestDeployers:
                 conanfile.output.info(contents)
                 save(conanfile, "licenses.txt", contents)
             """)
-        c.save({"conanfile.py": GenConanfile().with_requires("pkg/0.1")
-                                              .with_class_attribute("license='GPL'"),
-                "collectlicenses.py": collectlicenses})
+        c.save(
+            {
+                "conanfile.py": GenConanfile()
+                .with_requires("pkg/0.1")
+                .with_class_attribute("license='GPL'"),
+                "collectlicenses.py": collectlicenses,
+            }
+        )
         c.run("graph info . --deployer=collectlicenses")
         assert "conanfile.py: LICENSE : GPL!" in c.out
         assert "LICENSE pkg/0.1: MIT!" in c.out
@@ -332,8 +364,12 @@ class TestErrorsInGraph:
                 def package_id(self):
                     a = b
             """)
-        c.save({"dep/conanfile.py": dep,
-                "consumer/conanfile.py": GenConanfile().with_requires("dep/0.1")})
+        c.save(
+            {
+                "dep/conanfile.py": dep,
+                "consumer/conanfile.py": GenConanfile().with_requires("dep/0.1"),
+            }
+        )
         c.run("export dep")
         exit_code = c.run("graph info consumer", assert_error=True)
         assert "name 'b' is not defined" in c.out
@@ -350,8 +386,12 @@ class TestErrorsInGraph:
                 def export(self):
                     replace_in_file(self, "conanfile.py", "from conan", "from conans")
             """)
-        c.save({"dep/conanfile.py": dep,
-                "consumer/conanfile.py": GenConanfile().with_requires("dep/0.1")})
+        c.save(
+            {
+                "dep/conanfile.py": dep,
+                "consumer/conanfile.py": GenConanfile().with_requires("dep/0.1"),
+            }
+        )
         c.run("export dep")
         exit_code = c.run("graph info consumer", assert_error=True)
         assert "ERROR: Package 'dep/0.1' not resolved: dep/0.1: Cannot load" in c.out
@@ -372,13 +412,15 @@ class TestErrorsInGraph:
         """
         )
 
-        c.save({
+        c.save(
+            {
                 "dep/conanfile.py": GenConanfile("dep").with_version("0.1"),
                 "dep_invalid/conanfile.py": dep_invalid,
                 "consumer/conanfile.py": GenConanfile("consumer")
-                                        .with_requires("dep/0.1")
-                                        .with_requires("dep_invalid/0.1"),
-            })
+                .with_requires("dep/0.1")
+                .with_requires("dep_invalid/0.1"),
+            }
+        )
         c.run("export dep")
         c.run("export dep_invalid")
         exit_code = c.run("graph info consumer")
@@ -388,9 +430,7 @@ class TestErrorsInGraph:
         assert exit_code == 0
 
 
-
 class TestInfoUpdate:
-
     def test_update(self):
         c = TestClient(default_server_user=True)
         c.save({"conanfile.py": GenConanfile("tool")})
@@ -402,7 +442,9 @@ class TestInfoUpdate:
         c.run("graph info . --filter=recipe")
         assert "tool/1.0#7fbd52996f34447f4a4c362edb5b4af5 - Cache" in c.out
         c.run("graph info . --update --filter=recipe")
-        assert "tool/1.1#7fbd52996f34447f4a4c362edb5b4af5 - Downloaded (default)" in c.out
+        assert (
+            "tool/1.1#7fbd52996f34447f4a4c362edb5b4af5 - Downloaded (default)" in c.out
+        )
 
 
 def test_info_not_hit_server():
@@ -411,8 +453,14 @@ def test_info_not_hit_server():
     :return:
     """
     c = TestClient(default_server_user=True)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
-            "consumer/conanfile.py": GenConanfile("consumer", "0.1").with_require("pkg/0.1")})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1"),
+            "consumer/conanfile.py": GenConanfile("consumer", "0.1").with_require(
+                "pkg/0.1"
+            ),
+        }
+    )
     c.run("create pkg")
     c.run("create consumer")
     c.run("upload * -r=default -c")

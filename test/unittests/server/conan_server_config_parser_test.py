@@ -8,7 +8,6 @@ from conan.internal.util.files import mkdir, save
 
 
 class TestServerConfigParse:
-
     def test_not_allowed_encoding_password(self):
         tmp_dir = temp_folder()
         server_conf = """
@@ -38,7 +37,10 @@ demo: %s
         save(conf_path, server_conf % "cönan")
 
         server_config = ConanServerConfigParser(tmp_dir)
-        with pytest.raises(ConanException, match="Password contains invalid characters. Only ASCII encoding is supported"):
+        with pytest.raises(
+            ConanException,
+            match="Password contains invalid characters. Only ASCII encoding is supported",
+        ):
             server_config.users
 
         save(conf_path, server_conf % "manol ito!@")
@@ -46,11 +48,18 @@ demo: %s
         assert server_config.users == {"demo": "manol ito!@"}
 
         # Now test from ENV
-        server_config = ConanServerConfigParser(tmp_dir, environment={"CONAN_SERVER_USERS": "demo: cönan"})
-        with pytest.raises(ConanException, match="Password contains invalid characters. Only ASCII encoding is supported"):
+        server_config = ConanServerConfigParser(
+            tmp_dir, environment={"CONAN_SERVER_USERS": "demo: cönan"}
+        )
+        with pytest.raises(
+            ConanException,
+            match="Password contains invalid characters. Only ASCII encoding is supported",
+        ):
             server_config.users
 
-        server_config = ConanServerConfigParser(tmp_dir, environment={"CONAN_SERVER_USERS": "demo:manolito!@"})
+        server_config = ConanServerConfigParser(
+            tmp_dir, environment={"CONAN_SERVER_USERS": "demo:manolito!@"}
+        )
         assert server_config.users == {"demo": "manolito!@"}
 
     def test_relative_public_url(self):
@@ -101,4 +110,6 @@ disk_storage_path: ./custom_data
         """
         save(conf_path, server_conf)
         server_config = ConanServerConfigParser(server_dir, is_custom_path=True)
-        assert server_config.disk_storage_path == os.path.join(server_dir, "custom_data")
+        assert server_config.disk_storage_path == os.path.join(
+            server_dir, "custom_data"
+        )

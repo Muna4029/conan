@@ -12,31 +12,62 @@ from conan.test.utils.tools import TestClient
     "compiler, version, runtime, cppstd, build_type, defines, cflags, cxxflags, sharedlinkflags, exelinkflags",
     [
         ("msvc", "191", "dynamic", "14", "Release", [], [], [], [], []),
-        ("msvc", "191", "dynamic", "14", "Release",
-         ["TEST_DEFINITION1", "TEST_DEFINITION2=0", "TEST_DEFINITION3=", "TEST_DEFINITION4=TestPpdValue4",
-          "TEST_DEFINITION5=__declspec(dllexport)", "TEST_DEFINITION6=foo bar"],
-         ["/GL"], ["/GL"], ["/LTCG"], ["/LTCG"]),
+        (
+            "msvc",
+            "191",
+            "dynamic",
+            "14",
+            "Release",
+            [
+                "TEST_DEFINITION1",
+                "TEST_DEFINITION2=0",
+                "TEST_DEFINITION3=",
+                "TEST_DEFINITION4=TestPpdValue4",
+                "TEST_DEFINITION5=__declspec(dllexport)",
+                "TEST_DEFINITION6=foo bar",
+            ],
+            ["/GL"],
+            ["/GL"],
+            ["/LTCG"],
+            ["/LTCG"],
+        ),
         ("msvc", "191", "static", "17", "Debug", [], [], [], [], []),
     ],
 )
 @pytest.mark.skipif(platform.system() != "Windows", reason="Only for windows")
-def test_toolchain_nmake(compiler, version, runtime, cppstd, build_type,
-                         defines, cflags, cxxflags, sharedlinkflags, exelinkflags):
+def test_toolchain_nmake(
+    compiler,
+    version,
+    runtime,
+    cppstd,
+    build_type,
+    defines,
+    cflags,
+    cxxflags,
+    sharedlinkflags,
+    exelinkflags,
+):
     client = TestClient(path_with_spaces=False)
-    settings = {"compiler": compiler,
-                "compiler.version": version,
-                "compiler.cppstd": cppstd,
-                "compiler.runtime": runtime,
-                "build_type": build_type,
-                "arch": "x86_64"}
+    settings = {
+        "compiler": compiler,
+        "compiler.version": version,
+        "compiler.cppstd": cppstd,
+        "compiler.runtime": runtime,
+        "build_type": build_type,
+        "arch": "x86_64",
+    }
 
     serialize_array = lambda arr: "[{}]".format(",".join([f"'{v}'" for v in arr]))
     conf = {
         "tools.build:defines": serialize_array(defines) if defines else "",
         "tools.build:cflags": serialize_array(cflags) if cflags else "",
         "tools.build:cxxflags": serialize_array(cxxflags) if cxxflags else "",
-        "tools.build:sharedlinkflags": serialize_array(sharedlinkflags) if sharedlinkflags else "",
-        "tools.build:exelinkflags": serialize_array(exelinkflags) if exelinkflags else "",
+        "tools.build:sharedlinkflags": serialize_array(sharedlinkflags)
+        if sharedlinkflags
+        else "",
+        "tools.build:exelinkflags": serialize_array(exelinkflags)
+        if exelinkflags
+        else "",
     }
 
     # Build the profile according to the settings provided
@@ -44,8 +75,10 @@ def test_toolchain_nmake(compiler, version, runtime, cppstd, build_type,
 
     client.run("new cmake_lib -d name=dep -d version=1.0")
     conf = " ".join(f'-c {k}="{v}"' for k, v in conf.items() if v)
-    client.run(f'create . -tf=\"\" {settings} {conf}'
-               f' -c tools.cmake.cmaketoolchain:generator="Visual Studio 15"')
+    client.run(
+        f'create . -tf="" {settings} {conf}'
+        f' -c tools.cmake.cmaketoolchain:generator="Visual Studio 15"'
+    )
 
     # Rearrange defines to macro / value dict
     conf_preprocessors = {}
@@ -77,14 +110,32 @@ def test_toolchain_nmake(compiler, version, runtime, cppstd, build_type,
         simple.exe: simple.obj
           $(CPP) simple.obj
         """)
-    client.save({"conanfile.py": conanfile,
-                 "makefile": makefile,
-                 "simple.cpp": gen_function_cpp(name="main", includes=["dep"], calls=["dep"], preprocessor=conf_preprocessors.keys())},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "makefile": makefile,
+            "simple.cpp": gen_function_cpp(
+                name="main",
+                includes=["dep"],
+                calls=["dep"],
+                preprocessor=conf_preprocessors.keys(),
+            ),
+        },
+        clean_first=True,
+    )
     client.run(f"build . {settings} {conf}")
     client.run_command("simple.exe")
     assert "dep/1.0" in client.out
-    check_exe_run(client.out, "main", "msvc", version, build_type, "x86_64", cppstd, conf_preprocessors)
+    check_exe_run(
+        client.out,
+        "main",
+        "msvc",
+        version,
+        build_type,
+        "x86_64",
+        cppstd,
+        conf_preprocessors,
+    )
 
 
 @pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows")
@@ -95,26 +146,38 @@ def test_toolchain_nmake_clang():
     runtime = "dynamic"
     cppstd = "14"
     build_type = "Debug"
-    defines = ["TEST_DEFINITION1", "TEST_DEFINITION2=0", "TEST_DEFINITION3=", "TEST_DEFINITION4=TestPpdValue4",
-          "TEST_DEFINITION5=__declspec(dllexport)", "TEST_DEFINITION6=foo bar"]
+    defines = [
+        "TEST_DEFINITION1",
+        "TEST_DEFINITION2=0",
+        "TEST_DEFINITION3=",
+        "TEST_DEFINITION4=TestPpdValue4",
+        "TEST_DEFINITION5=__declspec(dllexport)",
+        "TEST_DEFINITION6=foo bar",
+    ]
     cflags = cxxflags = sharedlinkflags = exelinkflags = []
     client = TestClient(path_with_spaces=False)
-    settings = {"compiler": compiler,
-                "compiler.version": version,
-                "compiler.cppstd": cppstd,
-                "compiler.runtime": runtime,
-                "build_type": build_type,
-                "compiler.runtime_version": "v144",
-                "arch": "x86_64"}
+    settings = {
+        "compiler": compiler,
+        "compiler.version": version,
+        "compiler.cppstd": cppstd,
+        "compiler.runtime": runtime,
+        "build_type": build_type,
+        "compiler.runtime_version": "v144",
+        "arch": "x86_64",
+    }
 
     serialize_array = lambda arr: "[{}]".format(",".join([f"'{v}'" for v in arr]))
     conf = {
         "tools.build:defines": serialize_array(defines) if defines else "",
         "tools.build:cflags": serialize_array(cflags) if cflags else "",
         "tools.build:cxxflags": serialize_array(cxxflags) if cxxflags else "",
-        "tools.build:sharedlinkflags": serialize_array(sharedlinkflags) if sharedlinkflags else "",
-        "tools.build:exelinkflags": serialize_array(exelinkflags) if exelinkflags else "",
-        "tools.build:compiler_executables": r'{\"c\": \"clang-cl\", \"cpp\": \"clang-cl\"}',
+        "tools.build:sharedlinkflags": serialize_array(sharedlinkflags)
+        if sharedlinkflags
+        else "",
+        "tools.build:exelinkflags": serialize_array(exelinkflags)
+        if exelinkflags
+        else "",
+        "tools.build:compiler_executables": r"{\"c\": \"clang-cl\", \"cpp\": \"clang-cl\"}",
         "tools.cmake.cmaketoolchain:generator": "Visual Studio 17",
     }
 
@@ -123,7 +186,7 @@ def test_toolchain_nmake_clang():
 
     client.run("new cmake_lib -d name=dep -d version=1.0")
     conf = " ".join(f'-c {k}="{v}"' for k, v in conf.items() if v)
-    client.run(f'create . -tf=\"\" {settings} {conf}')
+    client.run(f'create . -tf="" {settings} {conf}')
 
     # Rearrange defines to macro / value dict
     conf_preprocessors = {}
@@ -152,11 +215,29 @@ def test_toolchain_nmake_clang():
         simple.exe: simple.cpp
           $(CPP) simple.cpp -o simple.exe
         """)
-    client.save({"conanfile.py": conanfile,
-                 "makefile": makefile,
-                 "simple.cpp": gen_function_cpp(name="main", includes=["dep"], calls=["dep"], preprocessor=conf_preprocessors.keys())},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "makefile": makefile,
+            "simple.cpp": gen_function_cpp(
+                name="main",
+                includes=["dep"],
+                calls=["dep"],
+                preprocessor=conf_preprocessors.keys(),
+            ),
+        },
+        clean_first=True,
+    )
     client.run(f"build . {settings} {conf}")
     client.run_command("simple.exe")
     assert "dep/1.0" in client.out
-    check_exe_run(client.out, "main", "clang", "19.1", build_type, "x86_64", cppstd, conf_preprocessors)
+    check_exe_run(
+        client.out,
+        "main",
+        "clang",
+        "19.1",
+        build_type,
+        "x86_64",
+        cppstd,
+        conf_preprocessors,
+    )

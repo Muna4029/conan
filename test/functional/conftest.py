@@ -116,7 +116,9 @@ def _matrix_client_components():
     vector_h = gen_function_h(name="vector")
     vector_cpp = gen_function_cpp(name="vector", includes=["vector"])
     module_h = gen_function_h(name="module")
-    module_cpp = gen_function_cpp(name="module", includes=["module", "vector"], calls=["vector"])
+    module_cpp = gen_function_cpp(
+        name="module", includes=["module", "vector"], calls=["vector"]
+    )
 
     conanfile = textwrap.dedent("""
         from conan import ConanFile
@@ -182,13 +184,17 @@ def _matrix_client_components():
        install(TARGETS vector module)
        install(TARGETS headers PUBLIC_HEADER DESTINATION include/headers)
        """)
-    c.save({"src/headers.h": headers_h,
+    c.save(
+        {
+            "src/headers.h": headers_h,
             "src/vector.h": vector_h,
             "src/vector.cpp": vector_cpp,
             "src/module.h": module_h,
             "src/module.cpp": module_cpp,
             "CMakeLists.txt": cmakelists,
-            "conanfile.py": conanfile})
+            "conanfile.py": conanfile,
+        }
+    )
     c.run("create .")
     return c
 
@@ -267,10 +273,14 @@ def _matrix_c_interface_client():
             def package_info(self):
                 self.cpp_info.libs = ["matrix"]
         """)
-    c.save({"include/matrix.h": matrix_h,
+    c.save(
+        {
+            "include/matrix.h": matrix_h,
             "src/matrix.cpp": matrix_cpp,
             "conanfile.py": conanfile,
-            "CMakeLists.txt": cmake})
+            "CMakeLists.txt": cmake,
+        }
+    )
     c.run("create .")
     return c
 

@@ -5,8 +5,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_cpp_info_serialize_round_trip():
-    """ test that serialize and deserialize CppInfo works
-    """
+    """test that serialize and deserialize CppInfo works"""
     # TODO: Define standard name for file
     c = TestClient()
     conanfile = textwrap.dedent("""\

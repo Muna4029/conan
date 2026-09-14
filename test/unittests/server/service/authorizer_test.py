@@ -1,13 +1,16 @@
 import pytest
 
-from conan.internal.errors import InternalErrorException, AuthenticationException, ForbiddenException
+from conan.internal.errors import (
+    InternalErrorException,
+    AuthenticationException,
+    ForbiddenException,
+)
 from conan.api.model import PkgReference
 from conan.api.model import RecipeReference
 from conans.server.service.authorize import BasicAuthorizer
 
 
 class TestAuthorizer:
-
     @pytest.fixture(autouse=True)
     def setup(self):
         self.openssl_ref = RecipeReference.loads("openssl/2.0.1@lasote/testing")
@@ -185,11 +188,11 @@ class TestAuthorizer:
         # Simple user list
         read_perms = [("openssl/*@lasote/testing", "user1,user2,user3")]
         authorizer = BasicAuthorizer(read_perms, [])
-        for u in ['user1', 'user2', 'user3']:
+        for u in ["user1", "user2", "user3"]:
             authorizer.check_read_conan(u, self.openssl_ref)
 
         # Spaces bewteen user names should be ignored
         read_perms = [("openssl/*@lasote/testing", "user1 , user2,\tuser3")]
         authorizer = BasicAuthorizer(read_perms, [])
-        for u in ['user1', 'user2', 'user3']:
+        for u in ["user1", "user2", "user3"]:
             authorizer.check_read_conan(u, self.openssl_ref)

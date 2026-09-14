@@ -68,10 +68,14 @@ def test_create_universal_binary():
             """)
 
     client.run("new cmake_lib -d name=mylibrary -d version=1.0")
-    client.save({"conanfile.py": conanfile, "test_package/conanfile.py": test_conanfile})
+    client.save(
+        {"conanfile.py": conanfile, "test_package/conanfile.py": test_conanfile}
+    )
 
-    client.run('create . --name=mylibrary --version=1.0 '
-               '-s="arch=armv8|armv8.3|x86_64" --build=missing -tf=""')
+    client.run(
+        "create . --name=mylibrary --version=1.0 "
+        '-s="arch=armv8|armv8.3|x86_64" --build=missing -tf=""'
+    )
 
     assert "libmylibrary.a are: x86_64 arm64 arm64e" in client.out
 
@@ -79,7 +83,9 @@ def test_create_universal_binary():
 
     assert "example are: x86_64 arm64 arm64e" in client.out
 
-    client.run('new cmake_exe -d name=foo -d version=1.0 -d requires=mylibrary/1.0 --force')
+    client.run(
+        "new cmake_exe -d name=foo -d version=1.0 -d requires=mylibrary/1.0 --force"
+    )
 
     client.run('install . -s="arch=armv8|armv8.3|x86_64"')
 
@@ -91,11 +97,13 @@ def test_create_universal_binary():
 
     rmdir(os.path.join(client.current_folder, "build"))
 
-    client.run('install . -s="arch=armv8|armv8.3|x86_64" '
-               '-c tools.cmake.cmake_layout:build_folder_vars=\'["settings.arch"]\'')
+    client.run(
+        'install . -s="arch=armv8|armv8.3|x86_64" '
+        "-c tools.cmake.cmake_layout:build_folder_vars='[\"settings.arch\"]'"
+    )
 
-    client.run_command("cmake --preset \"conan-armv8|armv8.3|x86_64-release\" ")
-    client.run_command("cmake --build --preset \"conan-armv8|armv8.3|x86_64-release\" ")
+    client.run_command('cmake --preset "conan-armv8|armv8.3|x86_64-release" ')
+    client.run_command('cmake --build --preset "conan-armv8|armv8.3|x86_64-release" ')
     client.run_command("lipo -info './build/armv8|armv8.3|x86_64/Release/foo'")
 
     assert "foo are: x86_64 arm64 arm64e" in client.out
@@ -108,7 +116,7 @@ def test_create_universal_binary_ninja():
 
     client.run("new cmake_lib -d name=mylibrary -d version=1.0")
 
-    client.run('export .')
+    client.run("export .")
 
     conanfile = textwrap.dedent("""
         [requires]
@@ -127,19 +135,21 @@ def test_create_universal_binary_ninja():
         find_package(mylibrary CONFIG REQUIRED)
         """)
 
-    client.save({"conanfile.txt": conanfile,
-                 "CMakeLists.txt": cmake},
-                 clean_first=True)
+    client.save({"conanfile.txt": conanfile, "CMakeLists.txt": cmake}, clean_first=True)
 
     client.run('install . -s=arch="armv8|x86_64" --build=missing -of=build')
 
     with client.chdir("build"):
-        client.run_command("cmake .. -GNinja "
-                           "-DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake "
-                           "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW "
-                           "-DCMAKE_BUILD_TYPE=Release")
+        client.run_command(
+            "cmake .. -GNinja "
+            "-DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake "
+            "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW "
+            "-DCMAKE_BUILD_TYPE=Release"
+        )
 
     assert "expected newline, got '|'" not in client.out
     assert "Build files have been written to:" in client.out
     # test that there are no files with the "|" character in the build folder
-    assert not any("|" in f for f in os.listdir(os.path.join(client.current_folder, "build")))
+    assert not any(
+        "|" in f for f in os.listdir(os.path.join(client.current_folder, "build"))
+    )

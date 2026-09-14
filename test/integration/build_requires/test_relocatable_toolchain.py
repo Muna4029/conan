@@ -5,7 +5,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_relocatable_toolchain():
-    """ Implements the following use case:
+    """Implements the following use case:
     - base/1.0 implements an SDK that needs to be relocated in every maching, but this package
       contains the non relocatable part and the relocation scripts
     - sdk/1.0 --tool_requires-> base/1.0 and implements just the relocation execution, copying
@@ -51,24 +51,38 @@ def test_relocatable_toolchain():
             def package_info(self):
                 self.output.info(f"SDK INFO: {load(self, 'sdk.txt')}!!!")
         """)
-    c.save({"linux": "[settings]\nos=Linux\narch=x86_64",
+    c.save(
+        {
+            "linux": "[settings]\nos=Linux\narch=x86_64",
             "embedded": "[settings]\narch=armv8",
             "base/conanfile.py": base,
             "sdk/conanfile.py": sdk,
-            "consumer/conanfile.py": GenConanfile("app", "1.0").with_tool_requires("sdk/1.0")})
+            "consumer/conanfile.py": GenConanfile("app", "1.0").with_tool_requires(
+                "sdk/1.0"
+            ),
+        }
+    )
     c.run("create base -pr:h=embedded -pr:b=linux --build-require")
     c.run("export sdk")
     c.run("install consumer -pr:h=embedded -pr:b=linux")
-    c.assert_listed_binary({"base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache"),
-                            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Build")},
-                           build=True)
+    c.assert_listed_binary(
+        {
+            "base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache"),
+            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Build"),
+        },
+        build=True,
+    )
     assert "sdk/1.0: Calling package()" in c.out
     assert "sdk/1.0: SDK INFO: CUSTOM PATH: arch:x86_64=>armv8!!!" in c.out
 
     c.run("install consumer -pr:h=embedded -pr:b=linux -v")
-    c.assert_listed_binary({"base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Skip"),
-                            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache")},
-                           build=True)
+    c.assert_listed_binary(
+        {
+            "base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Skip"),
+            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache"),
+        },
+        build=True,
+    )
     assert "sdk/1.0: Calling package()" not in c.out
     assert "sdk/1.0: SDK INFO: CUSTOM PATH: arch:x86_64=>armv8!!!" in c.out
 
@@ -77,16 +91,26 @@ def test_relocatable_toolchain():
     c.run("remove * -c")
     c.run("install consumer -pr:h=embedded -pr:b=linux")
     c.assert_listed_binary(
-        {"base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Download (default)"),
-         "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Build")},
-        build=True)
+        {
+            "base/1.0": (
+                "62e589af96a19807968167026d906e63ed4de1f5",
+                "Download (default)",
+            ),
+            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Build"),
+        },
+        build=True,
+    )
     assert "sdk/1.0: Calling package()" in c.out
     assert "sdk/1.0: SDK INFO: CUSTOM PATH: arch:x86_64=>armv8!!!" in c.out
 
     # we can even remove the binary!
     c.run("remove base/1.0:* -c")
     c.run("install consumer -pr:h=embedded -pr:b=linux -v")
-    c.assert_listed_binary({"base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Skip"),
-                            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache")},
-                           build=True)
+    c.assert_listed_binary(
+        {
+            "base/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Skip"),
+            "sdk/1.0": ("62e589af96a19807968167026d906e63ed4de1f5", "Cache"),
+        },
+        build=True,
+    )
     assert "sdk/1.0: SDK INFO: CUSTOM PATH: arch:x86_64=>armv8!!!" in c.out

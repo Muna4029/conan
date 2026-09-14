@@ -11,8 +11,13 @@ class TestFilterProfile:
     @pytest.fixture()
     def client(self):
         c = TestClient()
-        c.save({"lib/conanfile.py": GenConanfile("lib", "1.0").with_settings("os", "build_type")
-               .with_shared_option()})
+        c.save(
+            {
+                "lib/conanfile.py": GenConanfile("lib", "1.0")
+                .with_settings("os", "build_type")
+                .with_shared_option()
+            }
+        )
         c.run("create lib -s os=Linux")
         c.run("create lib -s os=Windows")
         c.run("create lib -s os=Windows -o *:shared=True")
@@ -28,7 +33,9 @@ class TestFilterProfile:
               explanation: This binary is an exact match for the defined inputs
             """)
         assert textwrap.indent(expected, "      ") in c.out
-        c.run("graph explain --requires=lib/1.0 --missing=lib/1.0 -s os=Windows --format=json")
+        c.run(
+            "graph explain --requires=lib/1.0 --missing=lib/1.0 -s os=Windows --format=json"
+        )
         cache = json.loads(c.stdout)["closest_binaries"]
         revisions = cache["lib/1.0"]["revisions"]
         pkgs = revisions["5313a980ea0c56baeb582c510d6d9fbc"]["packages"]
@@ -38,7 +45,10 @@ class TestFilterProfile:
         assert pkg1["diff"]["settings"] == {}
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary is an exact match for the defined inputs"
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary is an exact match for the defined inputs"
+        )
 
     def test_settings_incomplete(self, client):
         c = client
@@ -61,11 +71,16 @@ class TestFilterProfile:
         assert len(pkgs) == 1
         pkg1 = pkgs["3d714b452400b3c3d6a964f42d5ec5004a6f22dc"]
         assert pkg1["diff"]["platform"] == {}
-        assert pkg1["diff"]["settings"] == {'existing': ['build_type=Release'],
-                                            'expected': ['build_type=None']}
+        assert pkg1["diff"]["settings"] == {
+            "existing": ["build_type=Release"],
+            "expected": ["build_type=None"],
+        }
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary was built with different settings."
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary was built with different settings."
+        )
 
     def test_settings_with_option(self, client):
         c = client
@@ -85,7 +100,11 @@ class TestFilterProfile:
     def test_different_option(self, client):
         # We find 1 closest match in Linux static
         c = client
-        c.save({"linux": "[settings]\nos=Linux\nbuild_type=Release\n[options]\n*:shared=True"})
+        c.save(
+            {
+                "linux": "[settings]\nos=Linux\nbuild_type=Release\n[options]\n*:shared=True"
+            }
+        )
         c.run("graph explain --requires=lib/1.0 -pr linux")
         expected = textwrap.dedent("""\
             remote: Local Cache
@@ -106,15 +125,23 @@ class TestFilterProfile:
         pkg1 = pkgs["499989797d9192081b8f16f7d797b107a2edd8da"]
         assert pkg1["diff"]["platform"] == {}
         assert pkg1["diff"]["settings"] == {}
-        assert pkg1["diff"]["options"] == {'existing': ['shared=False'], 'expected': ['shared=True']}
+        assert pkg1["diff"]["options"] == {
+            "existing": ["shared=False"],
+            "expected": ["shared=True"],
+        }
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary was built with the same settings, " \
-                                              "but different options"
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary was built with the same settings, "
+            "but different options"
+        )
 
     def test_different_option_none(self):
         # We find 1 closest match in Linux static
         c = TestClient()
-        c.save({"conanfile.py": GenConanfile("lib", "1.0").with_option("opt", [None, 1])})
+        c.save(
+            {"conanfile.py": GenConanfile("lib", "1.0").with_option("opt", [None, 1])}
+        )
         c.run("create .")
         c.run("graph explain --requires=lib/1.0 -o *:opt=1")
         expected = textwrap.dedent("""\
@@ -144,7 +171,11 @@ class TestFilterProfile:
     def test_different_setting(self, client):
         # We find 1 closest match in Linux static
         c = client
-        c.save({"windows": "[settings]\nos=Windows\nbuild_type=Debug\n[options]\n*:shared=True"})
+        c.save(
+            {
+                "windows": "[settings]\nos=Windows\nbuild_type=Debug\n[options]\n*:shared=True"
+            }
+        )
         c.run("graph explain --requires=lib/1.0 -pr windows")
         expected = textwrap.dedent("""\
             remote: Local Cache
@@ -164,11 +195,16 @@ class TestFilterProfile:
         assert len(pkgs) == 1
         pkg1 = pkgs["c2dd2d51b5074bdb5b7d717929372de09830017b"]
         assert pkg1["diff"]["platform"] == {}
-        assert pkg1["diff"]["settings"] == {'existing': ['build_type=Release'],
-                                            'expected': ['build_type=Debug']}
+        assert pkg1["diff"]["settings"] == {
+            "existing": ["build_type=Release"],
+            "expected": ["build_type=Debug"],
+        }
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary was built with different settings."
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary was built with different settings."
+        )
 
     def test_different_settings_target(self):
         c = TestClient()
@@ -195,23 +231,34 @@ class TestFilterProfile:
               explanation: This binary was built with different settings_target.
             """)
         assert textwrap.indent(expected, "      ") in c.out
-        c.run("graph explain --tool-requires=tool/1.0 -s:b os=Windows -s:h os=Macos --format=json")
+        c.run(
+            "graph explain --tool-requires=tool/1.0 -s:b os=Windows -s:h os=Macos --format=json"
+        )
         cache = json.loads(c.stdout)["closest_binaries"]
         revisions = cache["tool/1.0"]["revisions"]
         pkgs = revisions["4cc4b286a46dc2ed188d8c417eadb4e6"]["packages"]
         assert len(pkgs) == 1
         pkg1 = pkgs["d66135125c07cc240b8d6adda090b76d60341205"]
         assert pkg1["diff"]["platform"] == {}
-        assert pkg1["diff"]["settings_target"] == {'existing': ['os=Linux'],
-                                                   'expected': ['os=Macos']}
+        assert pkg1["diff"]["settings_target"] == {
+            "existing": ["os=Linux"],
+            "expected": ["os=Macos"],
+        }
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary was built with different settings_target."
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary was built with different settings_target."
+        )
 
     def test_different_platform(self, client):
         # We find closest match in other platforms
         c = client
-        c.save({"macos": "[settings]\nos=Macos\nbuild_type=Release\n[options]\n*:shared=True"})
+        c.save(
+            {
+                "macos": "[settings]\nos=Macos\nbuild_type=Release\n[options]\n*:shared=True"
+            }
+        )
         c.run("graph explain --requires=lib/1.0 -pr macos")
         expected = textwrap.dedent("""\
             remote: Local Cache
@@ -230,12 +277,18 @@ class TestFilterProfile:
         pkgs = revisions["5313a980ea0c56baeb582c510d6d9fbc"]["packages"]
         assert len(pkgs) == 1
         pkg1 = pkgs["c2dd2d51b5074bdb5b7d717929372de09830017b"]
-        assert pkg1["diff"]["platform"] == {'existing': ['os=Windows'], 'expected': ['os=Macos']}
+        assert pkg1["diff"]["platform"] == {
+            "existing": ["os=Windows"],
+            "expected": ["os=Macos"],
+        }
         assert pkg1["diff"]["settings"] == {}
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["explanation"] == "This binary belongs to another OS or Architecture, " \
-                                              "highly incompatible."
+        assert (
+            pkg1["diff"]["explanation"]
+            == "This binary belongs to another OS or Architecture, "
+            "highly incompatible."
+        )
 
     def test_different_conf(self, client):
         # We find closest match in other platforms
@@ -263,19 +316,28 @@ class TestFilterProfile:
         assert pkg1["diff"]["settings"] == {}
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["confs"] == {"expected": ["user.foo:bar=42"],
-                                         "existing": ["user.foo:bar=None"]}
-        assert pkg1["diff"]["explanation"] == "This binary has same settings, options and " \
-                                              "dependencies, but different confs"
+        assert pkg1["diff"]["confs"] == {
+            "expected": ["user.foo:bar=42"],
+            "existing": ["user.foo:bar=None"],
+        }
+        assert (
+            pkg1["diff"]["explanation"] == "This binary has same settings, options and "
+            "dependencies, but different confs"
+        )
 
 
 class TestMissingBinaryDeps:
     @pytest.fixture()
     def client(self):
         c = TestClient()
-        c.save({"dep/conanfile.py": GenConanfile("dep").with_settings("os"),
-                "lib/conanfile.py": GenConanfile("lib", "1.0").with_settings("os")
-               .with_requires("dep/[>=1.0]")})
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep").with_settings("os"),
+                "lib/conanfile.py": GenConanfile("lib", "1.0")
+                .with_settings("os")
+                .with_requires("dep/[>=1.0]"),
+            }
+        )
         c.run("create dep --version=1.0 -s os=Linux")
         c.run("create lib -s os=Linux")
         c.run("create dep --version=2.0 -s os=Linux")
@@ -319,8 +381,14 @@ class TestMissingBinaryDeps:
 
     def test_different_python_requires(self):
         c = TestClient(light=True)
-        c.save({"tool/conanfile.py": GenConanfile("tool"),
-                "lib/conanfile.py": GenConanfile("lib", "1.0").with_python_requires("tool/[>=1.0]")})
+        c.save(
+            {
+                "tool/conanfile.py": GenConanfile("tool"),
+                "lib/conanfile.py": GenConanfile("lib", "1.0").with_python_requires(
+                    "tool/[>=1.0]"
+                ),
+            }
+        )
         c.run("create tool --version=1.0")
         c.run("create lib")
         c.run("create tool --version=2.0")
@@ -345,16 +413,26 @@ class TestMissingBinaryDeps:
         assert pkg1["diff"]["settings"] == {}
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["python_requires"] == {"expected": ["tool/2.0.Z"],
-                                                   "existing": ["tool/1.0.Z"]}
-        assert pkg1["diff"]["explanation"] == "This binary has same settings, options and " \
-                                              "dependencies, but different python_requires"
+        assert pkg1["diff"]["python_requires"] == {
+            "expected": ["tool/2.0.Z"],
+            "existing": ["tool/1.0.Z"],
+        }
+        assert (
+            pkg1["diff"]["explanation"] == "This binary has same settings, options and "
+            "dependencies, but different python_requires"
+        )
 
     def test_build_requires(self):
         c = TestClient(light=True)
         c.save_home({"global.conf": "core.package_id:default_build_mode=minor_mode"})
-        c.save({"tool/conanfile.py": GenConanfile("tool"),
-                "lib/conanfile.py": GenConanfile("lib", "1.0").with_tool_requires("tool/[>=1.0]")})
+        c.save(
+            {
+                "tool/conanfile.py": GenConanfile("tool"),
+                "lib/conanfile.py": GenConanfile("lib", "1.0").with_tool_requires(
+                    "tool/[>=1.0]"
+                ),
+            }
+        )
         c.run("create tool --version=1.0")
         c.run("create lib")
         c.run("create tool --version=2.0")
@@ -379,30 +457,37 @@ class TestMissingBinaryDeps:
         assert pkg1["diff"]["settings"] == {}
         assert pkg1["diff"]["options"] == {}
         assert pkg1["diff"]["dependencies"] == {}
-        assert pkg1["diff"]["build_requires"] == {"expected": ["tool/2.0.Z"],
-                                                  "existing": ["tool/1.0.Z"]}
-        assert pkg1["diff"]["explanation"] == "This binary has same settings, options and " \
-                                              "dependencies, but different build_requires"
+        assert pkg1["diff"]["build_requires"] == {
+            "expected": ["tool/2.0.Z"],
+            "existing": ["tool/1.0.Z"],
+        }
+        assert (
+            pkg1["diff"]["explanation"] == "This binary has same settings, options and "
+            "dependencies, but different build_requires"
+        )
 
 
 def test_change_in_package_type():
     tc = TestClient(light=True)
-    tc.save({
-        "libc/conanfile.py": GenConanfile("libc", "1.0"),
-        "libb/conanfile.py": GenConanfile("libb", "1.0")
-        .with_requires("libc/1.0"),
-        "liba/conanfile.py": GenConanfile("liba", "1.0")
-        .with_requires("libb/1.0")
-    })
+    tc.save(
+        {
+            "libc/conanfile.py": GenConanfile("libc", "1.0"),
+            "libb/conanfile.py": GenConanfile("libb", "1.0").with_requires("libc/1.0"),
+            "liba/conanfile.py": GenConanfile("liba", "1.0").with_requires("libb/1.0"),
+        }
+    )
 
     tc.run("create libc")
     tc.run("create libb")
     tc.run("create liba")
 
-    tc.save({
-        "libc/conanfile.py": GenConanfile("libc", "1.0")
-        .with_package_type("application")
-    })
+    tc.save(
+        {
+            "libc/conanfile.py": GenConanfile("libc", "1.0").with_package_type(
+                "application"
+            )
+        }
+    )
     tc.run("create libc")
 
     tc.run("create liba", assert_error=True)
@@ -410,16 +495,21 @@ def test_change_in_package_type():
 
     tc.run("graph explain --requires=liba/1.0")
     # This fails, graph explain thinks everything is ok
-    assert "explanation: This binary is an exact match for the defined inputs" not in tc.out
+    assert (
+        "explanation: This binary is an exact match for the defined inputs"
+        not in tc.out
+    )
 
 
 def test_conf_difference_shown():
     tc = TestClient(light=True)
-    tc.save({
-        "libc/conanfile.py": GenConanfile("libc", "1.0"),
-        "libb/conanfile.py": GenConanfile("libb", "1.0").with_requires("libc/1.0"),
-        "liba/conanfile.py": GenConanfile("liba", "1.0").with_requires("libb/1.0")
-    })
+    tc.save(
+        {
+            "libc/conanfile.py": GenConanfile("libc", "1.0"),
+            "libb/conanfile.py": GenConanfile("libb", "1.0").with_requires("libc/1.0"),
+            "liba/conanfile.py": GenConanfile("liba", "1.0").with_requires("libb/1.0"),
+        }
+    )
     tc.save_home({"global.conf": "tools.info.package_id:confs=['user.foo:bar']"})
 
     tc.run("create libc")
@@ -440,16 +530,19 @@ def test_conf_difference_shown():
 class TestDistance:
     def test_multiple_distance_ordering(self):
         tc = TestClient()
-        tc.save({
-            "conanfile.py": GenConanfile("pkg", "1.0").with_requires("dep/1.0"),
-            "dep/conanfile.py": GenConanfile("dep", "1.0")
-            .with_option("shared", [True, False])
-            .with_option("fPIC", [True, False])})
+        tc.save(
+            {
+                "conanfile.py": GenConanfile("pkg", "1.0").with_requires("dep/1.0"),
+                "dep/conanfile.py": GenConanfile("dep", "1.0")
+                .with_option("shared", [True, False])
+                .with_option("fPIC", [True, False]),
+            }
+        )
 
         tc.run("create dep -o shared=True -o fPIC=True")
         tc.run("create dep -o shared=True -o fPIC=False")
 
-        tc.run('graph explain . -o *:shared=False -o *:fPIC=False')
+        tc.run("graph explain . -o *:shared=False -o *:fPIC=False")
         # We don't expect the further binary to show
         assert "a657a8fc96dd855e2a1c90a9fe80125f0c4635a0" not in tc.out
         # We expect the closer binary to show

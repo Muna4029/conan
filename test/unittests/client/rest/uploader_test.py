@@ -4,7 +4,11 @@ from collections import namedtuple
 import pytest
 
 from conan.internal.rest.file_uploader import FileUploader
-from conan.internal.errors import InternalErrorException, AuthenticationException, ForbiddenException
+from conan.internal.errors import (
+    InternalErrorException,
+    AuthenticationException,
+    ForbiddenException,
+)
 from conan.internal.util.files import save
 
 

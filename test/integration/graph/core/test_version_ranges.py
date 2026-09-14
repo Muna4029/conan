@@ -9,7 +9,6 @@ from conan.test.utils.tools import TestClient, TestServer, NO_SETTINGS_PACKAGE_I
 
 
 class TestVersionRanges(GraphManagerTest):
-
     def test_transitive(self):
         # app -> libb[>0.1]
         self.recipe_cache("libb/0.1")
@@ -28,16 +27,17 @@ class TestVersionRanges(GraphManagerTest):
         for v in ["0.1", "0.2", "0.3", "1.1", "1.1.2", "1.2.1", "2.1", "2.2.1"]:
             self.recipe_cache(f"libb/{v}")
 
-        for expr, solution in [(">0.0", "2.2.1"),
-                               (">0.1 <1", "0.3"),
-                               (">0.1 <1||2.1", "2.1"),
-                               ("", "2.2.1"),
-                               ("~0", "0.3"),
-                               ("~1", "1.2.1"),
-                               ("~1.1", "1.1.2"),
-                               ("~2", "2.2.1"),
-                               ("~2.1", "2.1"),
-                               ]:
+        for expr, solution in [
+            (">0.0", "2.2.1"),
+            (">0.1 <1", "0.3"),
+            (">0.1 <1||2.1", "2.1"),
+            ("", "2.2.1"),
+            ("~0", "0.3"),
+            ("~1", "1.2.1"),
+            ("~1.1", "1.1.2"),
+            ("~2", "2.2.1"),
+            ("~2.1", "2.1"),
+        ]:
             consumer = self.recipe_consumer("app/0.1", [f"libb/[{expr}]"])
             deps_graph = self.build_consumer(consumer)
             self.assertEqual(2, len(deps_graph.nodes))
@@ -289,8 +289,11 @@ class TestVersionRangesOverridesDiamond(GraphManagerTest):
         self.recipe_cache("liba/0.1")
         self.recipe_cache("liba/1.2")
         self.recipe_cache("libb/0.1", ["liba/0.1"])
-        consumer = self.consumer_conanfile(GenConanfile("app", "0.1").with_require("libb/0.1")
-                                           .with_requirement("liba/[>1.0]", force=True))
+        consumer = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_require("libb/0.1")
+            .with_requirement("liba/[>1.0]", force=True)
+        )
         deps_graph = self.build_consumer(consumer, install=False)
 
         self.assertEqual(3, len(deps_graph.nodes))
@@ -309,8 +312,11 @@ class TestVersionRangesOverridesDiamond(GraphManagerTest):
         self.recipe_cache("liba/0.2")
         self.recipe_cache("liba/0.3")
         self.recipe_cache("libb/0.1", ["liba/[>=0.0]"])
-        consumer = self.consumer_conanfile(GenConanfile("app", "0.1").with_require("libb/0.1")
-                                           .with_requirement("liba/[<0.4]"))
+        consumer = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_require("libb/0.1")
+            .with_requirement("liba/[<0.4]")
+        )
         deps_graph = self.build_consumer(consumer)
 
         self.assertEqual(3, len(deps_graph.nodes))
@@ -330,8 +336,11 @@ class TestVersionRangesOverridesDiamond(GraphManagerTest):
         self.recipe_cache("liba/0.2")
         self.recipe_cache("liba/0.3")
         self.recipe_cache("libb/0.1", ["liba/[>=0.0]"])
-        consumer = self.consumer_conanfile(GenConanfile("app", "0.1").with_require("libb/0.1")
-                                           .with_requirement("liba/[<0.3]"))
+        consumer = self.consumer_conanfile(
+            GenConanfile("app", "0.1")
+            .with_require("libb/0.1")
+            .with_requirement("liba/[<0.3]")
+        )
         deps_graph = self.build_consumer(consumer, install=False)
 
         # This is no longer a conflict, and Conan knows that liba/2.0 is a valid joint solution
@@ -372,22 +381,29 @@ def test_remote_version_ranges():
         t.run(f"create . --name=dep --version={v}")
     t.run("upload * --confirm -r default")
     # TODO: Deprecate the comma separator for expressions
-    for expr, solution in [(">0.0", "2.2.1"),
-                           (">0.1 <1", "0.3"),
-                           (">0.1 <1||2.1", "2.1"),
-                           ("", "2.2.1"),
-                           ("~0", "0.3"),
-                           ("~1", "1.2.1"),
-                           ("~1.1", "1.1.2"),
-                           ("~2", "2.2.1"),
-                           ("~2.1", "2.1"),
-                           ]:
+    for expr, solution in [
+        (">0.0", "2.2.1"),
+        (">0.1 <1", "0.3"),
+        (">0.1 <1||2.1", "2.1"),
+        ("", "2.2.1"),
+        ("~0", "0.3"),
+        ("~1", "1.2.1"),
+        ("~1.1", "1.1.2"),
+        ("~2", "2.2.1"),
+        ("~2.1", "2.1"),
+    ]:
         t.run("remove * -c")
         t.save({"conanfile.py": GenConanfile().with_requires(f"dep/[{expr}]")})
         t.run("install .")
         assert str(t.out).count("Not found in local cache, looking in remotes") == 1
-        t.assert_listed_binary({f"dep/{solution}": ("da39a3ee5e6b4b0d3255bfef95601890afd80709",
-                                                    "Download (default)")})
+        t.assert_listed_binary(
+            {
+                f"dep/{solution}": (
+                    "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+                    "Download (default)",
+                )
+            }
+        )
 
 
 def test_different_user_channel_resolved_correctly():
@@ -395,7 +411,7 @@ def test_different_user_channel_resolved_correctly():
     server2 = TestServer()
     servers = OrderedDict([("server1", server1), ("server2", server2)])
 
-    client = TestClient(servers=servers, inputs=2*["admin", "password"], light=True)
+    client = TestClient(servers=servers, inputs=2 * ["admin", "password"], light=True)
     client.save({"conanfile.py": GenConanfile()})
     client.run("create . --name=lib --version=1.0 --user=conan --channel=stable")
     client.run("create . --name=lib --version=1.0 --user=conan --channel=testing")
@@ -404,8 +420,10 @@ def test_different_user_channel_resolved_correctly():
 
     client2 = TestClient(servers=servers, light=True)
     client2.run("install --requires=lib/[>=1.0]@conan/testing")
-    assert f"lib/1.0@conan/testing: Retrieving package {NO_SETTINGS_PACKAGE_ID} " \
-           f"from remote 'server2' " in client2.out
+    assert (
+        f"lib/1.0@conan/testing: Retrieving package {NO_SETTINGS_PACKAGE_ID} "
+        f"from remote 'server2' " in client2.out
+    )
 
 
 def test_unknown_options():
@@ -417,20 +435,32 @@ def test_unknown_options():
     assert '"<1.4" in version range ">1.2,<1.4" is not a valid option' in c.out
 
     c.run("graph info --requires=lib/[>1.2,unknown_conf]")
-    assert 'WARN: Unrecognized version range option "unknown_conf" in ">1.2,unknown_conf"' in c.out
+    assert (
+        'WARN: Unrecognized version range option "unknown_conf" in ">1.2,unknown_conf"'
+        in c.out
+    )
 
 
-@pytest.mark.parametrize("version_range,should_warn", [
-    [">=0.1, include_prereleases", False],
-    [">=0.1, include_prerelease=True", True],
-    [">=0.1, include_prerelease=False", True]
-])
+@pytest.mark.parametrize(
+    "version_range,should_warn",
+    [
+        [">=0.1, include_prereleases", False],
+        [">=0.1, include_prerelease=True", True],
+        [">=0.1, include_prerelease=False", True],
+    ],
+)
 def test_bad_options_syntax(version_range, should_warn):
     """We don't error out on bad options, maybe we should,
     but for now this test ensures we don't change it without realizing"""
     tc = TestClient(light=True)
-    tc.save({"lib/conanfile.py": GenConanfile("lib", "1.0"),
-             "app/conanfile.py": GenConanfile("app", "1.0").with_requires(f"lib/[{version_range}]")})
+    tc.save(
+        {
+            "lib/conanfile.py": GenConanfile("lib", "1.0"),
+            "app/conanfile.py": GenConanfile("app", "1.0").with_requires(
+                f"lib/[{version_range}]"
+            ),
+        }
+    )
     tc.run("export lib")
     tc.run("graph info app/conanfile.py")
     if should_warn:
@@ -441,8 +471,12 @@ def test_bad_options_syntax(version_range, should_warn):
 
 def test_empty_version_ranger():
     tc = TestClient(light=True)
-    tc.save({"lib/conanfile.py": GenConanfile("lib", "1.0"),
-             "app/conanfile.py": GenConanfile("app", "1.0").with_requires("lib/[]")})
+    tc.save(
+        {
+            "lib/conanfile.py": GenConanfile("lib", "1.0"),
+            "app/conanfile.py": GenConanfile("app", "1.0").with_requires("lib/[]"),
+        }
+    )
     tc.run("export lib")
     tc.run("graph info app")
     assert "lib/[]: lib/1.0" in tc.out

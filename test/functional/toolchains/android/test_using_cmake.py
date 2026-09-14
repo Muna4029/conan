@@ -13,13 +13,12 @@ from conan.test.utils.tools import TestClient
 @pytest.mark.tool("android_ndk")
 @pytest.mark.skipif(platform.system() != "Darwin", reason="NDK only installed on MAC")
 def test_use_cmake_toolchain():
-    """ This is the naive approach, we follow instruction from CMake in its documentation
-        https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#cross-compiling-for-android
+    """This is the naive approach, we follow instruction from CMake in its documentation
+    https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#cross-compiling-for-android
     """
     # Overriding the default folders, so they are in the same unit drive in Windows
     # otherwise AndroidNDK FAILS to build, it needs using the same unit drive
-    c = TestClient(cache_folder=tempfile.mkdtemp(),
-                   current_folder=tempfile.mkdtemp())
+    c = TestClient(cache_folder=tempfile.mkdtemp(), current_folder=tempfile.mkdtemp())
     c.run("new cmake_lib -d name=hello -d version=0.1")
     ndk_path = tools_locations["android_ndk"]["system"]["path"][platform.system()]
     android = textwrap.dedent(f"""
@@ -36,9 +35,9 @@ def test_use_cmake_toolchain():
        tools.cmake.cmaketoolchain:generator=Ninja
        """)
     c.save({"android": android})
-    c.run('create . --profile:host=android')
+    c.run("create . --profile:host=android")
     assert "hello/0.1 (test package): Running test()" in c.out
 
     # Build locally
-    c.run('build . --profile:host=android')
+    c.run("build . --profile:host=android")
     assert "conanfile.py (hello/0.1): Running CMake.build()" in c.out

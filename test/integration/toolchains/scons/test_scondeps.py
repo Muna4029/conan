@@ -34,9 +34,13 @@ def test_sconsdeps():
         """)
 
     c = TestClient()
-    c.save({"dep1/conanfile.py": dep.format(dep="dep1"),
+    c.save(
+        {
+            "dep1/conanfile.py": dep.format(dep="dep1"),
             "dep2/conanfile.py": dep.format(dep="dep2"),
-            "consumer/conanfile.py": consumer})
+            "consumer/conanfile.py": consumer,
+        }
+    )
     c.run("create dep1")
     c.run("create dep2")
     c.run("install consumer")
@@ -48,7 +52,8 @@ def test_sconsdeps():
         pattern = r"'[A-Za-z]?[:]?[/]?[^']+/([^'/]+)'"
         return re.sub(pattern, r"'\1'", text)
 
-    expected_content = ["""
+    expected_content = [
+        """
         "conandeps" : {
             "CPPPATH"     : ['dep2_includedir', 'dep1_includedir'],
             "LIBPATH"     : ['dep2_libdir', 'dep1_libdir'],
@@ -62,7 +67,8 @@ def test_sconsdeps():
             "SHLINKFLAGS" : ['dep2_sharedlinkflags', 'dep1_sharedlinkflags'],
             "LINKFLAGS"   : ['dep2_exelinkflags', 'dep1_exelinkflags'],
         },
-        """, """
+        """,
+        """
         "dep1" : {
             "CPPPATH"     : ['dep1_includedir'],
             "LIBPATH"     : ['dep1_libdir'],
@@ -77,7 +83,8 @@ def test_sconsdeps():
             "LINKFLAGS"   : ['dep1_exelinkflags'],
         },
         "dep1_version" : "0.1",
-        """, """
+        """,
+        """
         "dep2" : {
             "CPPPATH"     : ['dep2_includedir'],
             "LIBPATH"     : ['dep2_libdir'],
@@ -92,7 +99,8 @@ def test_sconsdeps():
             "LINKFLAGS"   : ['dep2_exelinkflags'],
         },
         "dep2_version" : "0.1",
-        """]
+        """,
+    ]
 
     clean_sconsdeps = clean_paths(sconsdeps)
     for block in expected_content:

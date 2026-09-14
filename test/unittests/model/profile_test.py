@@ -5,7 +5,6 @@ from conan.internal.model.profile import Profile
 
 
 class TestProfile:
-
     def test_profile_settings_update(self):
         new_profile = Profile()
         new_profile.update_settings(OrderedDict([("os", "Windows")]))
@@ -13,45 +12,83 @@ class TestProfile:
         new_profile.update_settings(OrderedDict([("OTHER", "2")]))
         assert new_profile.settings == OrderedDict([("os", "Windows"), ("OTHER", "2")])
 
-        new_profile.update_settings(OrderedDict([("compiler", "2"), ("compiler.version", "3")]))
-        assert new_profile.settings == OrderedDict([("os", "Windows"), ("OTHER", "2"),
-                                      ("compiler", "2"), ("compiler.version", "3")])
+        new_profile.update_settings(
+            OrderedDict([("compiler", "2"), ("compiler.version", "3")])
+        )
+        assert new_profile.settings == OrderedDict(
+            [
+                ("os", "Windows"),
+                ("OTHER", "2"),
+                ("compiler", "2"),
+                ("compiler.version", "3"),
+            ]
+        )
 
     def test_profile_subsettings_update(self):
         new_profile = Profile()
-        new_profile.update_settings(OrderedDict([("os", "Windows"),
-                                                ("compiler", "Visual Studio"),
-                                                ("compiler.runtime", "MT")]))
+        new_profile.update_settings(
+            OrderedDict(
+                [
+                    ("os", "Windows"),
+                    ("compiler", "Visual Studio"),
+                    ("compiler.runtime", "MT"),
+                ]
+            )
+        )
 
         new_profile.update_settings(OrderedDict([("compiler", "gcc")]))
         assert dict(new_profile.settings) == {"compiler": "gcc", "os": "Windows"}
 
         new_profile = Profile()
-        new_profile.update_settings(OrderedDict([("os", "Windows"),
-                                                 ("compiler", "Visual Studio"),
-                                                 ("compiler.runtime", "MT")]))
+        new_profile.update_settings(
+            OrderedDict(
+                [
+                    ("os", "Windows"),
+                    ("compiler", "Visual Studio"),
+                    ("compiler.runtime", "MT"),
+                ]
+            )
+        )
 
-        new_profile.update_settings(OrderedDict([("compiler", "Visual Studio"),
-                                                 ("compiler.subsetting", "3"),
-                                                 ("other", "value")]))
+        new_profile.update_settings(
+            OrderedDict(
+                [
+                    ("compiler", "Visual Studio"),
+                    ("compiler.subsetting", "3"),
+                    ("other", "value"),
+                ]
+            )
+        )
 
-        assert dict(new_profile.settings) == {"compiler": "Visual Studio",
-                                                      "os": "Windows",
-                                                      "compiler.runtime": "MT",
-                                                      "compiler.subsetting": "3",
-                                                      "other": "value"}
+        assert dict(new_profile.settings) == {
+            "compiler": "Visual Studio",
+            "os": "Windows",
+            "compiler.runtime": "MT",
+            "compiler.subsetting": "3",
+            "other": "value",
+        }
 
     def test_package_settings_update(self):
         np = Profile()
         np.update_package_settings({"MyPackage": [("os", "Windows")]})
 
         np.update_package_settings({"MyPackage": [("OTHER", "2")]})
-        assert np.package_settings_values == {"MyPackage": [("os", "Windows"), ("OTHER", "2")]}
+        assert np.package_settings_values == {
+            "MyPackage": [("os", "Windows"), ("OTHER", "2")]
+        }
 
         np._package_settings_values = None  # invalidate caching
-        np.update_package_settings({"MyPackage": [("compiler", "2"), ("compiler.version", "3")]})
-        assert np.package_settings_values == {"MyPackage": [("os", "Windows"), ("OTHER", "2"),
-                                        ("compiler", "2"), ("compiler.version", "3")]}
+        np.update_package_settings(
+            {"MyPackage": [("compiler", "2"), ("compiler.version", "3")]}
+        )
+        assert np.package_settings_values == {
+            "MyPackage": [
+                ("os", "Windows"),
+                ("OTHER", "2"),
+                ("compiler", "2"),
+                ("compiler.version", "3"),
+            ]
+        }
 
     def test_profile_dump_order(self):
         # Settings
@@ -61,9 +98,12 @@ class TestProfile:
         profile.settings["compiler"] = "Visual Studio"
         profile.settings["compiler.version"] = "12"
         profile.tool_requires["*"] = ["zlib/1.2.8@lasote/testing"]
-        profile.tool_requires["zlib/*"] = ["aaaa/1.2.3@lasote/testing",
-                                                 "bb/1.2@lasote/testing"]
-        assert """[settings]
+        profile.tool_requires["zlib/*"] = [
+            "aaaa/1.2.3@lasote/testing",
+            "bb/1.2@lasote/testing",
+        ]
+        assert (
+            """[settings]
 arch=x86_64
 compiler=Visual Studio
 compiler.version=12
@@ -71,7 +111,9 @@ zlib:compiler=gcc
 [tool_requires]
 *: zlib/1.2.8@lasote/testing
 zlib/*: aaaa/1.2.3@lasote/testing, bb/1.2@lasote/testing
-""".splitlines() == profile.dumps().splitlines()
+""".splitlines()
+            == profile.dumps().splitlines()
+        )
 
     def test_apply(self):
         # Settings
@@ -82,7 +124,10 @@ zlib/*: aaaa/1.2.3@lasote/testing, bb/1.2@lasote/testing
 
         profile.update_settings(OrderedDict([("compiler.version", "14")]))
 
-        assert '[settings]\narch=x86_64\ncompiler=Visual Studio\ncompiler.version=14\n' == profile.dumps()
+        assert (
+            "[settings]\narch=x86_64\ncompiler=Visual Studio\ncompiler.version=14\n"
+            == profile.dumps()
+        )
 
 
 def test_update_build_requires():
@@ -120,19 +165,33 @@ def test_profile_serialize():
     profile.tool_requires["*"] = ["zlib/1.2.8"]
     profile.update_package_settings({"MyPackage": [("os", "Windows")]})
     expected_json = {
-        "settings": {"arch": "x86_64", "compiler": "Visual Studio", "compiler.version": "12"},
-        "package_settings": {"MyPackage": {"os": "Windows"}}, "options": {},
-        "tool_requires": {"*": ["'zlib/1.2.8'"]}, "conf": {"user.myfield:value": "MyVal"},
-        "build_env": "VAR1=1\nVAR2=2\n"}
+        "settings": {
+            "arch": "x86_64",
+            "compiler": "Visual Studio",
+            "compiler.version": "12",
+        },
+        "package_settings": {"MyPackage": {"os": "Windows"}},
+        "options": {},
+        "tool_requires": {"*": ["'zlib/1.2.8'"]},
+        "conf": {"user.myfield:value": "MyVal"},
+        "build_env": "VAR1=1\nVAR2=2\n",
+    }
     assert expected_json == profile.serialize()
 
     profile.replace_requires.update({"cmake/*": "cmake/3.29.0"})
     profile.platform_tool_requires = ["cmake/3.29.0"]
     expected_json = {
-        "settings": {"arch": "x86_64", "compiler": "Visual Studio", "compiler.version": "12"},
-        "package_settings": {"MyPackage": {"os": "Windows"}}, "options": {},
+        "settings": {
+            "arch": "x86_64",
+            "compiler": "Visual Studio",
+            "compiler.version": "12",
+        },
+        "package_settings": {"MyPackage": {"os": "Windows"}},
+        "options": {},
         "replace_requires": {"cmake/*": "cmake/3.29.0"},
         "platform_tool_requires": ["cmake/3.29.0"],
-        "tool_requires": {"*": ["'zlib/1.2.8'"]}, "conf": {"user.myfield:value": "MyVal"},
-        "build_env": "VAR1=1\nVAR2=2\n"}
+        "tool_requires": {"*": ["'zlib/1.2.8'"]},
+        "conf": {"user.myfield:value": "MyVal"},
+        "build_env": "VAR1=1\nVAR2=2\n",
+    }
     assert expected_json == profile.serialize()

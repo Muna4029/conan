@@ -36,10 +36,11 @@ def test_default_bazel_toolchain(conanfile):
     """)
 
     c = TestClient()
-    c.save({"conanfile.py": conanfile,
-            "profile": profile})
+    c.save({"conanfile.py": conanfile, "profile": profile})
     c.run("install . -pr profile")
-    content = load(c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name))
+    content = load(
+        c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name)
+    )
     assert "build:conan-config --cxxopt=-std=gnu++17" in content
     assert "build:conan-config --force_pic=True" in content
     assert "build:conan-config --dynamic_mode=off" in content
@@ -66,13 +67,20 @@ def test_bazel_toolchain_and_flags(conanfile):
     tools.build:linker_scripts+=["myscript.sh"]
     """)
     c = TestClient()
-    c.save({"conanfile.py": conanfile,
-            "profile": profile})
+    c.save({"conanfile.py": conanfile, "profile": profile})
     c.run("install . -pr profile")
-    content = load(c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name))
+    content = load(
+        c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name)
+    )
     assert "build:conan-config --conlyopt=--flag3 --conlyopt=--flag4" in content
-    assert "build:conan-config --cxxopt=-std=gnu++17 --cxxopt=--flag1 --cxxopt=--flag2" in content
-    assert "build:conan-config --linkopt=--flag5 --linkopt=--flag6 --linkopt=-T'myscript.sh'" in content
+    assert (
+        "build:conan-config --cxxopt=-std=gnu++17 --cxxopt=--flag1 --cxxopt=--flag2"
+        in content
+    )
+    assert (
+        "build:conan-config --linkopt=--flag5 --linkopt=--flag6 --linkopt=-T'myscript.sh'"
+        in content
+    )
     assert "build:conan-config --force_pic=True" not in content
     assert "build:conan-config --dynamic_mode=fully" in content
     assert "build:conan-config --compilation_mode=opt" in content
@@ -101,11 +109,13 @@ def test_bazel_toolchain_and_cross_compilation(conanfile):
 
     """)
     c = TestClient()
-    c.save({"conanfile.py": conanfile,
-            "profile": profile,
-            "profile_host": profile_host})
+    c.save(
+        {"conanfile.py": conanfile, "profile": profile, "profile_host": profile_host}
+    )
     c.run("install . -pr:b profile -pr:h profile_host")
-    content = load(c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name))
+    content = load(
+        c, os.path.join(c.current_folder, "conan", BazelToolchain.bazelrc_name)
+    )
     assert "build:conan-config --cpu=darwin_arm64" in content
 
 
@@ -152,8 +162,7 @@ def test_toolchain_attributes_and_conf_priority():
             bz.generate()
     """)
     c = TestClient()
-    c.save({"conanfile.py": conanfile,
-            "profile": profile})
+    c.save({"conanfile.py": conanfile, "profile": profile})
     c.run("install . -pr profile")
     content = load(c, os.path.join(c.current_folder, BazelToolchain.bazelrc_name))
     expected = textwrap.dedent("""\

@@ -11,8 +11,13 @@ from conan.internal.util.files import save_files
 
 def test_cps():
     c = TestClient()
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1").with_settings("build_type")
-                                                          .with_class_attribute("license='MIT'")})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1")
+            .with_settings("build_type")
+            .with_class_attribute("license='MIT'")
+        }
+    )
     c.run("create pkg")
 
     settings = "-s os=Windows -s compiler=msvc -s compiler.version=191 -s arch=x86_64"
@@ -32,9 +37,14 @@ def test_cps():
 
 def test_cps_static_lib():
     c = TestClient()
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1").with_package_file("lib/pkg.a", "-")
-                                                          .with_settings("build_type")
-            .with_package_info(cpp_info={"libs": ["pkg"]}, env_info={})})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1")
+            .with_package_file("lib/pkg.a", "-")
+            .with_settings("build_type")
+            .with_package_info(cpp_info={"libs": ["pkg"]}, env_info={})
+        }
+    )
     c.run("create pkg")
 
     settings = "-s os=Windows -s compiler=msvc -s compiler.version=191 -s arch=x86_64"
@@ -51,7 +61,13 @@ def test_cps_static_lib():
 
 def test_cps_header():
     c = TestClient()
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1").with_package_type("header-library")})
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_package_type(
+                "header-library"
+            )
+        }
+    )
     c.run("create pkg")
 
     settings = "-s os=Windows -s compiler=msvc -s compiler.version=191 -s arch=x86_64"
@@ -113,13 +129,18 @@ def test_cps_in_pkg():
         assert os.path.exists(path_cps)
 
     assert not os.path.exists(os.path.join(c.current_folder, "zlib.cps"))
-    assert not os.path.exists(os.path.join(c.current_folder, "build", "cps", "zlib.cps"))
+    assert not os.path.exists(
+        os.path.join(c.current_folder, "build", "cps", "zlib.cps")
+    )
 
     c.run(f"install --requires=zlib/1.3.1 {settings} -g CMakeDeps")
     cmake = c.load("zlib-release-x86_64-data.cmake")
-    assert 'set(zlib_INCLUDE_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/include")' in cmake
+    assert (
+        'set(zlib_INCLUDE_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/include")'
+        in cmake
+    )
     assert 'set(zlib_LIB_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/lib")'
-    assert 'set(zlib_LIBS_RELEASE zlib)' in cmake
+    assert "set(zlib_LIBS_RELEASE zlib)" in cmake
 
 
 def test_cps_merge():
@@ -149,8 +170,7 @@ def test_cps_merge():
           "name" : "mypkg"
         }
         """)
-    save_files(folder, {"mypkg.cps": cps_base,
-                        "mypkg@release.cps": cps_conf})
+    save_files(folder, {"mypkg.cps": cps_base, "mypkg@release.cps": cps_conf})
     cps = CPS.load(os.path.join(folder, "mypkg.cps"))
     json_cps = cps.serialize()
     print(json.dumps(json_cps, indent=2))

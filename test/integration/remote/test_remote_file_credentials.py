@@ -20,7 +20,9 @@ def client():
 
 def test_remote_file_credentials(client):
     c = client
-    content = {"credentials": [{"remote": "default", "user": "admin", "password": "password"}]}
+    content = {
+        "credentials": [{"remote": "default", "user": "admin", "password": "password"}]
+    }
     save(os.path.join(c.cache_folder, "credentials.json"), json.dumps(content))
     c.run("upload * -r=default -c")
     # it works without problems!
@@ -29,16 +31,22 @@ def test_remote_file_credentials(client):
 
 def test_remote_file_credentials_remote_login(client):
     c = client
-    content = {"credentials": [{"remote": "default", "user": "admin", "password": "password"}]}
+    content = {
+        "credentials": [{"remote": "default", "user": "admin", "password": "password"}]
+    }
     save(os.path.join(c.cache_folder, "credentials.json"), json.dumps(content))
     c.run("remote login default")
-    assert "Changed user of remote 'default' from 'None' (anonymous) " \
-           "to 'admin' (authenticated)" in c.out
+    assert (
+        "Changed user of remote 'default' from 'None' (anonymous) "
+        "to 'admin' (authenticated)" in c.out
+    )
 
 
 def test_remote_file_credentials_error(client):
     c = client
-    content = {"credentials": [{"remote": "default", "user": "admin", "password": "wrong"}]}
+    content = {
+        "credentials": [{"remote": "default", "user": "admin", "password": "wrong"}]
+    }
     save(os.path.join(c.cache_folder, "credentials.json"), json.dumps(content))
     c.run("upload * -r=default -c", assert_error=True)
     assert "ERROR: Wrong user or password" in c.out

@@ -31,13 +31,19 @@ class TestIntelCC:
         """)
         client.save({"intel_profile": intel_profile})
         # Build in the cache
-        client.run('create . --profile:build=intel_profile --profile:host=intel_profile')
+        client.run(
+            "create . --profile:build=intel_profile --profile:host=intel_profile"
+        )
         assert ":: initializing oneAPI environment ..." in client.out
         assert ":: oneAPI environment initialized ::" in client.out
-        assert "Check for working CXX compiler: /opt/intel/oneapi/compiler/2021.3.0" \
-               "/linux/bin/dpcpp -- works" in client.out
-        assert "hello/0.1: Package " \
-               "'5d42bcd2e9be3378ed0c2f2928fe6dc9ea1b0922' created" in client.out
+        assert (
+            "Check for working CXX compiler: /opt/intel/oneapi/compiler/2021.3.0"
+            "/linux/bin/dpcpp -- works" in client.out
+        )
+        assert (
+            "hello/0.1: Package "
+            "'5d42bcd2e9be3378ed0c2f2928fe6dc9ea1b0922' created" in client.out
+        )
         # TODO:
         #  self.t.run_command(exe)
         #  self.assertIn("main __INTEL_COMPILER1910", self.t.out)

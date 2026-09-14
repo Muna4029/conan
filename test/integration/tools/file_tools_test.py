@@ -5,7 +5,6 @@ from conan.test.utils.tools import TestClient
 
 
 def test_file_tools():
-
     conanfile = textwrap.dedent("""
 
     from conan import ConanFile

@@ -8,7 +8,7 @@ from conan.test.utils.tools import TestClient
 
 
 def test_exports_sources_own_code_in_subfolder():
-    """ test that we can put the conanfile in a subfolder, and it can work. The key is
+    """test that we can put the conanfile in a subfolder, and it can work. The key is
     the exports_sources() method that can do:
         os.path.join(self.recipe_folder, "..")
     And the layout: self.folders.root = ".."
@@ -45,8 +45,7 @@ def test_exports_sources_own_code_in_subfolder():
                 self.output.info("MYCMAKE-BUILD: {}".format(cmake))
                 save(self, "mylib.a", "mylib")
             """)
-    c.save({"conan/conanfile.py": conanfile,
-            "CMakeLists.txt": "mycmake!"})
+    c.save({"conan/conanfile.py": conanfile, "CMakeLists.txt": "mycmake!"})
     c.run("create conan")
     assert "pkg/0.1: MYCMAKE-SRC: mycmake!" in c.out
     assert "pkg/0.1: MYCMAKE-BUILD: mycmake!" in c.out
@@ -61,7 +60,7 @@ def test_exports_sources_own_code_in_subfolder():
 
 
 def test_exports_sources_common_code():
-    """ very similar to the above, but intended for a multi-package project sharing some
+    """very similar to the above, but intended for a multi-package project sharing some
     common code
     """
     c = TestClient()
@@ -96,9 +95,13 @@ def test_exports_sources_common_code():
                 cmake = load(self, path)
                 self.output.info("MYUTILS-BUILD: {}".format(cmake))
             """)
-    c.save({"pkg/conanfile.py": conanfile,
+    c.save(
+        {
+            "pkg/conanfile.py": conanfile,
             "pkg/CMakeLists.txt": "mycmake!",
-            "common/myutils.cmake": "myutils!"})
+            "common/myutils.cmake": "myutils!",
+        }
+    )
     c.run("create pkg")
     assert "pkg/0.1: MYCMAKE-SRC: mycmake!" in c.out
     assert "pkg/0.1: MYCMAKE-BUILD: mycmake!" in c.out
@@ -114,8 +117,7 @@ def test_exports_sources_common_code():
 
 @pytest.mark.tool("cmake")
 def test_exports_sources_common_code_layout():
-    """ Equal to the previous test, but actually building and using cmake_layout
-    """
+    """Equal to the previous test, but actually building and using cmake_layout"""
     c = TestClient()
     conanfile = textwrap.dedent("""
         import os
@@ -144,13 +146,19 @@ def test_exports_sources_common_code_layout():
                 self.run(os.path.join(self.cpp.build.bindirs[0], "myapp"))
             """)
     cmake_include = "include(${CMAKE_CURRENT_LIST_DIR}/../common/myutils.cmake)"
-    c.save({"pkg/conanfile.py": conanfile,
-            "pkg/app.cpp": gen_function_cpp(name="main", includes=["../common/myheader"],
-                                            preprocessor=["MYDEFINE"]),
-            "pkg/CMakeLists.txt": gen_cmakelists(appsources=["app.cpp"],
-                                                 custom_content=cmake_include),
+    c.save(
+        {
+            "pkg/conanfile.py": conanfile,
+            "pkg/app.cpp": gen_function_cpp(
+                name="main", includes=["../common/myheader"], preprocessor=["MYDEFINE"]
+            ),
+            "pkg/CMakeLists.txt": gen_cmakelists(
+                appsources=["app.cpp"], custom_content=cmake_include
+            ),
             "common/myutils.cmake": 'message(STATUS "MYUTILS.CMAKE!")',
-            "common/myheader.h": '#define MYDEFINE "MYDEFINEVALUE"'})
+            "common/myheader.h": '#define MYDEFINE "MYDEFINEVALUE"',
+        }
+    )
     c.run("create pkg")
     assert "MYUTILS.CMAKE!" in c.out
     assert "main: Release!" in c.out

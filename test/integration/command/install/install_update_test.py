@@ -35,7 +35,9 @@ def test_update_binaries():
 
     value = get_value_from_output(client2.out)
 
-    client.run("create . --name=pkg --version=0.1 --user=lasote --channel=testing")  # Because of random, this should be NEW prev
+    client.run(
+        "create . --name=pkg --version=0.1 --user=lasote --channel=testing"
+    )  # Because of random, this should be NEW prev
     client.run("upload pkg/0.1@lasote/testing -r default")
 
     client2.run("install --requires=pkg/0.1@lasote/testing")
@@ -66,9 +68,14 @@ def test_update_not_date():
     # Regression for https://github.com/conan-io/conan/issues/949
     client.save({"conanfile.py": GenConanfile("hello0", "1.0")})
     client.run("export . --user=lasote --channel=stable")
-    client.save({"conanfile.py": GenConanfile("hello1", "1.0").
-                with_requirement("hello0/1.0@lasote/stable")},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": GenConanfile("hello1", "1.0").with_requirement(
+                "hello0/1.0@lasote/stable"
+            )
+        },
+        clean_first=True,
+    )
     client.run("install . --build='*'")
     client.run("upload hello0/1.0@lasote/stable -r default")
 
@@ -80,8 +87,14 @@ def test_update_not_date():
     initial_package_timestamp = prev.timestamp
 
     # Change and rebuild package
-    client.save({"conanfile.py": GenConanfile("hello0", "1.0").with_class_attribute("author = 'O'")},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": GenConanfile("hello0", "1.0").with_class_attribute(
+                "author = 'O'"
+            )
+        },
+        clean_first=True,
+    )
     client.run("export . --user=lasote --channel=stable")
     client.run("install --requires=hello0/1.0@lasote/stable --build='*'")
 
@@ -92,15 +105,23 @@ def test_update_not_date():
     assert rebuild_package_timestamp != initial_package_timestamp
 
     # back to the consumer, try to update
-    client.save({"conanfile.py": GenConanfile("hello1", "1.0").
-                with_requirement("hello0/1.0@lasote/stable")}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": GenConanfile("hello1", "1.0").with_requirement(
+                "hello0/1.0@lasote/stable"
+            )
+        },
+        clean_first=True,
+    )
     # First assign the preference to a remote, it has been cleared when exported locally
     client.run("install . --update")
     # *1 With revisions here is removing the package because it doesn't belong to the recipe
 
     client.assert_listed_require({"hello0/1.0@lasote/stable": "Newer"})
 
-    failed_update_recipe_timestamp = client.cache.get_latest_recipe_reference(ref).timestamp
+    failed_update_recipe_timestamp = client.cache.get_latest_recipe_reference(
+        ref
+    ).timestamp
     failed_update_package_timestamp = client.get_latest_package_reference(ref).timestamp
 
     assert rebuild_recipe_timestamp == failed_update_recipe_timestamp
@@ -109,12 +130,13 @@ def test_update_not_date():
 
 def test_reuse():
     client = TestClient(default_server_user=True)
-    conanfile = GenConanfile("hello0", "1.0")\
-        .with_exports_sources("*")\
-        .with_import("from conan.tools.files import copy")\
+    conanfile = (
+        GenConanfile("hello0", "1.0")
+        .with_exports_sources("*")
+        .with_import("from conan.tools.files import copy")
         .with_package("copy(self, '*', self.source_folder, self.package_folder)")
-    client.save({"conanfile.py": conanfile,
-                 "header.h": "content1"})
+    )
+    client.save({"conanfile.py": conanfile, "header.h": "content1"})
     client.run("export . --user=lasote --channel=stable")
     client.run("install --requires=hello0/1.0@lasote/stable --build='*'")
     client.run("upload hello0/1.0@lasote/stable -r default")
@@ -153,12 +175,15 @@ def test_install_update_repeated_tool_requires():
     https://github.com/conan-io/conan/issues/13508
     """
     c = TestClient(default_server_user=True)
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1"),
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1"),
             "liba/conanfile.py": GenConanfile("liba", "0.1"),
             "libb/conanfile.py": GenConanfile("libb", "0.1").with_requires("liba/0.1"),
             "libc/conanfile.py": GenConanfile("libc", "0.1").with_requires("libb/0.1"),
-            "profile": "[tool_requires]\ntool/0.1"
-            })
+            "profile": "[tool_requires]\ntool/0.1",
+        }
+    )
     c.run("create tool")
     c.run("create liba")
     c.run("create libb")
@@ -169,14 +194,23 @@ def test_install_update_repeated_tool_requires():
 
 class TestUpdateOldPolicy:
     def test_multi_remote_update_resolution(self):
-        c = TestClient(servers={"r1": TestServer(), "r2": TestServer(), "r3": TestServer()},
-                       inputs=["admin", "password"] * 3, light=True)
+        c = TestClient(
+            servers={"r1": TestServer(), "r2": TestServer(), "r3": TestServer()},
+            inputs=["admin", "password"] * 3,
+            light=True,
+        )
         c.save({"conanfile.py": GenConanfile("pkg", "0.1")})
         c.run("export .")
         rev1 = c.exported_recipe_revision()
         c.run("upload * -r=r1 -c")
         # second revision
-        c.save({"conanfile.py": GenConanfile("pkg", "0.1").with_class_attribute("auther = 'me'")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile("pkg", "0.1").with_class_attribute(
+                    "auther = 'me'"
+                )
+            }
+        )
         c.run("export .")
         rev2 = c.exported_recipe_revision()
         assert rev1 != rev2
@@ -200,18 +234,29 @@ class TestUpdateOldPolicy:
         # But if we enable order-based first found timestamp, it will pick up r2
         c.run("remove * -c")
         c.run("graph info --requires=pkg/0.1 --update -cc core:update_policy=legacy")
-        assert "The 'core:update_policy' conf is deprecated and will be removed" in c.out
+        assert (
+            "The 'core:update_policy' conf is deprecated and will be removed" in c.out
+        )
         assert f"pkg/0.1#{rev2} - Downloaded (r2)" in c.out
 
     def test_multi_remote_update_resolution_2_remotes(self):
-        c = TestClient(servers={"r1": TestServer(), "r2": TestServer()},
-                       inputs=["admin", "password"] * 2, light=True)
+        c = TestClient(
+            servers={"r1": TestServer(), "r2": TestServer()},
+            inputs=["admin", "password"] * 2,
+            light=True,
+        )
         c.save({"conanfile.py": GenConanfile("pkg", "0.1")})
         c.run("export .")
         rev1 = c.exported_recipe_revision()
         c.run("upload * -r=r1 -c")
         # second revision
-        c.save({"conanfile.py": GenConanfile("pkg", "0.1").with_class_attribute("auther = 'me'")})
+        c.save(
+            {
+                "conanfile.py": GenConanfile("pkg", "0.1").with_class_attribute(
+                    "auther = 'me'"
+                )
+            }
+        )
         c.run("export .")
         rev2 = c.exported_recipe_revision()
         assert rev1 != rev2
@@ -238,10 +283,18 @@ class TestUpdateOldPolicy:
         # https://github.com/conan-io/conan/issues/18006
         c = TestClient(default_server_user=True, light=True)  # needs server to fail
         c.save_home({"global.conf": "core:update_policy=legacy"})
-        c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-                "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_python_requires("dep/0.1")})
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile("dep", "0.1"),
+                "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_python_requires(
+                    "dep/0.1"
+                ),
+            }
+        )
         c.run("create dep")
         c.run("lock create pkg --lockfile-out base.lock --build=* --update")
-        c.run("lock create pkg --lockfile base.lock --lockfile-out full.lock --build=* --update")
+        c.run(
+            "lock create pkg --lockfile base.lock --lockfile-out full.lock --build=* --update"
+        )
         # it doesn't crash
         assert "Generated lockfile" in c.out

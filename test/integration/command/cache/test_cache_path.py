@@ -60,7 +60,9 @@ def test_cache_path(created_package):
     # Basic package paths, with both revisions
     t.run(f"cache path foo/1.0#{recipe_revision}:{pref.package_id}#{pref.revision}")
     assert pkg_layout.package() == str(t.out).rstrip()
-    t.run(f"cache path foo/1.0#{recipe_revision}:{pref.package_id}#{pref.revision} --folder=build")
+    t.run(
+        f"cache path foo/1.0#{recipe_revision}:{pref.package_id}#{pref.revision} --folder=build"
+    )
     assert pkg_layout.build() == str(t.out).rstrip()
 
 
@@ -79,14 +81,20 @@ def test_cache_path_exist_errors(created_package):
     # TODO: Improve this error message
     assert "ERROR: Recipe 'foo/1.0#rev' not found" in t.out
 
-    t.run(f"cache path foo/1.0:pid1", assert_error=True)
+    t.run("cache path foo/1.0:pid1", assert_error=True)
     assert f"ERROR: 'foo/1.0#{recipe_revision}:pid1' not found in cache" in t.out
 
     t.run(f"cache path foo/1.0#{recipe_revision}:pid1", assert_error=True)
     assert f"ERROR: 'foo/1.0#{recipe_revision}:pid1' not found in cache" in t.out
 
-    t.run(f"cache path foo/1.0#{recipe_revision}:{pref.package_id}#rev2", assert_error=True)
-    assert f"ERROR: No entry for package 'foo/1.0#{recipe_revision}:{pref.package_id}#rev2" in t.out
+    t.run(
+        f"cache path foo/1.0#{recipe_revision}:{pref.package_id}#rev2",
+        assert_error=True,
+    )
+    assert (
+        f"ERROR: No entry for package 'foo/1.0#{recipe_revision}:{pref.package_id}#rev2"
+        in t.out
+    )
 
 
 def test_cache_path_arg_errors():
@@ -113,9 +121,11 @@ def test_cache_path_does_not_exist_folder():
     client.run("upload * --confirm -r default")
     client.run("remove * -c")
 
-    client.run(f"install --requires mypkg/0.1")
+    client.run("install --requires mypkg/0.1")
     client.run(f"cache path {pref} --folder build", assert_error=True)
-    assert f"ERROR: 'build' folder does not exist for the reference {pref}" in client.out
+    assert (
+        f"ERROR: 'build' folder does not exist for the reference {pref}" in client.out
+    )
 
 
 def test_cache_path_output_json():
@@ -130,7 +140,6 @@ def test_cache_path_output_json():
 
 
 class TestCacheRef:
-
     def test_cache_path(self, created_package):
         t, recipe_layout, pkg_layout = created_package
 

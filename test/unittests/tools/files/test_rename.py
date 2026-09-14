@@ -18,7 +18,9 @@ def test_rename_file():
     assert os.path.exists(new_path)
 
 
-@pytest.mark.skipif(platform.system() != "Windows", reason="Robocopy only exists in Windows")
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="Robocopy only exists in Windows"
+)
 def test_rename_folder_robocopy():
     conanfile = ConanFileMock()
     tmp = temp_folder()

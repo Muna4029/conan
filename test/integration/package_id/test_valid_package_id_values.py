@@ -4,7 +4,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestValidPackageIdValue:
-
     def test_valid(self):
         c = TestClient()
         conanfile = textwrap.dedent("""

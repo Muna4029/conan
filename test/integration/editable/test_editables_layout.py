@@ -5,7 +5,6 @@ from conan.test.utils.tools import TestClient
 
 
 def test_cpp_info_editable():
-
     client = TestClient()
 
     conan_hello = str(GenConanfile())
@@ -96,7 +95,9 @@ def test_cpp_info_editable():
     base_folder = client.current_folder.replace("\\", "/") + "/"
     out = str(client2.out).replace(r"\\", "/").replace(base_folder, "")
 
-    assert "**includedirs:['my_sources/my_include_source', 'my_build/my_include']**" in out
+    assert (
+        "**includedirs:['my_sources/my_include_source', 'my_build/my_include']**" in out
+    )
     assert "**libdirs:['my_build/my_libdir']**" in out
     assert "**builddirs:['my_sources/my_builddir_source']**" in out
     assert "**libs:['hello']**" in out
@@ -108,7 +109,6 @@ def test_cpp_info_editable():
 
 
 def test_cpp_info_components_editable():
-
     client = TestClient()
 
     conan_hello = str(GenConanfile())
@@ -208,7 +208,9 @@ def test_cpp_info_components_editable():
     out = str(client2.out).replace(r"\\", "/").replace(package_folder, "")
     assert "**FOO includedirs:['package_include_foo']**" in out
     assert "**FOO libdirs:['lib']**" in out  # The components does have default dirs
-    assert "**FOO builddirs:[]**" in out  # The components don't have default dirs for builddirs
+    assert (
+        "**FOO builddirs:[]**" in out
+    )  # The components don't have default dirs for builddirs
 
     assert "**FOO libs:['lib_when_package_foo', 'lib_when_package2_foo']**" in out
     assert "**FOO objects:['myobject.o']**" in out
@@ -233,8 +235,10 @@ def test_cpp_info_components_editable():
     base_folder = client.current_folder.replace("\\", "/") + "/"
     out = str(client2.out).replace(r"\\", "/").replace(base_folder, "")
 
-    assert "**FOO includedirs:['my_sources/my_include_source_foo', " \
-           "'my_build/my_include_foo']**" in out
+    assert (
+        "**FOO includedirs:['my_sources/my_include_source_foo', "
+        "'my_build/my_include_foo']**" in out
+    )
     assert "**FOO libdirs:['my_build/my_libdir_foo']**" in out
     assert "**FOO builddirs:['my_sources/my_builddir_source_foo']**" in out
     assert "**FOO libs:['hello_foo']**" in out
@@ -243,8 +247,10 @@ def test_cpp_info_components_editable():
     assert "**FOO cxxflags:['my_cxx_flag_foo']**" in out
     assert "**FOO cflags:['my_c_flag_foo']**" in out
 
-    assert "**VAR includedirs:['my_sources/my_include_source_var', " \
-           "'my_build/my_include_var']**" in out
+    assert (
+        "**VAR includedirs:['my_sources/my_include_source_var', "
+        "'my_build/my_include_var']**" in out
+    )
     assert "**VAR libdirs:['my_build/my_libdir_var']**" in out
     assert "**VAR builddirs:['my_sources/my_builddir_source_var']**" in out
     assert "**VAR libs:['hello_var']**" in out
@@ -253,7 +259,7 @@ def test_cpp_info_components_editable():
 
 
 def test_editable_package_folder():
-    """ This test checks the behavior that self.package_folder is NOT defined (i.e = None)
+    """This test checks the behavior that self.package_folder is NOT defined (i.e = None)
     for editable packages, so it cannot be used in ``package_info()`` method
     """
     c = TestClient()
@@ -311,8 +317,7 @@ def test_editable_components_absolute_paths():
             def test(self):
                 pass
             """)
-    c.save({"conanfile.py": conanfile,
-            "test_package/conanfile.py": test})
+    c.save({"conanfile.py": conanfile, "test_package/conanfile.py": test})
     c.run("editable add .")
     c.run("create .")
     # This used to crash due to "include" is not absolute path, now it works

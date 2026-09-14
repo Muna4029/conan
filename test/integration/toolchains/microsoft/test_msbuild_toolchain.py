@@ -9,23 +9,21 @@ from conan.test.utils.tools import TestClient
 @pytest.mark.skipif(platform.system() != "Windows", reason="Only for windows")
 @pytest.mark.parametrize(
     "compiler, version",
-    [
-        ("msvc", "190"),
-        ("msvc", "191"),
-        ("clang", "16")
-    ],
+    [("msvc", "190"), ("msvc", "191"), ("clang", "16")],
 )
 @pytest.mark.parametrize("runtime", ["dynamic", "static"])
 @pytest.mark.parametrize("runtime_type", ["Release", "Debug"])
 def test_toolchain_win(compiler, version, runtime, runtime_type):
     client = TestClient(path_with_spaces=False)
-    settings = {"compiler": compiler,
-                "compiler.version": version,
-                "compiler.cppstd": "14",
-                "compiler.runtime": runtime,
-                "compiler.runtime_type": runtime_type,
-                "build_type": "Release",
-                "arch": "x86_64"}
+    settings = {
+        "compiler": compiler,
+        "compiler.version": version,
+        "compiler.cppstd": "14",
+        "compiler.runtime": runtime,
+        "compiler.runtime_type": runtime_type,
+        "build_type": "Release",
+        "arch": "x86_64",
+    }
     if compiler == "clang":
         settings["compiler.runtime_version"] = "v144"
 

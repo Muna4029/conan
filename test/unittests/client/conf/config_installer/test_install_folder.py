@@ -5,9 +5,8 @@ from conan.test.utils.test_files import temp_folder
 
 
 class TestInstallFolder:
-
     def test_unique_install_folder(self):
-        """ Validate if tmp_config_install_folder is removing old folder before creating a new one
+        """Validate if tmp_config_install_folder is removing old folder before creating a new one
 
         tmp_config_install_folder must create the same folder, but all items must be exclude when a
         new folder is created.

@@ -8,7 +8,7 @@ from conan.internal.util.files import mkdir
 
 
 def test_third_party_patch_flow():
-    """ this test emulates the work of a developer contributing recipes to ConanCenter, and having
+    """this test emulates the work of a developer contributing recipes to ConanCenter, and having
     to do multiple patches to the original library source code:
     - Everything is local, not messing with the cache
     - Using layout() to define location of things
@@ -40,8 +40,7 @@ def test_third_party_patch_flow():
         """)
 
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "conandata.yml": ""})
+    client.save({"conanfile.py": conanfile, "conandata.yml": ""})
     client.run("install .")
     client.run("source .")
     assert "apply_conandata_patches(): No patches defined in conandata" in client.out
@@ -110,7 +109,7 @@ def test_third_party_patch_flow():
 
 
 def test_third_party_overwrite_build_file():
-    """ this test emulates the work of a developer contributing recipes to ConanCenter, and
+    """this test emulates the work of a developer contributing recipes to ConanCenter, and
     replacing the original build script with your one one.
 
     The export_sources is actually copying CMakeLists.txt into the "src" folder, but the
@@ -142,9 +141,13 @@ def test_third_party_overwrite_build_file():
         """)
 
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "conandata.yml": "",
-                 "CMakeLists.txt": "My better cmake"})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "conandata.yml": "",
+            "CMakeLists.txt": "My better cmake",
+        }
+    )
     client.run("install .")
     client.run("source .")
     client.run("build .")
@@ -156,14 +159,15 @@ def test_third_party_overwrite_build_file():
 
 
 def test_third_party_git_overwrite_build_file():
-    """ Same as the above, but using git clone
+    """Same as the above, but using git clone
     The trick: "git clone <url> ." needs an empty directory. No reason why the ``src`` folder should
     be polluted automatically with exports, so just removing things works
     """
     git_repo = temp_folder().replace("\\", "/")
     create_local_git_repo({"CMakeLists.txt": "MISTAKE Cmake"}, folder=git_repo)
 
-    conanfile = textwrap.dedent(r"""
+    conanfile = textwrap.dedent(
+        r"""
         import os, shutil
         from conan import ConanFile
         from conan.tools.files import save, load
@@ -187,12 +191,17 @@ def test_third_party_git_overwrite_build_file():
             def build(self):
                 if "MISTAKE" in load(self, os.path.join(self.source_folder, "CMakeLists.txt")):
                     raise Exception("MISTAKE BUILD!")
-        """.format(git_repo))
+        """.format(git_repo)
+    )
 
     client = TestClient()
-    client.save({"conanfile.py": conanfile,
-                 "conandata.yml": "",
-                 "CMakeLists.txt": "My better cmake"})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "conandata.yml": "",
+            "CMakeLists.txt": "My better cmake",
+        }
+    )
     client.run("install .")
     client.run("source .")
     assert "FILES: []!" in client.out

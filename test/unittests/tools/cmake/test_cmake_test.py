@@ -9,14 +9,17 @@ from conan.test.utils.mocks import ConanFileMock
 from conan.test.utils.test_files import temp_folder
 
 
-@pytest.mark.parametrize("generator,target", [
-    ("NMake Makefiles", "test"),
-    ("Ninja Makefiles", "test"),
-    ("Ninja Multi-Config", "test"),
-    ("Unix Makefiles", "test"),
-    ("Visual Studio 14 2015", "RUN_TESTS"),
-    ("Xcode", "RUN_TESTS"),
-])
+@pytest.mark.parametrize(
+    "generator,target",
+    [
+        ("NMake Makefiles", "test"),
+        ("Ninja Makefiles", "test"),
+        ("Ninja Multi-Config", "test"),
+        ("Unix Makefiles", "test"),
+        ("Visual Studio 14 2015", "RUN_TESTS"),
+        ("Xcode", "RUN_TESTS"),
+    ],
+)
 def test_run_tests(generator, target):
     """
     Testing that the proper test target is picked for different generators, especially

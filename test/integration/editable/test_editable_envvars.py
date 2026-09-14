@@ -26,11 +26,16 @@ def test_editable_envvars():
                 self.buildenv_info.define("OTHERVAR", "randomvalue")
         """)
 
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": GenConanfile().with_settings("os")
-                                              .with_requires("dep/1.0")
-                                              .with_generator("VirtualBuildEnv")
-                                              .with_generator("VirtualRunEnv")})
+    c.save(
+        {
+            "dep/conanfile.py": dep,
+            "pkg/conanfile.py": GenConanfile()
+            .with_settings("os")
+            .with_requires("dep/1.0")
+            .with_generator("VirtualBuildEnv")
+            .with_generator("VirtualRunEnv"),
+        }
+    )
     c.run("editable add dep  --name=dep --version=1.0")
     c.run("install pkg -s os=Linux -s:b os=Linux")
     build_path = os.path.join(c.current_folder, "dep", "mybuild", "mylocalbuild")
@@ -48,11 +53,11 @@ def test_editable_envvars():
     c.run("create dep")
     c.run("install pkg -s os=Linux -s:b os=Linux")
     buildenv = c.load("pkg/conanbuildenv.sh")
-    assert 'mypkgbuild' in buildenv
+    assert "mypkgbuild" in buildenv
     assert "mylocalbuild" not in buildenv
     assert 'export OTHERVAR="randomvalue"' in buildenv
     runenv = c.load("pkg/conanrunenv.sh")
-    assert 'mypkgsrc' in runenv
+    assert "mypkgsrc" in runenv
     assert "mylocalsrc" not in runenv
 
 
@@ -83,8 +88,7 @@ def test_editable_conf():
                 dictconf2 = self.dependencies["dep"].conf_info.get("user:mydictconf2", check_type=dict)
                 self.output.info(f"CONFDICT: {dictconf2}")
         """)
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": pkg})
+    c.save({"dep/conanfile.py": dep, "pkg/conanfile.py": pkg})
     c.run("editable add dep --name=dep --version=1.0")
     c.run("install pkg -s os=Linux -s:b os=Linux")
     out = str(c.out).replace("\\\\", "\\")
@@ -119,8 +123,7 @@ def test_editable_conf_tool_require_builtin():
                 ndk = self.conf.get("tools.android:ndk_path")
                 self.output.info(f"NDK: {ndk}!!!")
         """)
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": pkg})
+    c.save({"dep/conanfile.py": dep, "pkg/conanfile.py": pkg})
     c.run("editable add dep")
     c.run("install pkg -s os=Linux -s:b os=Linux")
     ndk_path = os.path.join(c.current_folder, "dep", "mybuild")

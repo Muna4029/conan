@@ -13,7 +13,7 @@ def test_msbuild_deps_components():
     client = TestClient()
 
     client.run("new cmake_lib -d name=tcp -d version=1.0")
-    client.run("create . -tf=\"\"")
+    client.run('create . -tf=""')
 
     header = textwrap.dedent("""
         #pragma once
@@ -105,19 +105,29 @@ def test_msbuild_deps_components():
         self.cpp_info.components["server"].requires.extend(["core", "tcp::tcp"])
     """
 
-    client.save({
-        "include/core.h": header.format(name="core"),
-        "include/server.h": header.format(name="server"),
-        "include/client.h": header.format(name="client"),
-        "src/core.cpp": source.format(name="core", include="", call=""),
-        "src/server.cpp": source.format(name="server",
-                                        include='#include "core.h"\n#include "tcp.h"',
-                                        call="core(); tcp();"),
-        "src/client.cpp": source.format(name="client", include='#include "core.h"\n#include "tcp.h"',
-                                        call="core(); tcp();"),
-        "conanfile.py": conanfile_py.format(requires='requires= "tcp/1.0"', package_info=network_pi),
-        "CMakeLists.txt": cmakelists,
-    }, clean_first=True)
+    client.save(
+        {
+            "include/core.h": header.format(name="core"),
+            "include/server.h": header.format(name="server"),
+            "include/client.h": header.format(name="client"),
+            "src/core.cpp": source.format(name="core", include="", call=""),
+            "src/server.cpp": source.format(
+                name="server",
+                include='#include "core.h"\n#include "tcp.h"',
+                call="core(); tcp();",
+            ),
+            "src/client.cpp": source.format(
+                name="client",
+                include='#include "core.h"\n#include "tcp.h"',
+                call="core(); tcp();",
+            ),
+            "conanfile.py": conanfile_py.format(
+                requires='requires= "tcp/1.0"', package_info=network_pi
+            ),
+            "CMakeLists.txt": cmakelists,
+        },
+        clean_first=True,
+    )
 
     client.run("create . --name=network --version=1.0")
 
@@ -142,31 +152,44 @@ def test_msbuild_deps_components():
         install(TARGETS chat)
         """)
 
-    client.save({
-        "include/chat.h": header.format(name="chat"),
-        "src/chat.cpp": source.format(name="chat", include='#include "client.h"', call="client();"),
-        "conanfile.py": conanfile_py.format(requires='requires= "network/1.0"',
-                                            package_info=chat_pi),
-        "CMakeLists.txt": cmakelists_chat,
-    }, clean_first=True)
+    client.save(
+        {
+            "include/chat.h": header.format(name="chat"),
+            "src/chat.cpp": source.format(
+                name="chat", include='#include "client.h"', call="client();"
+            ),
+            "conanfile.py": conanfile_py.format(
+                requires='requires= "network/1.0"', package_info=chat_pi
+            ),
+            "CMakeLists.txt": cmakelists_chat,
+        },
+        clean_first=True,
+    )
 
     client.run("create . --name=chat --version=1.0")
 
     client.run("new msbuild_exe -d name=greet -d version=0.1 -f")
-    conanfile = client.load("conanfile.py").replace("settings = ",
-                                                    'requires="chat/1.0"\n'
-                                                    '    generators = "MSBuildDeps"\n'
-                                                    '    settings = ')
+    conanfile = client.load("conanfile.py").replace(
+        "settings = ",
+        'requires="chat/1.0"\n    generators = "MSBuildDeps"\n    settings = ',
+    )
     vcproj = client.load("greet.vcxproj")
-    vcproj2 = vcproj.replace(r'<Import Project="conan\conantoolchain.props" />',
-                             r"""<Import Project="conan\conantoolchain.props" />
+    vcproj2 = vcproj.replace(
+        r'<Import Project="conan\conantoolchain.props" />',
+        r"""<Import Project="conan\conantoolchain.props" />
                                <Import Project="conan\conandeps.props" />
-                             """)
+                             """,
+    )
     assert vcproj2 != vcproj
-    client.save({"conanfile.py": conanfile,
-                 "src/greet.cpp": gen_function_cpp(name="main", includes=["chat"],
-                                                   calls=["chat"]),
-                 "greet.vcxproj": vcproj2})
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "src/greet.cpp": gen_function_cpp(
+                name="main", includes=["chat"], calls=["chat"]
+            ),
+            "greet.vcxproj": vcproj2,
+        }
+    )
     client.run("create .")
     assert "main: Release!" in client.out
     assert "core/1.0: Hello World Release!" in client.out

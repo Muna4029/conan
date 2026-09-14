@@ -8,7 +8,7 @@ from conan.test.utils.tools import TestClient, TestServer
 
 
 class TestMetadataDeploy:
-    """ prove we can gather metadata too with a deployer"""
+    """prove we can gather metadata too with a deployer"""
 
     @pytest.fixture
     def client(self):
@@ -45,8 +45,7 @@ class TestMetadataDeploy:
 
         servers = OrderedDict([("default", TestServer()), ("remote2", TestServer())])
         c = TestClient(servers=servers, inputs=2 * ["admin", "password"], light=True)
-        c.save({"conanfile.py": conanfile,
-                "deploy.py": deploy})
+        c.save({"conanfile.py": conanfile, "deploy.py": deploy})
         c.run("create . --name=pkg1")
         c.run("create . --name=pkg2")
         return c
@@ -67,13 +66,18 @@ class TestMetadataDeploy:
         # First install without metadata
         c.run("install --requires=pkg1/0.1 --requires=pkg2/0.1")
         # So this will not deploy metadata
-        c.run("install --requires=pkg1/0.1 --requires=pkg2/0.1 --deployer=deploy -f=json",
-              redirect_stdout="graph.json")
+        c.run(
+            "install --requires=pkg1/0.1 --requires=pkg2/0.1 --deployer=deploy -f=json",
+            redirect_stdout="graph.json",
+        )
         assert not os.path.exists(os.path.join(c.current_folder, "pkgs"))
 
         # We can obtain the pkg-list for the graph, then "find-remote" and download the metadata
         c.run("list -g=graph.json -f=json", redirect_stdout="mylist.json")
-        c.run("pkglist find-remote mylist.json -f=json", redirect_stdout="pkg_remotes.json")
+        c.run(
+            "pkglist find-remote mylist.json -f=json",
+            redirect_stdout="pkg_remotes.json",
+        )
         c.run("download --list=pkg_remotes.json -r=default --metadata=*")
 
         # Now we will have the metadata in cache and we can deploy it
@@ -93,13 +97,18 @@ class TestMetadataDeploy:
         # First install without metadata
         c.run("install --requires=pkg1/0.1 --requires=pkg2/0.1")
         # So this will not deploy metadata
-        c.run("install --requires=pkg1/0.1 --requires=pkg2/0.1 --deployer=deploy -f=json",
-              redirect_stdout="graph.json")
+        c.run(
+            "install --requires=pkg1/0.1 --requires=pkg2/0.1 --deployer=deploy -f=json",
+            redirect_stdout="graph.json",
+        )
         assert not os.path.exists(os.path.join(c.current_folder, "pkgs"))
 
         # We can obtain the pkg-list for the graph, then "find-remote" and download the metadata
         c.run("list -g=graph.json -f=json", redirect_stdout="mylist.json")
-        c.run("pkglist find-remote mylist.json -f=json", redirect_stdout="pkg_remotes.json")
+        c.run(
+            "pkglist find-remote mylist.json -f=json",
+            redirect_stdout="pkg_remotes.json",
+        )
         # we need to ITERATE the remotes
         c.run("download --list=pkg_remotes.json -r=default --metadata=*")
         c.run("download --list=pkg_remotes.json -r=remote2 --metadata=*")

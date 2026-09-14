@@ -25,8 +25,7 @@ def test_compatible_cppstd():
         compiler.version=12
         compiler.libcxx=libstdc++
         """)
-    c.save({"conanfile.py": conanfile,
-            "myprofile": profile})
+    c.save({"conanfile.py": conanfile, "myprofile": profile})
     # Create package with cppstd 17
     c.run("create .  -pr=myprofile -s compiler.cppstd=17")
     package_id = "95dcfeb51c04968b4ee960ee393cf2c1ebcf7782"
@@ -69,8 +68,7 @@ def test_compatible_cppstd_missing_compiler():
             compiler.version=12
             compiler.libcxx=libstdc++
             """)
-    c.save({"conanfile.py": conanfile,
-            "myprofile": profile})
+    c.save({"conanfile.py": conanfile, "myprofile": profile})
     c.save_home({"settings_user.yml": settings_user})
     # Create package with cppstd 17
     c.run("create .  -pr=myprofile -s compiler.cppstd=17")
@@ -82,4 +80,7 @@ def test_compatible_cppstd_missing_compiler():
     c.save({"conanfile.py": GenConanfile().with_require("pkg/0.1")})
     c.run("install . -pr=myprofile -s compiler.cppstd=20", assert_error=True)
     assert "Missing binary: pkg/0.1:b4b07859713551e8aac612f8080888c58b4711ae" in c.out
-    assert 'pkg/0.1: WARN: No cppstd compatibility defined for compiler "mycompiler"' in c.out
+    assert (
+        'pkg/0.1: WARN: No cppstd compatibility defined for compiler "mycompiler"'
+        in c.out
+    )

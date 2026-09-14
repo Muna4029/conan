@@ -7,7 +7,6 @@ from conan.internal.util.files import mkdir
 
 
 class RemoveSubsettingTest(unittest.TestCase):
-
     def test_remove_options(self):
         # https://github.com/conan-io/conan/issues/2327
         # https://github.com/conan-io/conan/issues/2781

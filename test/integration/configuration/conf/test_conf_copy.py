@@ -44,4 +44,3 @@ def test_copy_conaninfo_conf():
     assert "tools.cmake.cmaketoolchain:generator=True" not in result
     assert "tools.deployer:symlinks" in result
     assert "user.myconf:cmake-test" not in result
-

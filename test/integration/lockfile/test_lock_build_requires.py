@@ -9,25 +9,37 @@ from conan.test.utils.tools import TestClient
 
 def test_lock_build_tool_requires():
     c = TestClient(light=True)
-    c.save({"common/conanfile.py": GenConanfile("common", "1.0").with_settings("os"),
-            "tool/conanfile.py": GenConanfile("tool", "1.0").with_settings("os")
-                                                            .with_requires("common/1.0"),
-            "lib/conanfile.py": GenConanfile("lib", "1.0").with_settings("os")
-                                                          .with_requires("tool/1.0"),
-            "consumer/conanfile.py":
-                GenConanfile("consumer", "1.0").with_settings("os")
-                                               .with_requires("lib/1.0")
-                                               .with_build_requires("tool/1.0")})
+    c.save(
+        {
+            "common/conanfile.py": GenConanfile("common", "1.0").with_settings("os"),
+            "tool/conanfile.py": GenConanfile("tool", "1.0")
+            .with_settings("os")
+            .with_requires("common/1.0"),
+            "lib/conanfile.py": GenConanfile("lib", "1.0")
+            .with_settings("os")
+            .with_requires("tool/1.0"),
+            "consumer/conanfile.py": GenConanfile("consumer", "1.0")
+            .with_settings("os")
+            .with_requires("lib/1.0")
+            .with_build_requires("tool/1.0"),
+        }
+    )
     c.run("export common")
     c.run("export tool")
     c.run("export lib")
     # cross compile Linux->Windows
     c.run("lock create consumer/conanfile.py -s:h os=Linux -s:b os=Windows --build=*")
-    c.run("install --tool-requires=tool/1.0 --build=missing --lockfile=consumer/conan.lock "
-          "-s:h os=Linux -s:b os=Windows")
-    c.assert_listed_binary({"tool/1.0": ("78ba71aef65089d6e3244756171f9f37d5a76223", "Build"),
-                            "common/1.0": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build")},
-                           build=True)
+    c.run(
+        "install --tool-requires=tool/1.0 --build=missing --lockfile=consumer/conan.lock "
+        "-s:h os=Linux -s:b os=Windows"
+    )
+    c.assert_listed_binary(
+        {
+            "tool/1.0": ("78ba71aef65089d6e3244756171f9f37d5a76223", "Build"),
+            "common/1.0": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build"),
+        },
+        build=True,
+    )
 
 
 def test_lock_buildrequires_create():
@@ -48,8 +60,12 @@ def test_lock_buildrequires_export():
 
 def test_lock_buildrequires_create_transitive():
     c = TestClient(light=True)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-            "tool/conanfile.py": GenConanfile("tool", "0.1").with_requires("dep/0.1")})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
+            "tool/conanfile.py": GenConanfile("tool", "0.1").with_requires("dep/0.1"),
+        }
+    )
     c.run("create dep")
     c.run("create tool --build-require --lockfile-out=conan.lock")
     lock = json.loads(c.load("conan.lock"))
@@ -58,8 +74,7 @@ def test_lock_buildrequires_create_transitive():
 
 
 def test_lock_create_build_require_transitive():
-    """ cross compiling from Windows to Linux
-    """
+    """cross compiling from Windows to Linux"""
     c = TestClient(light=True)
     dep = textwrap.dedent("""
         from conan import ConanFile
@@ -84,8 +99,7 @@ def test_lock_create_build_require_transitive():
                self.output.info(f"MYOS:{self.info.settings.os}!!")
                self.output.info(f"TARGET:{self.settings_target.os}!!")
            """)
-    c.save({"dep/conanfile.py": dep,
-            "tool/conanfile.py": tool})
+    c.save({"dep/conanfile.py": dep, "tool/conanfile.py": tool})
     c.run("create dep --build-require --version=0.1 -s:b os=Windows -s:h os=Linux")
     assert "dep/0.1: MYOS:Windows!!" in c.out
     assert "dep/0.1: TARGET:Linux!!" in c.out
@@ -126,22 +140,33 @@ class TestTransitiveBuildRequires:
     def client(self):
         # https://github.com/conan-io/conan/issues/13899
         client = TestClient(light=True)
-        client.save({"zlib/conanfile.py": GenConanfile("zlib", "1.0"),
-                     "cmake/conanfile.py": GenConanfile("cmake", "1.0").with_requires("zlib/1.0"),
-                     "pkg/conanfile.py": GenConanfile("pkg", "1.0").with_build_requires("cmake/1.0"),
-                     "consumer/conanfile.py": GenConanfile().with_requires("pkg/[>=1.0]"),
-                     })
+        client.save(
+            {
+                "zlib/conanfile.py": GenConanfile("zlib", "1.0"),
+                "cmake/conanfile.py": GenConanfile("cmake", "1.0").with_requires(
+                    "zlib/1.0"
+                ),
+                "pkg/conanfile.py": GenConanfile("pkg", "1.0").with_build_requires(
+                    "cmake/1.0"
+                ),
+                "consumer/conanfile.py": GenConanfile().with_requires("pkg/[>=1.0]"),
+            }
+        )
 
         client.run("export zlib")
         client.run("export cmake")
         client.run("export pkg")
-        client.run("lock create consumer/conanfile.py -pr:b=default --build=* "
-                   "--lockfile-out=conan.lock")
+        client.run(
+            "lock create consumer/conanfile.py -pr:b=default --build=* "
+            "--lockfile-out=conan.lock"
+        )
         return client
 
     def test_transitive_build_require(self, client):
         # This used to crash, not anymore with the fix
-        client.run("install consumer/conanfile.py --build=missing --lockfile=conan.lock")
+        client.run(
+            "install consumer/conanfile.py --build=missing --lockfile=conan.lock"
+        )
         assert "zlib/1.0: Created package" in client.out
         assert "cmake/1.0: Created package" in client.out
         assert "pkg/1.0: Created package" in client.out

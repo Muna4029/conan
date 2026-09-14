@@ -6,7 +6,6 @@ from conan.test.utils.tools import TestClient
 
 
 class RemoveEmptyDirsTest(unittest.TestCase):
-
     def test_basic(self):
         client = TestClient()
         client.save({"conanfile.py": GenConanfile("hello", "0.1")})

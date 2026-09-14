@@ -25,7 +25,7 @@ def test_version_json():
     assert js["python"]["version"] == _python_version()
     assert js["python"]["sys_version"] == _sys_version()
     assert js["python"]["sys_executable"] == sys.executable
-    assert js["python"]["is_frozen"] == getattr(sys, 'frozen', False)
+    assert js["python"]["is_frozen"] == getattr(sys, "frozen", False)
     assert js["python"]["architecture"] == platform.machine()
     assert js["system"]["version"] == platform.version()
     assert js["system"]["platform"] == platform.platform()
@@ -55,17 +55,17 @@ def test_version_raw():
 
 def _validate_text_output(output):
     lines = output.splitlines()
-    assert f'version: {__version__}' in lines
-    assert f'conan_path: {sys.argv[0]}' in lines
-    assert 'python' in lines
-    assert f'  version: {_python_version()}' in lines
-    assert f'  sys_version: {_sys_version()}' in lines
-    assert f'  sys_executable: {sys.executable}' in lines
-    assert f'  is_frozen: {getattr(sys, "frozen", False)}' in lines
-    assert f'  architecture: {platform.machine()}' in lines
-    assert 'system' in lines
-    assert f'  version: {platform.version()}' in lines
-    assert f'  platform: {platform.platform()}' in lines
-    assert f'  system: {platform.system()}' in lines
-    assert f'  release: {platform.release()}' in lines
-    assert f'  cpu: {platform.processor()}' in lines
+    assert f"version: {__version__}" in lines
+    assert f"conan_path: {sys.argv[0]}" in lines
+    assert "python" in lines
+    assert f"  version: {_python_version()}" in lines
+    assert f"  sys_version: {_sys_version()}" in lines
+    assert f"  sys_executable: {sys.executable}" in lines
+    assert f"  is_frozen: {getattr(sys, 'frozen', False)}" in lines
+    assert f"  architecture: {platform.machine()}" in lines
+    assert "system" in lines
+    assert f"  version: {platform.version()}" in lines
+    assert f"  platform: {platform.platform()}" in lines
+    assert f"  system: {platform.system()}" in lines
+    assert f"  release: {platform.release()}" in lines
+    assert f"  cpu: {platform.processor()}" in lines

@@ -9,8 +9,12 @@ def test_version_range_conf_nonexplicit_expression():
     tc.run("create base/conanfile.py --version=1.5.1")
     tc.run("create base/conanfile.py --version=2.5.0-pre")
 
-    tc.save({"v1/conanfile.py": GenConanfile("pkg", "1.0").with_requires("base/[>1 <2]"),
-             "v2/conanfile.py": GenConanfile("pkg", "2.0").with_requires("base/[>2 <3]")})
+    tc.save(
+        {
+            "v1/conanfile.py": GenConanfile("pkg", "1.0").with_requires("base/[>1 <2]"),
+            "v2/conanfile.py": GenConanfile("pkg", "2.0").with_requires("base/[>2 <3]"),
+        }
+    )
 
     tc.save_home({"global.conf": "core.version_ranges:resolve_prereleases=False"})
     tc.run("create v1/conanfile.py")
@@ -39,8 +43,16 @@ def test_version_range_conf_explicit_expression():
     tc.run("create base/conanfile.py --version=1.5.1")
     tc.run("create base/conanfile.py --version=2.5.0-pre")
 
-    tc.save({"v1/conanfile.py": GenConanfile("pkg", "1.0").with_requires("base/[>1 <2, include_prerelease]"),
-             "v2/conanfile.py": GenConanfile("pkg", "2.0").with_requires("base/[>2 <3, include_prerelease]")})
+    tc.save(
+        {
+            "v1/conanfile.py": GenConanfile("pkg", "1.0").with_requires(
+                "base/[>1 <2, include_prerelease]"
+            ),
+            "v2/conanfile.py": GenConanfile("pkg", "2.0").with_requires(
+                "base/[>2 <3, include_prerelease]"
+            ),
+        }
+    )
 
     tc.save_home({"global.conf": "core.version_ranges:resolve_prereleases=False"})
     tc.run("create v1/conanfile.py")

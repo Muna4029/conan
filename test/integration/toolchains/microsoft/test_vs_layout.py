@@ -19,7 +19,9 @@ def test_vs_layout_subproject():
         """)
     c.save({"pkg/conanfile.py": conanfile})
     c.run("install pkg")
-    assert os.path.isfile(os.path.join(c.current_folder, "pkg", "conan", "conantoolchain.props"))
+    assert os.path.isfile(
+        os.path.join(c.current_folder, "pkg", "conan", "conantoolchain.props")
+    )
 
 
 def test_vs_layout_error():

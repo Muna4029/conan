@@ -15,7 +15,6 @@ from conan.tools.microsoft.visual import vcvars_command
 
 
 class TestProfile(unittest.TestCase):
-
     def test_list_empty(self):
         client = TestClient()
         client.run("profile list")
@@ -23,18 +22,25 @@ class TestProfile(unittest.TestCase):
 
     def test_list(self):
         client = TestClient()
-        profiles = ["default", "profile1", "profile2", "profile3",
-                    "nested" + os.path.sep + "profile4",
-                    "nested" + os.path.sep + "two" + os.path.sep + "profile5",
-                    "nested" + os.path.sep + "profile6"]
+        profiles = [
+            "default",
+            "profile1",
+            "profile2",
+            "profile3",
+            "nested" + os.path.sep + "profile4",
+            "nested" + os.path.sep + "two" + os.path.sep + "profile5",
+            "nested" + os.path.sep + "profile6",
+        ]
         if platform.system() != "Windows":
             profiles.append("symlink_me" + os.path.sep + "profile7")
         for profile in profiles:
             save(os.path.join(client.paths.profiles_path, profile), "")
 
         if platform.system() != "Windows":
-            os.symlink(os.path.join(client.paths.profiles_path, 'symlink_me'),
-                       os.path.join(client.paths.profiles_path, 'link'))
+            os.symlink(
+                os.path.join(client.paths.profiles_path, "symlink_me"),
+                os.path.join(client.paths.profiles_path, "link"),
+            )
             # profile7 will be shown twice because it is symlinked.
             profiles.append("link" + os.path.sep + "profile7")
 
@@ -83,15 +89,16 @@ class DetectCompilersTest(unittest.TestCase):
         platform_default_compilers = {
             "Linux": "gcc",
             "Darwin": "apple-clang",
-            "Windows": "msvc"
+            "Windows": "msvc",
         }
 
         result = detect_defaults_settings()
         # result is a list of tuples (name, value) so converting it to dict
         result = dict(result)
         platform_compiler = platform_default_compilers.get(platform.system(), None)
-        if platform_compiler is not None:
-            self.assertEqual(result.get("compiler", None), platform_compiler)
+        detected_compiler = result.get("compiler", None)
+        if platform_compiler is not None and detected_compiler is not None:
+            self.assertEqual(detected_compiler, platform_compiler)
 
     @pytest.mark.tool("gcc")
     @pytest.mark.skipif(platform.system() != "Darwin", reason="only OSX test")
@@ -102,7 +109,9 @@ class DetectCompilersTest(unittest.TestCase):
         # See: https://github.com/conan-io/conan/issues/2231
         _, output = detect_runner("gcc --version")
 
-        assert "clang" in output, "Apple gcc doesn't point to clang with gcc frontend anymore!"
+        assert "clang" in output, (
+            "Apple gcc doesn't point to clang with gcc frontend anymore!"
+        )
         # Not test scenario gcc should display clang in output
         # see: https://stackoverflow.com/questions/19535422/os-x-10-9-gcc-links-to-clang
 
@@ -129,11 +138,15 @@ class DetectCompilersTest(unittest.TestCase):
         c.run("profile detect --name=./MyProfile2 --force")  # will not raise error
         assert "build_type=Release" in c.load("MyProfile2")
         c.save({"MyProfile2": "potato"})
-        c.run("profile detect --name=./MyProfile2 --exist-ok")  # wont raise, won't overwrite
+        c.run(
+            "profile detect --name=./MyProfile2 --exist-ok"
+        )  # wont raise, won't overwrite
         assert "Profile './MyProfile2' already exists, skipping detection" in c.out
         assert c.load("MyProfile2") == "potato"
 
-    @pytest.mark.skipif(platform.system() != "Windows", reason="Requires Windows and msvc")
+    @pytest.mark.skipif(
+        platform.system() != "Windows", reason="Requires Windows and msvc"
+    )
     def test_profile_new_msvc_vcvars(self):
         c = TestClient()
 

@@ -75,10 +75,15 @@ def test_editable_msbuilddeps():
             def layout(self):
                 pass
             """)
-    c.save({"dep/conanfile.py": dep,
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_settings("build_type", "arch")
-                                                          .with_requires("dep/0.1")
-                                                          .with_generator("MSBuildDeps")})
+    c.save(
+        {
+            "dep/conanfile.py": dep,
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1")
+            .with_settings("build_type", "arch")
+            .with_requires("dep/0.1")
+            .with_generator("MSBuildDeps"),
+        }
+    )
     c.run("editable add dep")
     c.run("install pkg")
     # It doesn't crash anymore

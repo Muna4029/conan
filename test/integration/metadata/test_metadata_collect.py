@@ -120,11 +120,16 @@ def collect(conan_api, parser, *args):
 
 def test_custom_command_collect_no_metadata():
     c = TestClient(default_server_user=True)
-    command_file_path = os.path.join(c.cache_folder, 'extensions',
-                                     'commands', 'metadata', 'cmd_collect.py')
+    command_file_path = os.path.join(
+        c.cache_folder, "extensions", "commands", "metadata", "cmd_collect.py"
+    )
     save(command_file_path, collect)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1")})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1"),
+        }
+    )
     c.run("create dep")
     c.run("create pkg")
     c.run("metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default")
@@ -165,16 +170,26 @@ conanfile = textwrap.dedent("""
 
 def test_custom_command_collect():
     c = TestClient(default_server_user=True)
-    command_file_path = os.path.join(c.cache_folder, 'extensions',
-                                     'commands', 'metadata', 'cmd_collect.py')
+    command_file_path = os.path.join(
+        c.cache_folder, "extensions", "commands", "metadata", "cmd_collect.py"
+    )
     save(command_file_path, collect)
-    c.save({"dep/conanfile.py": conanfile.format(name="dep",
-                                                 requires="tool_requires = 'tool/0.1'"),
-            "pkg/conanfile.py": conanfile.format(name="pkg", requires='requires = "dep/0.1"'),
-            "profile": "[platform_tool_requires]\ntool/0.1"})
+    c.save(
+        {
+            "dep/conanfile.py": conanfile.format(
+                name="dep", requires="tool_requires = 'tool/0.1'"
+            ),
+            "pkg/conanfile.py": conanfile.format(
+                name="pkg", requires='requires = "dep/0.1"'
+            ),
+            "profile": "[platform_tool_requires]\ntool/0.1",
+        }
+    )
     c.run("create dep -pr=profile")
     c.run("create pkg -pr=profile")
-    c.run("metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile")
+    c.run(
+        "metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile"
+    )
     assert "srclog dep!!" in c.load("metadata/dep/0.1/recipe/logs/src.log")
     assert "some logs dep!!!" in c.load("metadata/dep/0.1/package/logs/mylogs.txt")
     assert "srclog pkg!!" in c.load("metadata/pkg/0.1/recipe/logs/src.log")
@@ -184,7 +199,9 @@ def test_custom_command_collect():
 
     c.run("upload * -r=default -c")
     c.run("remove * -c")
-    c.run("metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile")
+    c.run(
+        "metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile"
+    )
     assert "srclog dep!!" in c.load("metadata/dep/0.1/recipe/logs/src.log")
     assert "some logs dep!!!" in c.load("metadata/dep/0.1/package/logs/mylogs.txt")
     assert "srclog pkg!!" in c.load("metadata/pkg/0.1/recipe/logs/src.log")
@@ -194,7 +211,9 @@ def test_custom_command_collect():
     c.run("editable add dep")
     c.run("source dep")
     c.run("build dep -pr=profile")
-    c.run("metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile")
+    c.run(
+        "metadata:collect --requires=pkg/0.1 --metadata=* --metadata-remote=default -pr=profile"
+    )
     assert "srclog dep!!" in c.load("metadata/dep/0.1/recipe/logs/src.log")
     assert "some logs dep!!!" in c.load("metadata/dep/0.1/package/logs/mylogs.txt")
     assert "srclog pkg!!" in c.load("metadata/pkg/0.1/recipe/logs/src.log")

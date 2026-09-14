@@ -9,7 +9,6 @@ from conan.internal.util.files import tar_extract, save, gather_files, chdir
 
 
 class TestTarExtract:
-
     @pytest.fixture
     def setup_files(self):
         tmp_folder = temp_folder()
@@ -29,7 +28,7 @@ class TestTarExtract:
                 files, _ = gather_files(ori_files_dir)
                 for filename, abs_path in files.items():
                     info = tarfile.TarInfo(name=filename)
-                    with open(file1, 'rb') as file_handler:
+                    with open(file1, "rb") as file_handler:
                         tgz.addfile(tarinfo=info, fileobj=file_handler)
                 tgz.close()
         return tmp_folder, tgz_file
@@ -51,13 +50,13 @@ class TestTarExtract:
         with chdir(working_dir):
             # Unpack and check
             destination_dir = os.path.join(tmp_folder, "dest")
-            with open(tgz_file, 'rb') as file_handler:
+            with open(tgz_file, "rb") as file_handler:
                 tar_extract(file_handler, destination_dir)
             check_files(destination_dir)
 
             # Unpack and check (now we have a symlinked local folder)
             os.symlink(temp_folder(), "folder")
             destination_dir = os.path.join(tmp_folder, "dest2")
-            with open(tgz_file, 'rb') as file_handler:
+            with open(tgz_file, "rb") as file_handler:
                 tar_extract(file_handler, destination_dir)
             check_files(destination_dir)

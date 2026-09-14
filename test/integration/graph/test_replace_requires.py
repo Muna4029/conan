@@ -8,47 +8,64 @@ from conan.test.assets.genconanfile import GenConanfile
 from conan.test.utils.tools import TestClient
 
 
-@pytest.mark.parametrize("require, pattern, alternative, pkg", [
-    # PATTERN VERSIONS
-    # override all dependencies to "dep" to a specific version,user and channel)
-    # TODO: This is a version override, is this really wanted?
-    ("dep/1.3", "dep/*", "dep/1.1", "dep/1.1"),
-    ("dep/[>=1.0 <2]", "dep/*", "dep/1.1", "dep/1.1"),
-    # override all dependencies to "dep" to the same version with other user, remove channel)
-    ("dep/1.3", "dep/*", "dep/*@system", "dep/1.3@system"),
-    ("dep/[>=1.0 <2]", "dep/*", "dep/*@system", "dep/1.1@system"),
-    # override all dependencies to "dep" to the same version with other user, same channel)
-    ("dep/1.3@comp/stable", "dep/*@*/*", "dep/*@system/*", "dep/1.3@system/stable"),
-    ("dep/[>=1.0 <2]@comp/stable", "dep/*@*/*", "dep/*@system/*", "dep/1.1@system/stable"),
-    # EXACT VERSIONS
-    # replace exact dependency version for one in the system
-    ("dep/1.1", "dep/1.1", "dep/1.1@system", "dep/1.1@system"),
-    ("dep/[>=1.0 <2]", "dep/1.1", "dep/1.1@system", "dep/1.1@system"),
-    ("dep/[>=1.0 <2]@comp", "dep/1.1@*", "dep/1.1@*/stable", "dep/1.1@comp/stable"),
-    ("dep/1.1@comp", "dep/1.1@*", "dep/1.1@*/stable", "dep/1.1@comp/stable"),
-    # PACKAGE ALTERNATIVES (zlib->zlibng)
-    ("dep/1.0", "dep/*", "depng/*", "depng/1.0"),
-    ("dep/[>=1.0 <2]", "dep/*", "depng/*", "depng/1.1"),
-    ("dep/[>=1.0 <2]", "dep/1.1", "depng/1.2", "depng/1.2"),
-    # NON MATCHING
-    ("dep/1.3", "dep/1.1", "dep/1.1@system", "dep/1.3"),
-    ("dep/1.3", "dep/*@comp", "dep/*@system", "dep/1.3"),
-    ("dep/[>=1.0 <2]", "dep/2.1", "dep/2.1@system", "dep/1.1"),
-    # PATTERN - PATTERN REPLACE
-    ("dep/[>=1.3 <2]", "dep/*", "dep/[>=1.0 <1.9]", "dep/1.1"),
-    # DIRECT REPLACE OF PINNED VERSIONS
-    ("dep/1.3", "dep/1.3", "dep/1.5", "dep/1.5"),
-])
+@pytest.mark.parametrize(
+    "require, pattern, alternative, pkg",
+    [
+        # PATTERN VERSIONS
+        # override all dependencies to "dep" to a specific version,user and channel)
+        # TODO: This is a version override, is this really wanted?
+        ("dep/1.3", "dep/*", "dep/1.1", "dep/1.1"),
+        ("dep/[>=1.0 <2]", "dep/*", "dep/1.1", "dep/1.1"),
+        # override all dependencies to "dep" to the same version with other user, remove channel)
+        ("dep/1.3", "dep/*", "dep/*@system", "dep/1.3@system"),
+        ("dep/[>=1.0 <2]", "dep/*", "dep/*@system", "dep/1.1@system"),
+        # override all dependencies to "dep" to the same version with other user, same channel)
+        ("dep/1.3@comp/stable", "dep/*@*/*", "dep/*@system/*", "dep/1.3@system/stable"),
+        (
+            "dep/[>=1.0 <2]@comp/stable",
+            "dep/*@*/*",
+            "dep/*@system/*",
+            "dep/1.1@system/stable",
+        ),
+        # EXACT VERSIONS
+        # replace exact dependency version for one in the system
+        ("dep/1.1", "dep/1.1", "dep/1.1@system", "dep/1.1@system"),
+        ("dep/[>=1.0 <2]", "dep/1.1", "dep/1.1@system", "dep/1.1@system"),
+        ("dep/[>=1.0 <2]@comp", "dep/1.1@*", "dep/1.1@*/stable", "dep/1.1@comp/stable"),
+        ("dep/1.1@comp", "dep/1.1@*", "dep/1.1@*/stable", "dep/1.1@comp/stable"),
+        # PACKAGE ALTERNATIVES (zlib->zlibng)
+        ("dep/1.0", "dep/*", "depng/*", "depng/1.0"),
+        ("dep/[>=1.0 <2]", "dep/*", "depng/*", "depng/1.1"),
+        ("dep/[>=1.0 <2]", "dep/1.1", "depng/1.2", "depng/1.2"),
+        # NON MATCHING
+        ("dep/1.3", "dep/1.1", "dep/1.1@system", "dep/1.3"),
+        ("dep/1.3", "dep/*@comp", "dep/*@system", "dep/1.3"),
+        ("dep/[>=1.0 <2]", "dep/2.1", "dep/2.1@system", "dep/1.1"),
+        # PATTERN - PATTERN REPLACE
+        ("dep/[>=1.3 <2]", "dep/*", "dep/[>=1.0 <1.9]", "dep/1.1"),
+        # DIRECT REPLACE OF PINNED VERSIONS
+        ("dep/1.3", "dep/1.3", "dep/1.5", "dep/1.5"),
+    ],
+)
 @pytest.mark.parametrize("tool_require", [False, True])
 class TestReplaceRequires:
     def test_alternative(self, tool_require, require, pattern, alternative, pkg):
         c = TestClient(light=True)
-        conanfile = GenConanfile().with_tool_requires(require) if tool_require else \
-            GenConanfile().with_requires(require)
-        profile_tag = "replace_requires" if not tool_require else "replace_tool_requires"
-        c.save({"dep/conanfile.py": GenConanfile(),
+        conanfile = (
+            GenConanfile().with_tool_requires(require)
+            if tool_require
+            else GenConanfile().with_requires(require)
+        )
+        profile_tag = (
+            "replace_requires" if not tool_require else "replace_tool_requires"
+        )
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile(),
                 "pkg/conanfile.py": conanfile,
-                "profile": f"[{profile_tag}]\n{pattern}: {alternative}"})
+                "profile": f"[{profile_tag}]\n{pattern}: {alternative}",
+            }
+        )
         ref = RecipeReference.loads(pkg)
         user = f"--user={ref.user}" if ref.user else ""
         channel = f"--channel={ref.channel}" if ref.channel else ""
@@ -72,15 +89,26 @@ class TestReplaceRequires:
 
     def test_diamond(self, tool_require, require, pattern, alternative, pkg):
         c = TestClient(light=True)
-        conanfile = GenConanfile().with_tool_requires(require) if tool_require else \
-            GenConanfile().with_requires(require)
-        profile_tag = "replace_requires" if not tool_require else "replace_tool_requires"
+        conanfile = (
+            GenConanfile().with_tool_requires(require)
+            if tool_require
+            else GenConanfile().with_requires(require)
+        )
+        profile_tag = (
+            "replace_requires" if not tool_require else "replace_tool_requires"
+        )
 
-        c.save({"dep/conanfile.py": GenConanfile(),
+        c.save(
+            {
+                "dep/conanfile.py": GenConanfile(),
                 "libb/conanfile.py": conanfile,
                 "libc/conanfile.py": conanfile,
-                "app/conanfile.py": GenConanfile().with_requires("libb/0.1", "libc/0.1"),
-                "profile": f"[{profile_tag}]\n{pattern}: {alternative}"})
+                "app/conanfile.py": GenConanfile().with_requires(
+                    "libb/0.1", "libc/0.1"
+                ),
+                "profile": f"[{profile_tag}]\n{pattern}: {alternative}",
+            }
+        )
         ref = RecipeReference.loads(pkg)
         user = f"--user={ref.user}" if ref.user else ""
         channel = f"--channel={ref.channel}" if ref.channel else ""
@@ -107,21 +135,28 @@ class TestReplaceRequires:
         c.assert_listed_require({f"{pkg}#{rrev}": "Cache"}, build=tool_require)
 
 
-@pytest.mark.parametrize("pattern, replace", [
-    ("pkg", "pkg/0.1"),
-    ("pkg/*", "pkg"),
-    ("pkg/*:pid1", "pkg/0.1"),
-    ("pkg/*:pid1", "pkg/0.1:pid2"),
-    ("pkg/*", "pkg/0.1:pid2"),
-    (":", ""),
-    ("pkg/version:pid", ""),
-    ("pkg/version:pid", ":")
-])
+@pytest.mark.parametrize(
+    "pattern, replace",
+    [
+        ("pkg", "pkg/0.1"),
+        ("pkg/*", "pkg"),
+        ("pkg/*:pid1", "pkg/0.1"),
+        ("pkg/*:pid1", "pkg/0.1:pid2"),
+        ("pkg/*", "pkg/0.1:pid2"),
+        (":", ""),
+        ("pkg/version:pid", ""),
+        ("pkg/version:pid", ":"),
+    ],
+)
 def test_replace_requires_errors(pattern, replace):
     c = TestClient(light=True)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1"),
             "app/conanfile.py": GenConanfile().with_requires("pkg/0.2"),
-            "profile": f"[replace_requires]\n{pattern}: {replace}"})
+            "profile": f"[replace_requires]\n{pattern}: {replace}",
+        }
+    )
     c.run("create pkg")
     c.run("install app -pr=profile", assert_error=True)
     assert "ERROR: Error reading 'profile' profile: Error in [replace_xxx]" in c.out
@@ -133,8 +168,12 @@ def test_replace_requires_invalid_requires_errors():
     a recipe requires("pkg/2.*"), and then it will fail because such package doesn't exist
     """
     c = TestClient(light=True)
-    c.save({"app/conanfile.py": GenConanfile().with_requires("pkg/0.2"),
-            "profile": f"[replace_requires]\npkg/0.2: pkg/2.*"})
+    c.save(
+        {
+            "app/conanfile.py": GenConanfile().with_requires("pkg/0.2"),
+            "profile": "[replace_requires]\npkg/0.2: pkg/2.*",
+        }
+    )
     c.run("install app -pr=profile", assert_error=True)
     assert "pkg/0.2: pkg/2.*" in c.out  # The replacement happens
     assert "ERROR: Package 'pkg/2.*' not resolved" in c.out
@@ -142,9 +181,13 @@ def test_replace_requires_invalid_requires_errors():
 
 def test_replace_requires_json_format():
     c = TestClient(light=True)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.2"),
+    c.save(
+        {
+            "pkg/conanfile.py": GenConanfile("pkg", "0.2"),
             "app/conanfile.py": GenConanfile().with_requires("pkg/0.1"),
-            "profile": f"[replace_requires]\npkg/0.1: pkg/0.2"})
+            "profile": "[replace_requires]\npkg/0.1: pkg/0.2",
+        }
+    )
     c.run("create pkg")
     c.run("install app -pr=profile --format=json")
     assert "pkg/0.1: pkg/0.2" in c.out  # The replacement happens
@@ -156,16 +199,22 @@ def test_replace_requires_json_format():
 
 def test_replace_requires_test_requires():
     c = TestClient(light=True)
-    c.save({"gtest/conanfile.py": GenConanfile("gtest", "0.2"),
+    c.save(
+        {
+            "gtest/conanfile.py": GenConanfile("gtest", "0.2"),
             "app/conanfile.py": GenConanfile().with_test_requires("gtest/0.1"),
-            "profile": f"[replace_requires]\ngtest/0.1: gtest/0.2"})
+            "profile": "[replace_requires]\ngtest/0.1: gtest/0.2",
+        }
+    )
     c.run("create gtest")
     c.run("install app -pr=profile")
     assert "gtest/0.1: gtest/0.2" in c.out  # The replacement happens
 
 
 # We test even replacing by itself, not great, but shouldn't crash
-@pytest.mark.parametrize("name, version", [("zlib", "0.1"), ("zlib", "0.2"), ("zlib-ng", "0.1")])
+@pytest.mark.parametrize(
+    "name, version", [("zlib", "0.1"), ("zlib", "0.2"), ("zlib-ng", "0.1")]
+)
 def test_replace_requires_consumer_references(name, version):
     c = TestClient()
     # IMPORTANT: The replacement package must be target-compatible
@@ -195,9 +244,13 @@ def test_replace_requires_consumer_references(name, version):
                 self.output.info(f"DEP ZLIB package_info: {self.dependencies['zlib'].ref.name}!")
                 self.cpp_info.requires = ["zlib::zlib"]
         """)
-    c.save({"dep/conanfile.py": dep,
+    c.save(
+        {
+            "dep/conanfile.py": dep,
             "app/conanfile.py": conanfile,
-            "profile": f"[replace_requires]\nzlib/0.1: {name}/{version}"})
+            "profile": f"[replace_requires]\nzlib/0.1: {name}/{version}",
+        }
+    )
     c.run("create dep")
     c.run("build app -pr=profile")
     assert f"zlib/0.1: {name}/{version}" in c.out
@@ -247,9 +300,13 @@ def test_replace_requires_consumer_references_error_multiple():
                 self.output.info(f"DEP ZLIB package_info: {self.dependencies['zlib'].ref.name}!")
                 self.cpp_info.requires = ["zlib::zlib", "bzip2::bzip2"]
         """)
-    c.save({"zlib/conanfile.py": zlib,
+    c.save(
+        {
+            "zlib/conanfile.py": zlib,
             "app/conanfile.py": conanfile,
-            "profile": "[replace_requires]\nzlib/0.1: zlib/0.2\nbzip2/0.1: zlib/0.2"})
+            "profile": "[replace_requires]\nzlib/0.1: zlib/0.2\nbzip2/0.1: zlib/0.2",
+        }
+    )
     c.run("create zlib")
     c.run("build app -pr=profile")
     assert "zlib/0.1: zlib/0.2" in c.out
@@ -312,9 +369,13 @@ def test_replace_requires_consumer_components_options():
         [replace_requires]
         zlib/0.1: zlib-ng/0.1
         """)
-    c.save({"zlibng/conanfile.py": zlib_ng,
+    c.save(
+        {
+            "zlibng/conanfile.py": zlib_ng,
             "app/conanfile.py": conanfile,
-            "profile": profile})
+            "profile": profile,
+        }
+    )
 
     c.run("create zlibng -o *:compat=True")
     c.run("build app -pr=profile")
@@ -328,8 +389,10 @@ def test_replace_requires_consumer_components_options():
     cmake = c.load("app/ZLIBTargets.cmake")
     assert "add_library(ZLIB::ZLIB INTERFACE IMPORTED)" in cmake
     cmake = c.load("app/ZLIB-Target-none.cmake")
-    assert "set_property(TARGET ZLIB::ZLIB APPEND PROPERTY INTERFACE_LINK_LIBRARIES ZLIB::zmylib)" \
-           in cmake
+    assert (
+        "set_property(TARGET ZLIB::ZLIB APPEND PROPERTY INTERFACE_LINK_LIBRARIES ZLIB::zmylib)"
+        in cmake
+    )
 
     c.run("create app -pr=profile")
     assert "zlib/0.1: zlib-ng/0.1" in c.out
@@ -367,9 +430,13 @@ def test_replace_requires_multiple():
         egl/system: libgl/1.0
         """)
     c = TestClient()
-    c.save({"dep/conanfile.py": GenConanfile(),
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile(),
             "app/conanfile.py": conanfile,
-            "profile": profile})
+            "profile": profile,
+        }
+    )
     c.run("create dep --name=libgl --version=1.0")
     c.run("create app -pr=profile")
     # There are actually 2 dependencies, pointing to the same node
@@ -378,7 +445,7 @@ def test_replace_requires_multiple():
 
 
 class TestReplaceRequiresTransitiveGenerators:
-    """ Generators are incorrectly managing replace_requires
+    """Generators are incorrectly managing replace_requires
     # https://github.com/conan-io/conan/issues/17557
     """
 
@@ -431,10 +498,14 @@ class TestReplaceRequiresTransitiveGenerators:
             [replace_requires]
             zlib/0.1: zlib-ng/0.1
             """)
-        c.save({"zlibng/conanfile.py": zlib_ng,
+        c.save(
+            {
+                "zlibng/conanfile.py": zlib_ng,
                 "openssl/conanfile.py": openssl,
                 "app/conanfile.py": conanfile,
-                "profile": profile})
+                "profile": profile,
+            }
+        )
 
         c.run("create zlibng")
         c.run("create openssl -pr=profile")
@@ -444,7 +515,7 @@ class TestReplaceRequiresTransitiveGenerators:
         pc_content = c.load("app/ZLIB.pc")
         assert 'Libs: -L"${libdir}" -lzlib' in pc_content
         pc_content = c.load("app/openssl.pc")
-        assert 'Requires: ZLIB' in pc_content
+        assert "Requires: ZLIB" in pc_content
 
         cmake = c.load("app/ZLIB-Targets-release.cmake")
         assert "add_library(ZLIB::ZLIB STATIC IMPORTED)" in cmake
@@ -452,15 +523,19 @@ class TestReplaceRequiresTransitiveGenerators:
         cmake = c.load("app/openssl-Targets-release.cmake")
         assert "find_dependency(ZLIB REQUIRED CONFIG)" in cmake
         assert "add_library(openssl::openssl STATIC IMPORTED)" in cmake
-        assert "set_property(TARGET openssl::openssl APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-               '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+        assert (
+            "set_property(TARGET openssl::openssl APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+            '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+        )
 
         # checking MSBuildDeps
         zlib_ng_props = c.load("app/conan_zlib-ng.props")
         assert 'Project="conan_zlib-ng_release_x64.props"' in zlib_ng_props
         props = c.load("app/conan_openssl_release_x64.props")
-        assert "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\"" \
-               " Project=\"conan_zlib-ng.props\"/>" in props
+        assert (
+            "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\""
+            ' Project="conan_zlib-ng.props"/>' in props
+        )
 
     @pytest.mark.parametrize("diamond", [True, False])
     def test_openssl_components(self, diamond):
@@ -511,10 +586,14 @@ class TestReplaceRequiresTransitiveGenerators:
             [replace_requires]
             zlib/0.1: zlib-ng/0.1
             """)
-        c.save({"zlibng/conanfile.py": zlib_ng,
+        c.save(
+            {
+                "zlibng/conanfile.py": zlib_ng,
                 "openssl/conanfile.py": openssl,
                 "app/conanfile.py": conanfile,
-                "profile": profile})
+                "profile": profile,
+            }
+        )
 
         c.run("create zlibng")
         c.run("create openssl -pr=profile")
@@ -524,7 +603,7 @@ class TestReplaceRequiresTransitiveGenerators:
         pc_content = c.load("app/ZLIB.pc")
         assert 'Libs: -L"${libdir}" -lzlib' in pc_content
         pc_content = c.load("app/openssl-crypto.pc")
-        assert 'Requires: ZLIB' in pc_content
+        assert "Requires: ZLIB" in pc_content
 
         cmake = c.load("app/ZLIB-Targets-release.cmake")
         assert "add_library(ZLIB::ZLIB STATIC IMPORTED)" in cmake
@@ -532,16 +611,20 @@ class TestReplaceRequiresTransitiveGenerators:
         cmake = c.load("app/openssl-Targets-release.cmake")
         assert "find_dependency(ZLIB REQUIRED CONFIG)" in cmake
         assert "add_library(openssl::crypto STATIC IMPORTED)" in cmake
-        assert "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-               '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+        assert (
+            "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+            '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+        )
 
         # checking MSBuildDeps
         zlib_ng_props = c.load("app/conan_zlib-ng.props")
         assert 'Project="conan_zlib-ng_release_x64.props"' in zlib_ng_props
 
         props = c.load("app/conan_openssl_crypto_release_x64.props")
-        assert "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\"" \
-               " Project=\"conan_zlib-ng.props\"/>" in props
+        assert (
+            "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\""
+            ' Project="conan_zlib-ng.props"/>' in props
+        )
 
     @pytest.mark.parametrize("diamond", [True, False])
     @pytest.mark.parametrize("explicit_requires", [True, False])
@@ -595,10 +678,14 @@ class TestReplaceRequiresTransitiveGenerators:
             [replace_requires]
             zlib/0.1: zlib-ng/0.1
             """)
-        c.save({"zlibng/conanfile.py": zlib_ng,
+        c.save(
+            {
+                "zlibng/conanfile.py": zlib_ng,
                 "openssl/conanfile.py": openssl,
                 "app/conanfile.py": conanfile,
-                "profile": profile})
+                "profile": profile,
+            }
+        )
 
         c.run("create zlibng")
         c.run("create openssl -pr=profile")
@@ -606,11 +693,11 @@ class TestReplaceRequiresTransitiveGenerators:
         assert "zlib/0.1: zlib-ng/0.1" in c.out
 
         pc_content = c.load("app/zlib-ng.pc")
-        assert 'Requires: ZLIB' in pc_content
+        assert "Requires: ZLIB" in pc_content
         pc_content = c.load("app/ZLIB.pc")
         assert 'Libs: -L"${libdir}" -lzlib' in pc_content
         pc_content = c.load("app/openssl.pc")
-        assert 'Requires: zlib-ng' in pc_content
+        assert "Requires: zlib-ng" in pc_content
 
         cmake = c.load("app/ZLIB-Targets-release.cmake")
         assert "add_library(ZLIB::ZLIB STATIC IMPORTED)" in cmake
@@ -619,17 +706,23 @@ class TestReplaceRequiresTransitiveGenerators:
         assert "find_dependency(ZLIB REQUIRED CONFIG)" in cmake
         assert "add_library(openssl::openssl STATIC IMPORTED)" in cmake
         # It should access the generic zlib-ng target
-        assert "set_property(TARGET openssl::openssl APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-               '             "$<$<CONFIG:RELEASE>:zlib-ng::zlib-ng>")' in cmake
+        assert (
+            "set_property(TARGET openssl::openssl APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+            '             "$<$<CONFIG:RELEASE>:zlib-ng::zlib-ng>")' in cmake
+        )
 
         # checking MSBuildDeps
         zlib_ng_props = c.load("app/conan_zlib-ng.props")
-        assert "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\" " \
-               "Project=\"conan_zlib-ng_myzlib.props\"/" in zlib_ng_props
+        assert (
+            "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\" "
+            'Project="conan_zlib-ng_myzlib.props"/' in zlib_ng_props
+        )
 
         props = c.load("app/conan_openssl_release_x64.props")
-        assert "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\"" \
-               " Project=\"conan_zlib-ng.props\"/>" in props
+        assert (
+            "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\""
+            ' Project="conan_zlib-ng.props"/>' in props
+        )
 
     @pytest.mark.parametrize("diamond", [True, False])
     @pytest.mark.parametrize("package_requires", [False, True])
@@ -685,10 +778,14 @@ class TestReplaceRequiresTransitiveGenerators:
             [replace_requires]
             zlib/0.1: zlib-ng/0.1
             """)
-        c.save({"zlibng/conanfile.py": zlib_ng,
+        c.save(
+            {
+                "zlibng/conanfile.py": zlib_ng,
                 "openssl/conanfile.py": openssl,
                 "app/conanfile.py": conanfile,
-                "profile": profile})
+                "profile": profile,
+            }
+        )
 
         c.run("create zlibng")
         c.run("create openssl -pr=profile")
@@ -696,11 +793,11 @@ class TestReplaceRequiresTransitiveGenerators:
         assert "zlib/0.1: zlib-ng/0.1" in c.out
 
         pc_content = c.load("app/zlib-ng.pc")
-        assert 'Requires: ZLIB' in pc_content
+        assert "Requires: ZLIB" in pc_content
         pc_content = c.load("app/ZLIB.pc")
         assert 'Libs: -L"${libdir}" -lzlib' in pc_content
         pc_content = c.load("app/openssl-crypto.pc")
-        assert f'Requires: {"zlib-ng" if package_requires else "ZLIB"}' in pc_content
+        assert f"Requires: {'zlib-ng' if package_requires else 'ZLIB'}" in pc_content
 
         cmake = c.load("app/ZLIB-Targets-release.cmake")
         assert "add_library(ZLIB::ZLIB STATIC IMPORTED)" in cmake
@@ -710,21 +807,31 @@ class TestReplaceRequiresTransitiveGenerators:
         assert "add_library(openssl::crypto STATIC IMPORTED)" in cmake
         if package_requires:
             # The generic package requirement uses the package name zlib-ng
-            assert "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-                   '             "$<$<CONFIG:RELEASE>:zlib-ng::zlib-ng>")' in cmake
+            assert (
+                "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+                '             "$<$<CONFIG:RELEASE>:zlib-ng::zlib-ng>")' in cmake
+            )
         else:
-            assert "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n" \
-                   '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+            assert (
+                "set_property(TARGET openssl::crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES\n"
+                '             "$<$<CONFIG:RELEASE>:ZLIB::ZLIB>")' in cmake
+            )
 
         # checking MSBuildDeps
         zlib_ng_props = c.load("app/conan_zlib-ng.props")
-        assert "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\" " \
-               "Project=\"conan_zlib-ng_myzlib.props\"/" in zlib_ng_props
+        assert (
+            "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\" "
+            'Project="conan_zlib-ng_myzlib.props"/' in zlib_ng_props
+        )
 
         props = c.load("app/conan_openssl_crypto_release_x64.props")
         if package_requires:
-            assert "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\"" \
-                   " Project=\"conan_zlib-ng.props\"/>" in props
+            assert (
+                "<Import Condition=\"'$(conan_zlib-ng_props_imported)' != 'True'\""
+                ' Project="conan_zlib-ng.props"/>' in props
+            )
         else:
-            assert "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\"" \
-                   " Project=\"conan_zlib-ng_myzlib.props\"/>" in props
+            assert (
+                "<Import Condition=\"'$(conan_zlib-ng_myzlib_props_imported)' != 'True'\""
+                ' Project="conan_zlib-ng_myzlib.props"/>' in props
+            )

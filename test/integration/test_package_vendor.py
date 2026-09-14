@@ -24,10 +24,14 @@ def test_package_vendor():
                 save(self, os.path.join(self.package_folder, "app.exe"), "app")
             """)
 
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "0.1").with_package_type("shared-library")
-                                                            .with_package_file("pkga.dll", "dll"),
-            "app/conanfile.py": app
-            })
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "0.1")
+            .with_package_type("shared-library")
+            .with_package_file("pkga.dll", "dll"),
+            "app/conanfile.py": app,
+        }
+    )
     c.run("create pkga")
     c.run("create app")  # -c tools.graph:vendor=build will be automatic
     assert "app/0.1: package(): Packaged 1 '.dll' file: pkga.dll" in c.out
@@ -42,8 +46,13 @@ def test_package_vendor():
     assert c.load("full_deploy/host/app/0.1/pkga.dll") == "dll"
 
     # we can create a modified pkga
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "0.1").with_package_type("shared-library")
-           .with_package_file("pkga.dll", "newdll")})
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "0.1")
+            .with_package_type("shared-library")
+            .with_package_file("pkga.dll", "newdll")
+        }
+    )
     c.run("create pkga")
     # still using the re-packaged one
     c.run("install --requires=app/0.1 --deployer=full_deploy")
@@ -52,27 +61,35 @@ def test_package_vendor():
     assert c.load("full_deploy/host/app/0.1/pkga.dll") == "dll"
 
     # but we can force the expansion, still not the rebuild
-    c.run("install --requires=app/0.1 --deployer=full_deploy -c tools.graph:vendor=build")
+    c.run(
+        "install --requires=app/0.1 --deployer=full_deploy -c tools.graph:vendor=build"
+    )
     assert "pkga" in c.out
     assert c.load("full_deploy/host/app/0.1/app.exe") == "app"
     assert c.load("full_deploy/host/app/0.1/pkga.dll") == "dll"
 
     # and finally we can force the expansion and the rebuild
-    c.run("install --requires=app/0.1 --build=app* --deployer=full_deploy "
-          "-c tools.graph:vendor=build")
+    c.run(
+        "install --requires=app/0.1 --build=app* --deployer=full_deploy "
+        "-c tools.graph:vendor=build"
+    )
     assert "pkga" in c.out
     assert c.load("full_deploy/host/app/0.1/app.exe") == "app"
     assert c.load("full_deploy/host/app/0.1/pkga.dll") == "newdll"
     # This shoulnd't happen, no visibility over transitive dependencies of app
-    assert not os.path.exists(os.path.join(c.current_folder, "full_deploy", "host", "pkga"))
+    assert not os.path.exists(
+        os.path.join(c.current_folder, "full_deploy", "host", "pkga")
+    )
 
     # lets remove the binary
     c.run("remove app:* -c")
     c.run("install --requires=app/0.1", assert_error=True)
     assert "Missing binary" in c.out
     c.run("install --requires=app/0.1 --build=missing", assert_error=True)
-    assert "app/0.1: Invalid: The package 'app/0.1' is a vendoring one, needs to be built " \
-           "from source, but it didn't enable 'tools.graph:vendor=build'" in c.out
+    assert (
+        "app/0.1: Invalid: The package 'app/0.1' is a vendoring one, needs to be built "
+        "from source, but it didn't enable 'tools.graph:vendor=build'" in c.out
+    )
 
     c.run("install --requires=app/0.1 --build=missing  -c tools.graph:vendor=build")
     assert "pkga" in c.out  # it works
@@ -101,12 +118,17 @@ def test_package_vendor_editable():
                 save(self, os.path.join(self.build_folder, "pkgb.dll"), "dll")
             """)
 
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "0.1").with_package_type("shared-library")
-                                                            .with_package_file("bin/pkga.dll", "d"),
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "0.1")
+            .with_package_type("shared-library")
+            .with_package_file("bin/pkga.dll", "d"),
             "pkgb/conanfile.py": pkgb,
-            "app/conanfile.py": GenConanfile("app", "0.1").with_settings("os")
-                                                          .with_requires("pkgb/0.1")
-            })
+            "app/conanfile.py": GenConanfile("app", "0.1")
+            .with_settings("os")
+            .with_requires("pkgb/0.1"),
+        }
+    )
     c.run("create pkga")
     c.run("editable add pkgb")
     c.run("install app -s os=Linux --build=editable")
@@ -121,23 +143,44 @@ def test_package_vendor_editable():
 
 def test_vendor_dont_propagate_options():
     c = TestClient()
-    app = GenConanfile("app", "0.1").with_requires("pkga/0.1").with_class_attribute("vendor=True")
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "0.1").with_shared_option(False),
+    app = (
+        GenConanfile("app", "0.1")
+        .with_requires("pkga/0.1")
+        .with_class_attribute("vendor=True")
+    )
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "0.1").with_shared_option(False),
             "app/conanfile.py": app,
             "consumer/conanfile.txt": "[requires]\napp/0.1",
-            "consumer_shared/conanfile.txt": "[requires]\napp/0.1\n[options]\n*:shared=True"
-            })
+            "consumer_shared/conanfile.txt": "[requires]\napp/0.1\n[options]\n*:shared=True",
+        }
+    )
     c.run("create pkga")
-    c.assert_listed_binary({"pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Build")})
+    c.assert_listed_binary(
+        {"pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Build")}
+    )
     c.run("create app")
-    c.assert_listed_binary({"pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
-                            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build")})
+    c.assert_listed_binary(
+        {
+            "pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
+            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build"),
+        }
+    )
     c.run("install consumer --build=app/* -c tools.graph:vendor=build")
-    c.assert_listed_binary({"pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
-                            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build")})
+    c.assert_listed_binary(
+        {
+            "pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
+            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build"),
+        }
+    )
     c.run("install consumer_shared --build=app/* -c tools.graph:vendor=build")
-    c.assert_listed_binary({"pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
-                            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build")})
+    c.assert_listed_binary(
+        {
+            "pkga/0.1": ("55c609fe8808aa5308134cb5989d23d3caffccf2", "Cache"),
+            "app/0.1": ("da39a3ee5e6b4b0d3255bfef95601890afd80709", "Build"),
+        }
+    )
 
 
 def test_package_vendor_export_pkg():
@@ -159,15 +202,23 @@ def test_package_vendor_export_pkg():
                 save(self, os.path.join(self.package_folder, "app.exe"), "app")
             """)
 
-    c.save({"pkga/conanfile.py": GenConanfile("pkga", "0.1").with_package_type("shared-library")
-                                                            .with_package_file("pkga.dll", "dll"),
-            "app/conanfile.py": app
-            })
+    c.save(
+        {
+            "pkga/conanfile.py": GenConanfile("pkga", "0.1")
+            .with_package_type("shared-library")
+            .with_package_file("pkga.dll", "dll"),
+            "app/conanfile.py": app,
+        }
+    )
     c.run("create pkga")
     c.run("build app")  # -c tools.graph:vendor=build will be automatic
     c.run("export-pkg app")
-    assert "pkga/0.1" in c.out  # In the export-pkg process, dependencies are still needed
-    assert "conanfile.py (app/0.1): package(): Packaged 1 '.dll' file: pkga.dll" in c.out
+    assert (
+        "pkga/0.1" in c.out
+    )  # In the export-pkg process, dependencies are still needed
+    assert (
+        "conanfile.py (app/0.1): package(): Packaged 1 '.dll' file: pkga.dll" in c.out
+    )
 
     # we can safely remove pkga, once the package is created, it can work without deps
     c.run("remove pkg* -c")

@@ -21,10 +21,11 @@ DEFAULT_REVISION = "1234"
 
 
 class TestConanService:
-
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ref = RecipeReference.loads("openssl/2.0.3@lasote/testing#%s" % DEFAULT_REVISION)
+        self.ref = RecipeReference.loads(
+            "openssl/2.0.3@lasote/testing#%s" % DEFAULT_REVISION
+        )
 
         self.pref = PkgReference(self.ref, "123123123", DEFAULT_REVISION)
         self.tmp_dir = temp_folder()
@@ -43,15 +44,16 @@ class TestConanService:
         save_files(self.server_store.export(self.ref), files)
         self.server_store.update_last_revision(self.ref)
         manifest = FileTreeManifest.create(self.server_store.export(self.ref))
-        conan_digest_path = os.path.join(self.server_store.export(self.ref), CONAN_MANIFEST)
+        conan_digest_path = os.path.join(
+            self.server_store.export(self.ref), CONAN_MANIFEST
+        )
         save(conan_digest_path, repr(manifest))
 
         files = {"boost.lib": "", "boost2.lib": ""}
         save_files(self.server_store.package(self.pref), files)
 
     def test_search(self):
-        """ check the dict is returned by get_packages_info service
-        """
+        """check the dict is returned by get_packages_info service"""
         # Creating and saving conans, packages, and conans.vars
         ref2 = RecipeReference("openssl", "3.0", "lasote", "stable", DEFAULT_REVISION)
         ref3 = RecipeReference("Assimp", "1.10", "fenix", "stable", DEFAULT_REVISION)
@@ -78,8 +80,10 @@ class TestConanService:
         save_files(self.server_store.export(ref4), {"dummy.txt": "//"})
 
         info = self.search_service.search()
-        expected = [RecipeReference(r.name, r.version, r.user, r.channel, revision=None)
-                    for r in [ref3, ref4, self.ref, ref2]]
+        expected = [
+            RecipeReference(r.name, r.version, r.user, r.channel, revision=None)
+            for r in [ref3, ref4, self.ref, ref2]
+        ]
         assert expected == info
 
         info = self.search_service.search(pattern="Assimp*", ignorecase=False)
@@ -88,12 +92,14 @@ class TestConanService:
         assert info == [ref3_norev]
 
         info = self.search_service.search_packages(ref2)
-        assert info == {'12345587754': {'content': '\n[options]\n    use_Qt=False\n',
-                                                }}
+        assert info == {
+            "12345587754": {
+                "content": "\n[options]\n    use_Qt=False\n",
+            }
+        }
 
         info = self.search_service.search_packages(ref3)
-        assert info == {'77777777777': {'content': '\n[options]\n    use_Qt=True\n'}
-                                }
+        assert info == {"77777777777": {"content": "\n[options]\n    use_Qt=True\n"}}
 
     def test_remove(self):
         ref2 = RecipeReference("OpenCV", "3.0", "lasote", "stable", DEFAULT_REVISION)
@@ -117,4 +123,5 @@ class TestConanService:
         # Raise an exception
         with pytest.raises(NotFoundException):
             self.service.remove_recipe(
-                              RecipeReference("Fake", "1.0", "lasote", "stable"), "lasote")
+                RecipeReference("Fake", "1.0", "lasote", "stable"), "lasote"
+            )

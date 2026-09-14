@@ -35,4 +35,3 @@ def test_env_and_scope_none():
     ext = ".bat" if platform.system() == "Windows" else ".sh"
     assert "my_env_file" not in client.load(f"conanbuild{ext}")
     assert "my_env_file" not in client.load(f"conanrun{ext}")
-

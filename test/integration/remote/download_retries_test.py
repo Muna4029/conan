@@ -4,10 +4,11 @@ from conan.test.utils.tools import TestClient, TestServer, TestRequester
 
 
 class TestDownloadRetries:
-
     def test_recipe_download_retry(self):
         test_server = TestServer()
-        client = TestClient(servers={"default": test_server}, inputs=["admin", "password"])
+        client = TestClient(
+            servers={"default": test_server}, inputs=["admin", "password"]
+        )
 
         client.save({CONANFILE: GenConanfile()})
         client.run("create . --name=pkg --version=0.1 --user=lasote --channel=stable")
@@ -26,8 +27,11 @@ class TestDownloadRetries:
                     return Response(False, 200)
 
         # The buggy requester will cause a failure only downloading files, not in regular requests
-        client = TestClient(servers={"default": test_server}, inputs=["admin", "password"],
-                            requester_class=BuggyRequester)
+        client = TestClient(
+            servers={"default": test_server},
+            inputs=["admin", "password"],
+            requester_class=BuggyRequester,
+        )
         client.run("install --requires=pkg/0.1@lasote/stable", assert_error=True)
         assert str(client.out).count("Waiting 0 seconds to retry...") == 2
         assert str(client.out).count("Error 200 downloading") == 3

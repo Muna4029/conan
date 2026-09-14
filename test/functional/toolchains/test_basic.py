@@ -1,4 +1,3 @@
-import os
 import platform
 import textwrap
 import unittest
@@ -9,7 +8,6 @@ from conan.test.utils.tools import TestClient
 
 
 class BasicTest(unittest.TestCase):
-
     def test_basic(self):
         conanfile = textwrap.dedent("""
             from conan import ConanFile
@@ -38,9 +36,15 @@ class BasicTest(unittest.TestCase):
         client.save({"conanfile.py": conanfile})
         client.run("install .")
 
-        self.assertIn("conanfile.py: Generator 'CMakeToolchain' calling 'generate()'", client.out)
-        self.assertIn("conanfile.py: Generator 'MesonToolchain' calling 'generate()'", client.out)
-        self.assertIn("conanfile.py: Generator 'CMakeDeps' calling 'generate()'", client.out)
+        self.assertIn(
+            "conanfile.py: Generator 'CMakeToolchain' calling 'generate()'", client.out
+        )
+        self.assertIn(
+            "conanfile.py: Generator 'MesonToolchain' calling 'generate()'", client.out
+        )
+        self.assertIn(
+            "conanfile.py: Generator 'CMakeDeps' calling 'generate()'", client.out
+        )
         toolchain = client.load("conan_toolchain.cmake")
         self.assertIn("Conan automatically generated toolchain file", toolchain)
         toolchain = client.load("conan_meson_native.ini")
@@ -59,7 +63,10 @@ class BasicTest(unittest.TestCase):
         client.save({"conanfile.py": conanfile})
         client.run("install .")
 
-        self.assertIn("conanfile.py: Generator 'MSBuildToolchain' calling 'generate()'", client.out)
+        self.assertIn(
+            "conanfile.py: Generator 'MSBuildToolchain' calling 'generate()'",
+            client.out,
+        )
         toolchain = client.load("conantoolchain.props")
         self.assertIn("<?xml version", toolchain)
 
@@ -72,8 +79,10 @@ class BasicTest(unittest.TestCase):
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("install .", assert_error=True)
-        self.assertIn("Error in generator 'MSBuildToolchain': 'settings.build_type' doesn't exist",
-                      client.out)
+        self.assertIn(
+            "Error in generator 'MSBuildToolchain': 'settings.build_type' doesn't exist",
+            client.out,
+        )
 
     def test_error_missing_settings_method(self):
         conanfile = textwrap.dedent("""
@@ -87,7 +96,9 @@ class BasicTest(unittest.TestCase):
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("install .", assert_error=True)
-        self.assertIn("ERROR: conanfile.py: Error in generate() method, line 6", client.out)
+        self.assertIn(
+            "ERROR: conanfile.py: Error in generate() method, line 6", client.out
+        )
 
     def test_declarative_new_helper(self):
         conanfile = textwrap.dedent("""
@@ -102,7 +113,7 @@ class BasicTest(unittest.TestCase):
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("build .", assert_error=True)  # No CMakeLists.txt
-        self.assertIn('-DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake"',  client.out)
+        self.assertIn('-DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake"', client.out)
         self.assertIn("ERROR: conanfile.py: Error in build() method", client.out)
 
     @pytest.mark.tool("visual_studio")
@@ -125,9 +136,13 @@ class BasicTest(unittest.TestCase):
 
         client.save({"conanfile.py": conanfile})
 
-        client.run('install . -s os=Windows -s compiler=msvc -s compiler.version=191'
-                   ' -s compiler.runtime=dynamic')
+        client.run(
+            "install . -s os=Windows -s compiler=msvc -s compiler.version=191"
+            " -s compiler.runtime=dynamic"
+        )
 
         conan_toolchain_props = client.load("conantoolchain.props")
         self.assertIn("<ConanPackageName>Pkg</ConanPackageName>", conan_toolchain_props)
-        self.assertIn("<ConanPackageVersion>0.1</ConanPackageVersion>", conan_toolchain_props)
+        self.assertIn(
+            "<ConanPackageVersion>0.1</ConanPackageVersion>", conan_toolchain_props
+        )

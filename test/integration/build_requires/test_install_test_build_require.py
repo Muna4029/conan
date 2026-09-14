@@ -46,9 +46,13 @@ def client():
             """)
 
     client = TestClient()
-    client.save({"tool/conanfile.py": GenConanfile(),
-                 "cmake/conanfile.py": cmake,
-                 "openssl/conanfile.py": openssl})
+    client.save(
+        {
+            "tool/conanfile.py": GenConanfile(),
+            "cmake/conanfile.py": cmake,
+            "openssl/conanfile.py": openssl,
+        }
+    )
 
     client.run("create tool --name=tool --version=1.0")
     client.run("create openssl --name=openssl --version=1.0")
@@ -77,7 +81,11 @@ def test_build_require_test_package(build_profile, client):
 
     # Test with extra build_requires to check it doesn't interfere or get deleted
     client.save({"cmake/test_package/conanfile.py": test_cmake})
-    client.run("create cmake --name=mycmake --version=1.0 {} --build=missing".format(build_profile))
+    client.run(
+        "create cmake --name=mycmake --version=1.0 {} --build=missing".format(
+            build_profile
+        )
+    )
 
     def check(out):
         system = {"Darwin": "Macos"}.get(platform.system(), platform.system())
@@ -114,7 +122,9 @@ def test_both_types(client):
     # Test with extra build_requires to check it doesn't interfere or get deleted
     client.save({"cmake/test_package/conanfile.py": test_cmake})
     # This must use the build-host contexts to have same dep in different contexts
-    client.run("create cmake --name=mycmake --version=1.0 -pr:b=default --build=missing")
+    client.run(
+        "create cmake --name=mycmake --version=1.0 -pr:b=default --build=missing"
+    )
 
     def check(out):
         system = {"Darwin": "Macos"}.get(platform.system(), platform.system())
@@ -140,9 +150,12 @@ def test_create_build_requires():
                 self.output.info("MYTARGET={}!!!".format(self.settings_target.os))
         """)
     client.save({"conanfile.py": conanfile})
-    client.run("create . --name=br --version=0.1  --build-require -s:h os=Linux -s:b os=Windows")
-    client.assert_listed_binary({"br/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build")},
-                                build=True)
+    client.run(
+        "create . --name=br --version=0.1  --build-require -s:h os=Linux -s:b os=Windows"
+    )
+    client.assert_listed_binary(
+        {"br/0.1": ("ebec3dc6d7f6b907b3ada0c3d3cdc83613a2b715", "Build")}, build=True
+    )
     assert "br/0.1: MYOS=Windows!!!" in client.out
     assert "br/0.1: MYTARGET=Linux!!!" in client.out
     assert "br/0.1: MYOS=Linux!!!" not in client.out
@@ -152,7 +165,9 @@ def test_build_require_conanfile_text(client):
     client.save({"conanfile.txt": "[tool_requires]\nmycmake/1.0"}, clean_first=True)
     client.run("install . -g VirtualBuildEnv")
     ext = ".bat" if platform.system() == "Windows" else ".sh"
-    cmd = environment_wrap_command(ConanFileMock(),"conanbuild", client.current_folder, f"mycmake{ext}")
+    cmd = environment_wrap_command(
+        ConanFileMock(), "conanbuild", client.current_folder, f"mycmake{ext}"
+    )
     client.run_command(cmd)
     system = {"Darwin": "Macos"}.get(platform.system(), platform.system())
     assert "MYCMAKE={}!!".format(system) in client.out
@@ -162,7 +177,9 @@ def test_build_require_conanfile_text(client):
 def test_build_require_command_line_build_context(client):
     client.run("install --tool-requires=mycmake/1.0@ -g VirtualBuildEnv -pr:b=default")
     ext = ".bat" if platform.system() == "Windows" else ".sh"
-    cmd = environment_wrap_command(ConanFileMock(),"conanbuild", client.current_folder, f"mycmake{ext}")
+    cmd = environment_wrap_command(
+        ConanFileMock(), "conanbuild", client.current_folder, f"mycmake{ext}"
+    )
     client.run_command(cmd)
     system = {"Darwin": "Macos"}.get(platform.system(), platform.system())
     assert "MYCMAKE={}!!".format(system) in client.out
@@ -175,14 +192,15 @@ def test_install_multiple_tool_requires_cli():
     c.run("create . --name=zlib --version=1.1")
     c.run("create . --name=cmake --version=0.1")
     c.run("create . --name=gcc --version=0.2")
-    c.run("install --tool-requires=cmake/0.1 --tool-requires=gcc/0.2 --requires=zlib/1.1")
+    c.run(
+        "install --tool-requires=cmake/0.1 --tool-requires=gcc/0.2 --requires=zlib/1.1"
+    )
     c.assert_listed_require({"cmake/0.1": "Cache", "gcc/0.2": "Cache"}, build=True)
     c.assert_listed_require({"zlib/1.1": "Cache"})
 
 
 def test_bootstrap_other_architecture():
-    """ this is the case of libraries as ICU, that needs itself for cross-compiling
-    """
+    """this is the case of libraries as ICU, that needs itself for cross-compiling"""
     c = TestClient()
     conanfile = textwrap.dedent("""
         from conan import ConanFile
@@ -214,8 +232,11 @@ def test_bootstrap_other_architecture():
     c.assert_listed_binary({"tool/1.0": (linux_pkg_id, "Build")})
     c.assert_listed_binary({"tool/1.0": (win_pkg_id, "Build")}, build=True)
 
-    c.run("graph build-order --requires=tool/1.0 -s:b os=Windows -s:h os=Linux --build=* "
-          "--format=json", redirect_stdout="o.json")
+    c.run(
+        "graph build-order --requires=tool/1.0 -s:b os=Windows -s:h os=Linux --build=* "
+        "--format=json",
+        redirect_stdout="o.json",
+    )
     order = json.loads(c.load("o.json"))
     package1 = order[0][0]["packages"][0][0]
     package2 = order[0][0]["packages"][1][0]
@@ -242,18 +263,20 @@ def test_bootstrap_cc():
         """)
     foo = GenConanfile("foo", "1.0").with_tool_requirement("cc/1.0")
     c = TestClient()
-    c.save({"cc/conanfile.py": cc,
-            "foo/conanfile.py": foo})
+    c.save({"cc/conanfile.py": cc, "foo/conanfile.py": foo})
     c.run("create cc --build-require")
     # Both are build-requires
-    c.assert_listed_binary({"cc/1.0": ("826727aac60b5956d1df5121a3921f26a6984f15", "Build")},
-                           build=True)
-    c.assert_listed_binary({"cc/1.0": ("96ae1d965ce6f2e2256ac0cfc3a35dcd4860c389", "Build")},
-                           build=True)
+    c.assert_listed_binary(
+        {"cc/1.0": ("826727aac60b5956d1df5121a3921f26a6984f15", "Build")}, build=True
+    )
+    c.assert_listed_binary(
+        {"cc/1.0": ("96ae1d965ce6f2e2256ac0cfc3a35dcd4860c389", "Build")}, build=True
+    )
     # This works fine, being able to build the 2 different binaries both bootstrapped and not
     c.run("list cc/1.0:*")
     assert "bootstrap: False" in c.out
     assert "bootstrap: True" in c.out
     c.run("create foo")
-    c.assert_listed_binary({"cc/1.0": ("96ae1d965ce6f2e2256ac0cfc3a35dcd4860c389", "Cache")},
-                           build=True)
+    c.assert_listed_binary(
+        {"cc/1.0": ("96ae1d965ce6f2e2256ac0cfc3a35dcd4860c389", "Cache")}, build=True
+    )

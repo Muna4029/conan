@@ -44,8 +44,14 @@ def test_offline_build_requires():
     - prepopulate the cache with all tool-requires with `-c:a tools.graph:skip_binaries=False`
     """
     c = TestClient(default_server_user=True)
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1"),
-            "lib/conanfile.py": GenConanfile("pkg", "0.1").with_tool_requires("tool/0.1")})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1"),
+            "lib/conanfile.py": GenConanfile("pkg", "0.1").with_tool_requires(
+                "tool/0.1"
+            ),
+        }
+    )
     c.run("create tool")
     c.run("create lib")
     c.run("upload * -r=default -c")
@@ -54,16 +60,18 @@ def test_offline_build_requires():
     assert "Install finished successfully" in c.out
 
     class MyHttpRequester(TestRequester):
-
         def get(self, _, **kwargs):
             from requests.exceptions import ConnectionError
+
             raise ConnectionError("ALL BAD")
 
     c.requester_class = MyHttpRequester
     # this will fail
     c.run("install --requires=pkg/0.1", assert_error=True)
-    assert "ERROR: Failed checking for binary 'tool/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709'" \
-           in c.out
+    assert (
+        "ERROR: Failed checking for binary 'tool/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709'"
+        in c.out
+    )
     # Explicitly telling that no-remotes, works
     c.run("install --requires=pkg/0.1 -nr")
     assert "tool/0.1: WARN" not in c.out
@@ -71,8 +79,10 @@ def test_offline_build_requires():
 
     # graph info also breaks
     c.run("graph info --requires=pkg/0.1", assert_error=True)
-    assert "ERROR: Failed checking for binary 'tool/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709'" \
-           in c.out
+    assert (
+        "ERROR: Failed checking for binary 'tool/0.1:da39a3ee5e6b4b0d3255bfef95601890afd80709'"
+        in c.out
+    )
 
     c.run("graph info --requires=pkg/0.1 -nr")
     assert "tool/0.1: WARN" not in c.out

@@ -36,13 +36,17 @@ conanfile_py = textwrap.dedent("""
 
 
 @pytest.mark.skipif(platform.system() != "Darwin", reason="Only OSX")
-@pytest.mark.parametrize("config", [("x86_64", "Macos", "10.14", None),
-                                    ("armv8", "iOS", "10.0", "iphoneos"),
-                                    ("armv7", "iOS", "10.0", "iphoneos"),
-                                    ("x86", "iOS", "10.0", "iphonesimulator"),
-                                    ("x86_64", "iOS", "10.0", "iphonesimulator"),
-                                    ("armv8", "Macos", "10.14", None)  # M1
-                                    ])
+@pytest.mark.parametrize(
+    "config",
+    [
+        ("x86_64", "Macos", "10.14", None),
+        ("armv8", "iOS", "10.0", "iphoneos"),
+        ("armv7", "iOS", "10.0", "iphoneos"),
+        ("x86", "iOS", "10.0", "iphonesimulator"),
+        ("x86_64", "iOS", "10.0", "iphonesimulator"),
+        ("armv8", "Macos", "10.14", None),  # M1
+    ],
+)
 def test_makefile_arch(config):
     arch, os_, os_version, os_sdk = config
 
@@ -53,20 +57,28 @@ def test_makefile_arch(config):
                 {os_sdk}
                 os.version = {os_version}
                 arch = {arch}
-                """).format(os=os_, arch=arch,
-                            os_version=os_version, os_sdk="os.sdk = " + os_sdk if os_sdk else "")
+                """).format(
+        os=os_,
+        arch=arch,
+        os_version=os_version,
+        os_sdk="os.sdk = " + os_sdk if os_sdk else "",
+    )
 
     t = TestClient()
     hello_h = gen_function_h(name="hello")
     hello_cpp = gen_function_cpp(name="hello")
     main_cpp = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
 
-    t.save({"Makefile": makefile,
+    t.save(
+        {
+            "Makefile": makefile,
             "hello.h": hello_h,
             "hello.cpp": hello_cpp,
             "app.cpp": main_cpp,
             "conanfile.py": conanfile_py,
-            "profile": profile})
+            "profile": profile,
+        }
+    )
 
     t.run("install . --profile:host=profile --profile:build=default")
     t.run("build . --profile:host=profile --profile:build=default")
@@ -118,12 +130,16 @@ def test_catalyst(arch):
         }
         """)
 
-    t.save({"Makefile": makefile,
+    t.save(
+        {
+            "Makefile": makefile,
             "hello.h": hello_h,
             "hello.cpp": hello_cpp,
             "app.cpp": main_cpp,
             "conanfile.py": conanfile_py,
-            "profile": profile})
+            "profile": profile,
+        }
+    )
 
     t.run("install . --profile:host=profile --profile:build=default")
     t.run("build . --profile:host=profile --profile:build=default")
@@ -141,6 +157,6 @@ def test_catalyst(arch):
     t.run_command('lipo -info "%s"' % app)
     assert "architecture: %s" % expected_arch in t.out
 
-    #FIXME: recover when ci is fixed for M2
-    #t.run_command('"%s"' % app)
-    #assert "running catalyst 160100" in t.out
+    # FIXME: recover when ci is fixed for M2
+    # t.run_command('"%s"' % app)
+    # assert "running catalyst 160100" in t.out

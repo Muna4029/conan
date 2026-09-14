@@ -25,8 +25,7 @@ def test_print_in_conanfile():
                 print("Hello world!!")
                 other.myprint("Bye world!!")
         """)
-    c.save({"other.py": other,
-            "conanfile.py": conanfile})
+    c.save({"other.py": other, "conanfile.py": conanfile})
     c.run("install . --format=json")
     assert "Hello world!!" in c.stderr
     assert "Bye world!!" in c.stderr

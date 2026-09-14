@@ -9,7 +9,6 @@ from conan.internal.util.files import load, save
 
 
 class TestRecipeMetadataLogs:
-
     conanfile = textwrap.dedent("""
         import os
         from conan import ConanFile
@@ -38,28 +37,38 @@ class TestRecipeMetadataLogs:
 
     def test_metadata_logs(self):
         c = TestClient(default_server_user=True)
-        c.save({"conanfile.py": self.conanfile,
-                "file.log": "log contents!"})
+        c.save({"conanfile.py": self.conanfile, "file.log": "log contents!"})
         c.run("create .")
         # Test local cache looks good
         ref = RecipeReference.loads("pkg/0.1")
         ref_layout = c.get_latest_ref_layout(ref)
         assert os.listdir(ref_layout.metadata()) == ["logs"]
-        assert set(os.listdir(os.path.join(ref_layout.metadata(), "logs"))) == {"file.log",
-                                                                                "src.log"}
-        assert load(os.path.join(ref_layout.metadata(), "logs", "file.log")) == "log contents!"
-        assert load(os.path.join(ref_layout.metadata(), "logs", "src.log")) == "srclog!!"
+        assert set(os.listdir(os.path.join(ref_layout.metadata(), "logs"))) == {
+            "file.log",
+            "src.log",
+        }
+        assert (
+            load(os.path.join(ref_layout.metadata(), "logs", "file.log"))
+            == "log contents!"
+        )
+        assert (
+            load(os.path.join(ref_layout.metadata(), "logs", "src.log")) == "srclog!!"
+        )
 
         pref = c.get_latest_package_reference(ref)
         pref_layout = c.get_latest_pkg_layout(pref)
         assert os.listdir(pref_layout.metadata()) == ["logs"]
-        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == ["mylogs.txt"]
-        assert load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt")) == "some logs!!!"
+        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == [
+            "mylogs.txt"
+        ]
+        assert (
+            load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt"))
+            == "some logs!!!"
+        )
 
     def test_metadata_logs_local(self):
         c = TestClient(default_server_user=True)
-        c.save({"conanfile.py": self.conanfile,
-                "file.log": "log contents!"})
+        c.save({"conanfile.py": self.conanfile, "file.log": "log contents!"})
         c.run("source .")
         assert c.load("metadata/logs/src.log") == "srclog!!"
         c.run("build .")
@@ -67,8 +76,7 @@ class TestRecipeMetadataLogs:
 
     def test_download_pkg_list_from_graph(self):
         c = TestClient(default_server_user=True)
-        c.save({"conanfile.py": self.conanfile,
-                "file.log": "log contents!"})
+        c.save({"conanfile.py": self.conanfile, "file.log": "log contents!"})
         c.run("create .")
         c.run("upload * -r=default -c")
         c.run("remove * -c")
@@ -83,11 +91,16 @@ class TestRecipeMetadataLogs:
         pref = c.get_latest_package_reference(ref)
         pref_layout = c.get_latest_pkg_layout(pref)
         assert os.listdir(pref_layout.metadata()) == ["logs"]
-        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == ["mylogs.txt"]
-        assert load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt")) == "some logs!!!"
+        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == [
+            "mylogs.txt"
+        ]
+        assert (
+            load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt"))
+            == "some logs!!!"
+        )
 
     def test_metadata_folder_exist(self):
-        """ make sure the folders exists
+        """make sure the folders exists
         so recipe don't have to create it for running bulk copies calling self.run(cp -R)
         """
         conanfile = textwrap.dedent("""
@@ -117,7 +130,6 @@ class TestRecipeMetadataLogs:
 
 
 class TestHooksMetadataLogs:
-
     @pytest.fixture()
     def _client(self):
         c = TestClient(default_server_user=True)
@@ -162,8 +174,7 @@ class TestHooksMetadataLogs:
                 def build(self):
                     save(self, "logs/mylogs.txt", "some logs!!!")
             """)
-        c.save({"conanfile.py": conanfile,
-                "file.log": "log contents!"})
+        c.save({"conanfile.py": conanfile, "file.log": "log contents!"})
         return c
 
     def test_metadata_logs_hook(self, _client):
@@ -173,16 +184,28 @@ class TestHooksMetadataLogs:
         ref = RecipeReference.loads("pkg/0.1")
         ref_layout = c.get_latest_ref_layout(ref)
         assert os.listdir(ref_layout.metadata()) == ["logs"]
-        assert set(os.listdir(os.path.join(ref_layout.metadata(), "logs"))) == {"file.log",
-                                                                                "src.log"}
-        assert load(os.path.join(ref_layout.metadata(), "logs", "file.log")) == "log contents!"
-        assert load(os.path.join(ref_layout.metadata(), "logs", "src.log")) == "srclog!!"
+        assert set(os.listdir(os.path.join(ref_layout.metadata(), "logs"))) == {
+            "file.log",
+            "src.log",
+        }
+        assert (
+            load(os.path.join(ref_layout.metadata(), "logs", "file.log"))
+            == "log contents!"
+        )
+        assert (
+            load(os.path.join(ref_layout.metadata(), "logs", "src.log")) == "srclog!!"
+        )
 
         pref = c.get_latest_package_reference(ref)
         pref_layout = c.get_latest_pkg_layout(pref)
         assert os.listdir(pref_layout.metadata()) == ["logs"]
-        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == ["mylogs.txt"]
-        assert load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt")) == "some logs!!!"
+        assert os.listdir(os.path.join(pref_layout.metadata(), "logs")) == [
+            "mylogs.txt"
+        ]
+        assert (
+            load(os.path.join(pref_layout.metadata(), "logs", "mylogs.txt"))
+            == "some logs!!!"
+        )
 
     def test_metadata_logs_local(self, _client):
         c = _client
@@ -220,4 +243,7 @@ def test_metadata_export_pkg():
     pkg_layout = c.created_layout()
     assert os.listdir(pkg_layout.metadata()) == ["logs"]
     assert os.listdir(os.path.join(pkg_layout.metadata(), "logs")) == ["mylogs.txt"]
-    assert load(os.path.join(pkg_layout.metadata(), "logs", "mylogs.txt")) == "some logs!!!"
+    assert (
+        load(os.path.join(pkg_layout.metadata(), "logs", "mylogs.txt"))
+        == "some logs!!!"
+    )

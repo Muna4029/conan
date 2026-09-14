@@ -6,8 +6,8 @@ from conan.test.utils.tools import TestClient
 
 
 class TestErrorsProfilePlugin:
-    """ when the plugin fails, we want a clear message and a helpful trace
-    """
+    """when the plugin fails, we want a clear message and a helpful trace"""
+
     def test_error_profile_plugin(self):
         c = TestClient()
         profile_plugin = textwrap.dedent("""\
@@ -31,9 +31,13 @@ class TestErrorsProfilePlugin:
         # https://github.com/conan-io/conan/issues/17247
         c = TestClient()
         c.save({"conanfile.txt": ""})
-        c.run("install . -s compiler=clang -s compiler.version=19 -s compiler.cppstd=26")
+        c.run(
+            "install . -s compiler=clang -s compiler.version=19 -s compiler.cppstd=26"
+        )
         # doesn't fail anymore
-        c.run("install . -s compiler=apple-clang -s compiler.version=16 -s compiler.cppstd=26")
+        c.run(
+            "install . -s compiler=apple-clang -s compiler.version=16 -s compiler.cppstd=26"
+        )
         # doesn't fail anymore
         c.run("install . -s compiler=gcc -s compiler.version=14 -s compiler.cppstd=26")
         # doesn't fail anymore

@@ -50,8 +50,7 @@ def test_settings_definitions_compiler():
         compiler.version=192
         compiler.runtime=dynamic
         """)
-    c.save({"conanfile.py": conanfile,
-            "profile": profile})
+    c.save({"conanfile.py": conanfile, "profile": profile})
     # New settings are there
     c.run("install . -pr=profile -s:b compiler=gcc")
     assert "conanfile.py: HOST: 170, 180, 190, 191, 192" in c.out

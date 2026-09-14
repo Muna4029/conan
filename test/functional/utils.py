@@ -1,13 +1,20 @@
 from conan.tools.microsoft.visual import vcvars_command
 
 
-def check_vs_runtime(artifact, client, vs_version, build_type, architecture="amd64",
-                     static_runtime=False, subsystem=None):
+def check_vs_runtime(
+    artifact,
+    client,
+    vs_version,
+    build_type,
+    architecture="amd64",
+    static_runtime=False,
+    subsystem=None,
+):
     vcvars = vcvars_command(version=vs_version, architecture=architecture)
     normalized_path = artifact.replace("/", "\\")
     static = artifact.endswith(".a") or artifact.endswith(".lib")
     if not static:
-        cmd = ('%s && dumpbin /nologo /dependents "%s"' % (vcvars, normalized_path))
+        cmd = '%s && dumpbin /nologo /dependents "%s"' % (vcvars, normalized_path)
         client.run_command(cmd)
         if subsystem:
             assert "KERNEL32.dll" in client.out
@@ -68,15 +75,28 @@ def check_vs_runtime(artifact, client, vs_version, build_type, architecture="amd
             else:
                 raise NotImplementedError()
     else:  # A static library cannot be checked the same
-        client.run_command('{} && DUMPBIN /NOLOGO /DIRECTIVES "{}"'.format(vcvars, artifact))
+        client.run_command(
+            '{} && DUMPBIN /NOLOGO /DIRECTIVES "{}"'.format(vcvars, artifact)
+        )
         if build_type == "Debug":
             assert "RuntimeLibrary=MDd_DynamicDebug" in client.out
         else:
             assert "RuntimeLibrary=MD_DynamicRelease" in client.out
 
 
-def check_exe_run(output, names, compiler, version, build_type, arch, cppstd, definitions=None,
-                  cxx11_abi=None, subsystem=None, extra_msg=""):
+def check_exe_run(
+    output,
+    names,
+    compiler,
+    version,
+    build_type,
+    arch,
+    cppstd,
+    definitions=None,
+    cxx11_abi=None,
+    subsystem=None,
+    extra_msg="",
+):
     output = str(output)
     names = names if isinstance(names, list) else [names]
 
@@ -93,7 +113,9 @@ def check_exe_run(output, names, compiler, version, build_type, arch, cppstd, de
             elif arch == "armv8":
                 assert "{} _M_ARM64 defined".format(name) in output
             else:
-                assert arch is None, "checked don't know how to validate this architecture"
+                assert arch is None, (
+                    "checked don't know how to validate this architecture"
+                )
 
             if version:
                 assert "{} _MSC_VER{}".format(name, version) in output
@@ -118,7 +140,10 @@ def check_exe_run(output, names, compiler, version, build_type, arch, cppstd, de
                 assert "{} __apple_build_version__".format(name) in output
                 if version:
                     major, minor = version.split(".")[0:2]
-                    assert "{} __apple_build_version__{}{}".format(name, major, minor) in output
+                    assert (
+                        "{} __apple_build_version__{}{}".format(name, major, minor)
+                        in output
+                    )
             if arch == "x86":
                 assert "{} __i386__ defined".format(name) in output
             elif arch == "x86_64":
@@ -126,13 +151,17 @@ def check_exe_run(output, names, compiler, version, build_type, arch, cppstd, de
             elif arch == "armv8":
                 assert "{} __aarch64__ defined".format(name) in output
             else:
-                assert arch is None, "checked don't know how to validate this architecture"
+                assert arch is None, (
+                    "checked don't know how to validate this architecture"
+                )
 
             if cppstd:
-                cppstd_value = {"98": "199711",
-                                "11": "201103",
-                                "14": "201402",
-                                "17": "201703"}[cppstd]
+                cppstd_value = {
+                    "98": "199711",
+                    "11": "201103",
+                    "14": "201402",
+                    "17": "201703",
+                }[cppstd]
                 assert "{} __cplusplus{}".format(name, cppstd_value) in output
 
             if cxx11_abi is not None:

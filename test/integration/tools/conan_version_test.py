@@ -5,7 +5,6 @@ from conan import __version__
 
 
 def test_conan_version():
-
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan import conan_version

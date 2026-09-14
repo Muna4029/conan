@@ -1,11 +1,8 @@
-import pytest
-
 from conan.internal.model.info import _VersionRepr
 from conan.internal.model.version import Version
 
 
 class TestVersionRepr:
-
     def test_text(self):
         v1 = Version("master+build2")
         vr = _VersionRepr(v1)

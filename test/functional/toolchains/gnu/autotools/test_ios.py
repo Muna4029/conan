@@ -25,7 +25,7 @@ def test_ios():
     client = TestClient(path_with_spaces=False)
     client.save({"ios-armv8": profile}, clean_first=True)
     client.run("new cmake_lib -d name=hello -d version=0.1")
-    client.run("create . --profile:build=default --profile:host=ios-armv8 -tf=\"\"")
+    client.run('create . --profile:build=default --profile:host=ios-armv8 -tf=""')
 
     main = gen_function_cpp(name="main", includes=["hello"], calls=["hello"])
     makefile_am = gen_makefile_am(main="main", main_srcs="main.cpp")
@@ -52,11 +52,16 @@ def test_ios():
 
         """)
 
-    client.save({"conanfile.py": conanfile,
-                 "configure.ac": configure_ac,
-                 "Makefile.am": makefile_am,
-                 "main.cpp": main,
-                 "ios-armv8": profile}, clean_first=True)
+    client.save(
+        {
+            "conanfile.py": conanfile,
+            "configure.ac": configure_ac,
+            "Makefile.am": makefile_am,
+            "main.cpp": main,
+            "ios-armv8": profile,
+        },
+        clean_first=True,
+    )
     client.run("build . --profile:build=default --profile:host=ios-armv8")
     client.run_command("lipo -info main")
     assert "Non-fat file: main is architecture: arm64" in client.out
@@ -69,11 +74,16 @@ def test_ios():
     configure_args = conanbuild["configure_args"]
     make_args = conanbuild["make_args"]
     autoreconf_args = conanbuild["autoreconf_args"]
-    build_arch = client.api.profiles.get_profile([client.api.profiles.get_default_build()]).settings['arch']
+    build_arch = client.api.profiles.get_profile(
+        [client.api.profiles.get_default_build()]
+    ).settings["arch"]
     build_arch = "aarch64" if build_arch == "armv8" else build_arch
-    assert configure_args == "--prefix=/ '--bindir=${prefix}/bin' '--sbindir=${prefix}/bin' " \
-                             "'--libdir=${prefix}/lib' '--includedir=${prefix}/include' " \
-                             "'--oldincludedir=${prefix}/include' '--datarootdir=${prefix}/res' " \
-                             f"--host=aarch64-apple-ios --build={build_arch}-apple-darwin"
+    assert (
+        configure_args
+        == "--prefix=/ '--bindir=${prefix}/bin' '--sbindir=${prefix}/bin' "
+        "'--libdir=${prefix}/lib' '--includedir=${prefix}/include' "
+        "'--oldincludedir=${prefix}/include' '--datarootdir=${prefix}/res' "
+        f"--host=aarch64-apple-ios --build={build_arch}-apple-darwin"
+    )
     assert make_args == ""
     assert autoreconf_args == "--force --install"

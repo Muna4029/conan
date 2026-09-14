@@ -49,9 +49,9 @@ def test_cross_x86():
         """)
     main_cpp = gen_function_cpp(name="main")
     client = TestClient()
-    client.save({"conanfile.py": conanfile_py,
-                 "meson.build": meson_build,
-                 "main.cpp": main_cpp})
+    client.save(
+        {"conanfile.py": conanfile_py, "meson.build": meson_build, "main.cpp": main_cpp}
+    )
     client.run("install .")
     content = client.load("conan_meson_native.ini")
     assert "backend = 'vs'" in content

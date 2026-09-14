@@ -7,10 +7,9 @@ from conan.internal.util.files import remove, save
 
 
 class TestRemove:
-
     @pytest.fixture
     def setup_file(self):
-        file = os.path.join(temp_folder(), 'file.txt')
+        file = os.path.join(temp_folder(), "file.txt")
         save(file, "some content")
         return file
 
@@ -20,7 +19,7 @@ class TestRemove:
         assert os.path.exists(os.path.dirname(setup_file))
 
     def test_remove_readonly(self, setup_file):
-        os.chmod(setup_file, stat.S_IREAD|stat.S_IRGRP|stat.S_IROTH)
+        os.chmod(setup_file, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
         with pytest.raises((IOError, OSError)):
             save(setup_file, "change the content")
         remove(setup_file)

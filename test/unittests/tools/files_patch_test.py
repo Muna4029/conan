@@ -8,7 +8,7 @@ from conan.test.utils.test_files import temp_folder
 from conan.test.utils.tools import TestClient
 from conan.internal.util.files import save, load
 
-base_conanfile = '''
+base_conanfile = """
 from conan import ConanFile
 from conan.tools.files import patch, replace_in_file
 import os
@@ -16,33 +16,39 @@ import os
 class ConanFileToolsTest(ConanFile):
     name = "test"
     version = "1.9.10"
-'''
+"""
 
 
 class TestToolsFilesPatch:
-
     @pytest.mark.parametrize("strip", [0, 1])
     def test_patch_from_file(self, strip):
         if strip:
-            file_content = base_conanfile + '''
+            file_content = (
+                base_conanfile
+                + """
     def build(self):
         patch(self, patch_file="file.patch", strip=%s)
-''' % strip
-            patch_content = '''--- %s/text.txt\t2016-01-25 17:57:11.452848309 +0100
+"""
+                % strip
+            )
+            patch_content = """--- %s/text.txt\t2016-01-25 17:57:11.452848309 +0100
 +++ %s/text_new.txt\t2016-01-25 17:57:28.839869950 +0100
 @@ -1 +1 @@
 -ONE TWO THREE
-+ONE TWO FOUR''' % ("old_path", "new_path")
++ONE TWO FOUR""" % ("old_path", "new_path")
         else:
-            file_content = base_conanfile + '''
+            file_content = (
+                base_conanfile
+                + """
     def build(self):
         patch(self, patch_file="file.patch")
-'''
-            patch_content = '''--- text.txt\t2016-01-25 17:57:11.452848309 +0100
+"""
+            )
+            patch_content = """--- text.txt\t2016-01-25 17:57:11.452848309 +0100
 +++ text_new.txt\t2016-01-25 17:57:28.839869950 +0100
 @@ -1 +1 @@
 -ONE TWO THREE
-+ONE TWO FOUR'''
++ONE TWO FOUR"""
 
         tmp_dir, file_path, text_file = self._save_files(file_content)
         patch_file = os.path.join(tmp_dir, "file.patch")
@@ -50,7 +56,9 @@ class TestToolsFilesPatch:
         self._build_and_check(tmp_dir, file_path, text_file, "ONE TWO FOUR")
 
     def test_patch_from_str(self):
-        file_content = base_conanfile + '''
+        file_content = (
+            base_conanfile
+            + """
     def build(self):
         patch_content = \'''--- text.txt\t2016-01-25 17:57:11.452848309 +0100
 +++ text_new.txt\t2016-01-25 17:57:28.839869950 +0100
@@ -59,7 +67,8 @@ class TestToolsFilesPatch:
 +ONE TWO DOH!\'''
         patch(self, patch_string=patch_content)
 
-'''
+"""
+        )
         tmp_dir, file_path, text_file = self._save_files(file_content)
         self._build_and_check(tmp_dir, file_path, text_file, "ONE TWO DOH!")
 
@@ -77,8 +86,7 @@ class TestToolsFilesPatch:
             +New file!""")
 
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "example.patch": patch})
+        client.save({"conanfile.py": conanfile, "example.patch": patch})
         client.run("source .")
         assert client.load("newfile") == "New file!"
 
@@ -95,9 +103,13 @@ class TestToolsFilesPatch:
             @@ -0,1 +0,0 @@
             -legacy code""")
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "example.patch": patch,
-                     "oldfile": "legacy code"})
+        client.save(
+            {
+                "conanfile.py": conanfile,
+                "example.patch": patch,
+                "oldfile": "legacy code",
+            }
+        )
         path = os.path.join(client.current_folder, "oldfile")
         assert os.path.exists(path)
         client.run("source .")
@@ -116,16 +128,22 @@ class TestToolsFilesPatch:
             @@ -0,1 +0,0 @@
             -legacy code""")
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "example.patch": patch,
-                     "oldfile": "legacy code"})
+        client.save(
+            {
+                "conanfile.py": conanfile,
+                "example.patch": patch,
+                "oldfile": "legacy code",
+            }
+        )
         path = os.path.join(client.current_folder, "oldfile")
         assert os.path.exists(path)
         client.run("source .")
         assert not os.path.exists(path)
 
     def test_patch_new_delete(self):
-        conanfile = base_conanfile + '''
+        conanfile = (
+            base_conanfile
+            + '''
     def build(self):
         from conan.tools.files import load, save
         save(self, "oldfile", "legacy code")
@@ -145,14 +163,20 @@ class TestToolsFilesPatch:
         self.output.info("NEW FILE=%s" % load(self, "newfile"))
         self.output.info("OLD FILE=%s" % os.path.exists("oldfile"))
 '''
+        )
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("create . --user=user --channel=testing")
-        assert "test/1.9.10@user/testing: NEW FILE=New file!\nNew file!\nNew file!\n" in client.out
+        assert (
+            "test/1.9.10@user/testing: NEW FILE=New file!\nNew file!\nNew file!\n"
+            in client.out
+        )
         assert "test/1.9.10@user/testing: OLD FILE=False" in client.out
 
     def test_patch_new_strip(self):
-        conanfile = base_conanfile + '''
+        conanfile = (
+            base_conanfile
+            + '''
     def build(self):
         from conan.tools.files import load, save
         patch_content = """--- /dev/null
@@ -165,29 +189,38 @@ class TestToolsFilesPatch:
         patch(self, patch_string=patch_content, strip=1)
         self.output.info("NEW FILE=%s" % load(self, "newfile"))
 '''
+        )
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("create . --user=user --channel=testing")
-        assert "test/1.9.10@user/testing: NEW FILE=New file!\nNew file!\nNew file!\n" in client.out
+        assert (
+            "test/1.9.10@user/testing: NEW FILE=New file!\nNew file!\nNew file!\n"
+            in client.out
+        )
 
     def test_error_patch(self):
-        file_content = base_conanfile + '''
+        file_content = (
+            base_conanfile
+            + """
     def build(self):
         patch_content = "some corrupted patch"
         patch(self, patch_string=patch_content, output=self.output)
 
-'''
+"""
+        )
         client = TestClient()
         client.save({"conanfile.py": file_content})
         client.run("install .")
         client.run("build .", assert_error=True)
         assert "patch_ng: error: no patch data found!" in client.out
-        assert "ERROR: conanfile.py (test/1.9.10): Error in build() method, line 12" in client.out
+        assert (
+            "ERROR: conanfile.py (test/1.9.10): Error in build() method, line 12"
+            in client.out
+        )
         assert "Failed to parse patch: string" in client.out
 
     def test_add_new_file(self):
-        """ Validate issue #5320
-        """
+        """Validate issue #5320"""
 
         conanfile = dedent("""
             from conan import ConanFile
@@ -241,17 +274,23 @@ class TestToolsFilesPatch:
         """)
 
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "add_files.patch": patch,
-                     "bar.txt": bar})
+        client.save(
+            {"conanfile.py": conanfile, "add_files.patch": patch, "bar.txt": bar}
+        )
         client.run("install .")
         client.run("build .")
         bar_content = client.load("bar.txt")
-        assert dedent("""Yo no creo en brujas, pero que las hay, las hay
-                             """) in bar_content
+        assert (
+            dedent("""Yo no creo en brujas, pero que las hay, las hay
+                             """)
+            in bar_content
+        )
         foo_content = client.load("foo.txt")
-        assert dedent("""For us, there is no spring.
-Just the wind that smells fresh before the storm.""") in foo_content
+        assert (
+            dedent("""For us, there is no spring.
+Just the wind that smells fresh before the storm.""")
+            in foo_content
+        )
         assert "Calling build()" in client.out
         assert "Warning" not in client.out
 
@@ -309,9 +348,9 @@ Y
 V
 Z""")
         client = TestClient()
-        client.save({"conanfile.py": conanfile,
-                     "fuzzy.patch": patch,
-                     "Jamroot": source})
+        client.save(
+            {"conanfile.py": conanfile, "fuzzy.patch": patch, "Jamroot": source}
+        )
         client.run("install .")
         client.run("build .")
         content = client.load("Jamroot")

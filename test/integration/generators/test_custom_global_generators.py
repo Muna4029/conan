@@ -24,8 +24,7 @@ def test_custom_global_generator():
         [generators]
         MyCustomGenerator
         """)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
-            "conanfile.txt": conanfile})
+    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"), "conanfile.txt": conanfile})
     c.run("create pkg")
     c.run("install .")
     assert "conanfile.txt: Generator 'MyCustomGenerator' calling 'generate()'" in c.out
@@ -104,8 +103,7 @@ def test_custom_global_generator_multiple():
         MyGenerator1
         MyGenerator2
         """)
-    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"),
-            "conanfile.txt": conanfile})
+    c.save({"pkg/conanfile.py": GenConanfile("pkg", "0.1"), "conanfile.txt": conanfile})
     c.run("create pkg")
     c.run("install .")
     assert "conanfile.txt: Generator 'MyGenerator0' calling 'generate()'" in c.out

@@ -12,7 +12,7 @@ from conan.test.utils.tools import TestClient
 @pytest.mark.tool("pkg_config")
 def test_pkgconfigdeps_definitions_escape():
     client = TestClient(path_with_spaces=False)
-    conanfile = textwrap.dedent(r'''
+    conanfile = textwrap.dedent(r"""
         from conan import ConanFile
         class HelloLib(ConanFile):
             def package_info(self):
@@ -20,14 +20,16 @@ def test_pkgconfigdeps_definitions_escape():
                 self.cpp_info.defines.append('OTHER="other.h"')
                 self.cpp_info.cflags.append("flag1=\"my flag1\"")
                 self.cpp_info.cxxflags.append('flag2="my flag2"')
-        ''')
+        """)
     client.save({"conanfile.py": conanfile})
     client.run("export . --name=hello --version=1.0")
     client.save({"conanfile.txt": "[requires]\nhello/1.0\n"}, clean_first=True)
     client.run("install . --build=missing -g PkgConfigDeps")
     client.run_command("PKG_CONFIG_PATH=$(pwd) pkg-config --cflags hello")
-    assert r'flag2=\"my flag2\" flag1=\"my flag1\" ' \
-           r'-DUSER_CONFIG=\"user_config.h\" -DOTHER=\"other.h\"' in client.out
+    assert (
+        r"flag2=\"my flag2\" flag1=\"my flag1\" "
+        r"-DUSER_CONFIG=\"user_config.h\" -DOTHER=\"other.h\"" in client.out
+    )
 
 
 @pytest.mark.tool("cmake")
@@ -38,27 +40,37 @@ def test_pkgconfigdeps_with_test_requires():
     Related issue: https://github.com/conan-io/conan/issues/11376
     """
     client = TestClient()
-    client.save({"app/conanfile.py": GenConanfile("app", "1.0"),
-                 "test/conanfile.py": GenConanfile("test", "1.0")})
+    client.save(
+        {
+            "app/conanfile.py": GenConanfile("app", "1.0"),
+            "test/conanfile.py": GenConanfile("test", "1.0"),
+        }
+    )
     client.run("create app")
     client.run("create test")
     # Create library having build and test requires
-    conanfile = textwrap.dedent(r'''
+    conanfile = textwrap.dedent(r"""
         from conan import ConanFile
         class HelloLib(ConanFile):
             def build_requirements(self):
                 self.test_requires('app/1.0')
                 self.test_requires('test/1.0')
-        ''')
+        """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("install . -g PkgConfigDeps")
     assert "Description: Conan package: test" in client.load("test.pc")
     assert "Description: Conan package: app" in client.load("app.pc")
 
 
-@pytest.mark.skipif(sys.version_info.minor < 7, reason="Meson 1.1.x version needs Python >= 3.7")
-@pytest.mark.skipif(platform.system() != "Windows", reason="It makes sense only for Windows")
-@pytest.mark.tool("meson")  # https://github.com/mesonbuild/meson/pull/11649 is part of Meson 1.1.0
+@pytest.mark.skipif(
+    sys.version_info.minor < 7, reason="Meson 1.1.x version needs Python >= 3.7"
+)
+@pytest.mark.skipif(
+    platform.system() != "Windows", reason="It makes sense only for Windows"
+)
+@pytest.mark.tool(
+    "meson"
+)  # https://github.com/mesonbuild/meson/pull/11649 is part of Meson 1.1.0
 @pytest.mark.tool("pkg_config")
 def test_pkgconfigdeps_bindir_and_meson():
     """
@@ -72,7 +84,7 @@ def test_pkgconfigdeps_bindir_and_meson():
     """
     client = TestClient()
     client.run("new meson_lib -d name=hello -d version=1.0")
-    client.run("create . -tf \"\" -o *:shared=True")
+    client.run('create . -tf "" -o *:shared=True')
     test_meson_build = textwrap.dedent("""
     project('Testhello', 'cpp')
     hello = dependency('hello', version : '>=1.0')
@@ -103,10 +115,12 @@ def test_pkgconfigdeps_bindir_and_meson():
         def layout(self):
             basic_layout(self)
     """)
-    client.save({
-        "test_package/conanfile.py": test_conanfile,
-        "test_package/meson.build": test_meson_build
-    })
+    client.save(
+        {
+            "test_package/conanfile.py": test_conanfile,
+            "test_package/meson.build": test_meson_build,
+        }
+    )
     client.run("build test_package/conanfile.py -o *:shared=True")
     # Important: Only Meson >= 1.1.0 brings this capability
     # Executing directly "meson test" fails if the bindir field does not exist
@@ -117,14 +131,14 @@ def test_pkgconfigdeps_bindir_and_meson():
 def test_pkgconfigdeps_component_matches_package_name():
     client = TestClient(path_with_spaces=False)
     # Create library having build and test requires
-    conanfile = textwrap.dedent(r'''
+    conanfile = textwrap.dedent(r"""
         from conan import ConanFile
         class MyLib(ConanFile):
             name = "hello"
             version = "0.1"
             def package_info(self):
                 self.cpp_info.components["mycomponent"].set_property("pkg_config_name", "hello")
-        ''')
+        """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("export-pkg .")
     client.run("install --requires=hello/0.1 -g PkgConfigDeps")

@@ -17,11 +17,12 @@ class TestUpdateFlows:
 
         servers = OrderedDict()
         for index in range(3):
-            servers[f"server{index}"] = TestServer([("*/*@*/*", "*")], [("*/*@*/*", "*")],
-                                                   users={"user": "password"})
+            servers[f"server{index}"] = TestServer(
+                [("*/*@*/*", "*")], [("*/*@*/*", "*")], users={"user": "password"}
+            )
 
-        self.client = TestClient(servers=servers, inputs=3*["user", "password"])
-        self.client2 = TestClient(servers=servers, inputs=3*["user", "password"])
+        self.client = TestClient(servers=servers, inputs=3 * ["user", "password"])
+        self.client2 = TestClient(servers=servers, inputs=3 * ["user", "password"])
         self.the_time = 0.0
         self.server_times = {}
 
@@ -36,7 +37,7 @@ class TestUpdateFlows:
         # we are patching the time all these revisions uploaded to the servers
         # will be older than the ones we create in local
         self.server_times[remote] = self.the_time
-        with patch.object(RevisionList, '_now', return_value=self.the_time):
+        with patch.object(RevisionList, "_now", return_value=self.the_time):
             client.run(f"upload {ref} -r {remote} -c")
 
     def test_revision_fixed_version(self):
@@ -53,17 +54,23 @@ class TestUpdateFlows:
         # - In conan 2.X no remote means search in all remotes
 
         # create a revision 0 in client2, client2 will have an older revision than all the servers
-        self.client2.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")})
+        self.client2.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")}
+        )
         self.client2.run("create .")
 
         # other revision created in client
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV")}
+        )
         self.client.run("create .")
 
         self._upload_ref_to_all_servers("liba/1.0.0", self.client)
 
         # upload other revision 1 we create in client
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV1")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV1")}
+        )
         self.client.run("create .")
 
         self._upload_ref_to_all_servers("liba/1.0.0", self.client)
@@ -96,10 +103,14 @@ class TestUpdateFlows:
         # first match that is rev1 from server0
         # --> result: install rev from server0
         self.client.assert_listed_require({"liba/1.0.0": "Downloaded (server0)"})
-        assert f"liba/1.0.0: Retrieving package {NO_SETTINGS_PACKAGE_ID}" \
-               " from remote 'server0'" in self.client.out
+        assert (
+            f"liba/1.0.0: Retrieving package {NO_SETTINGS_PACKAGE_ID}"
+            " from remote 'server0'" in self.client.out
+        )
 
-        latest_rrev = self.client.cache.get_latest_recipe_reference(RecipeReference.loads("liba/1.0.0@"))
+        latest_rrev = self.client.cache.get_latest_recipe_reference(
+            RecipeReference.loads("liba/1.0.0@")
+        )
         # check that we have stored REV1 in client with the same date from the server0
         assert latest_rrev.timestamp == self.server_times["server0"]
         assert latest_rrev.timestamp == self.server_times["server0"]
@@ -115,7 +126,9 @@ class TestUpdateFlows:
         # will find the latest revision: REV1 from server2 we already have that
         # revision but the date is newer
         # --> result: do not download anything, but update REV1 date in cache
-        self.client.assert_listed_require({"liba/1.0.0": "Cache (Updated date) (server2)"})
+        self.client.assert_listed_require(
+            {"liba/1.0.0": "Cache (Updated date) (server2)"}
+        )
         assert "liba/1.0.0: Already installed!" in self.client.out
 
         # now create a newer REV2 in server2 and if we do --update it should update the date
@@ -123,7 +136,9 @@ class TestUpdateFlows:
 
         # we create a newer revision in client2
         self.client2.run("remove * -c")
-        self.client2.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV2")})
+        self.client2.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV2")}
+        )
         self.client2.run("create .")
 
         self.the_time = 100.0
@@ -145,7 +160,9 @@ class TestUpdateFlows:
 
         # we create a newer revision in client
         self.client.run("remove * -c")
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV2")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV2")}
+        )
         self.client.run("create .")
         self.client.run(f"remove {latest_rrev.repr_notime()} -c -r server2")
 
@@ -169,7 +186,9 @@ class TestUpdateFlows:
         assert "liba/1.0.0: Already installed!" in self.client.out
 
         # create newer revisions in servers so that the ones from the clients are older
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV3")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV3")}
+        )
         self.client.run("create .")
         rev_to_upload = self.client.cache.get_latest_recipe_reference(self.liba)
         # the future
@@ -189,9 +208,14 @@ class TestUpdateFlows:
         # check if it is in cache, if it is --> stop, if it is not --> check date and install
         # --> result: install rev from server2
         self.client2.assert_listed_require({"liba/1.0.0": "Updated (server2)"})
-        assert f"liba/1.0.0: Downloaded recipe revision {rev_to_upload.revision}" in self.client2.out
-        assert f"liba/1.0.0: Retrieving package {NO_SETTINGS_PACKAGE_ID}" \
-               " from remote 'server2'" in self.client2.out
+        assert (
+            f"liba/1.0.0: Downloaded recipe revision {rev_to_upload.revision}"
+            in self.client2.out
+        )
+        assert (
+            f"liba/1.0.0: Retrieving package {NO_SETTINGS_PACKAGE_ID}"
+            " from remote 'server2'" in self.client2.out
+        )
 
         check_ref = RecipeReference.loads(str(rev_to_upload))  # without revision
         rev_to_upload = self.client2.cache.get_latest_recipe_reference(check_ref)
@@ -222,7 +246,9 @@ class TestUpdateFlows:
         self.client.run("remove '*' -c -r server2")
 
         # create new older revisions in servers
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV4")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV4")}
+        )
         self.client.run("create .")
         server_rrev = self.client.cache.get_latest_recipe_reference(self.liba)
         self.the_time = 0.0
@@ -237,7 +263,9 @@ class TestUpdateFlows:
         # |             | REV0 (1000)|            |           |            |
         # |             |            |            |           |            |
 
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV5")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV5")}
+        )
         self.client.run("create .")
 
         # | CLIENT      | CLIENT2    | SERVER0    | SERVER1   | SERVER2    |
@@ -254,13 +282,18 @@ class TestUpdateFlows:
         # immutable so all of them are the same
         # --> result: install new revision asked, but the latest revision remains the other one,
         # because the one installed took the date from the server and it's older
-        assert "liba/1.0.0: Not found in local cache, looking in remotes..." in self.client.out
+        assert (
+            "liba/1.0.0: Not found in local cache, looking in remotes..."
+            in self.client.out
+        )
         assert "liba/1.0.0: Checking remote: server0" in self.client.out
         assert "liba/1.0.0: Checking remote: server1" not in self.client.out
         assert "liba/1.0.0: Checking remote: server2" not in self.client.out
         server_rrev_norev = copy.copy(server_rrev)
         server_rrev_norev.revision = None
-        latest_cache_revision = self.client.cache.get_latest_recipe_reference(server_rrev_norev)
+        latest_cache_revision = self.client.cache.get_latest_recipe_reference(
+            server_rrev_norev
+        )
         assert latest_cache_revision != server_rrev
 
         # | CLIENT      | CLIENT2    | SERVER0    | SERVER1   | SERVER2    |
@@ -269,26 +302,34 @@ class TestUpdateFlows:
         # | REV4 (10)   | REV0 (1000)|            |           |            |
         # |             |            |            |           |            |
 
-        self.client.run(f"install --requires={server_rrev}@#{server_rrev.revision} --update")
+        self.client.run(
+            f"install --requires={server_rrev}@#{server_rrev.revision} --update"
+        )
         # last step without --update it took the REV4 from server0 but now
         # we tell conan to search for newer recipes of an specific revision
         # it will go to server2 and update the local date with the one
         # from the remote
         # --> result: update REV4 date to 30 but it won't be latest
 
-        latest_cache_revision = self.client.cache.get_latest_recipe_reference(server_rrev_norev)
+        latest_cache_revision = self.client.cache.get_latest_recipe_reference(
+            server_rrev_norev
+        )
         assert latest_cache_revision != server_rrev
         latest_cache_revision = self.client.cache.recipe_layout(server_rrev).reference
 
         assert self.the_time == latest_cache_revision.timestamp
-        self.client.assert_listed_require({"liba/1.0.0": "Cache (Updated date) (server2)"})
+        self.client.assert_listed_require(
+            {"liba/1.0.0": "Cache (Updated date) (server2)"}
+        )
 
         self.client.run("remove * -c")
         self.client.run("remove '*' -c -r server0")
         self.client.run("remove '*' -c -r server1")
         self.client.run("remove '*' -c -r server2")
 
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV6")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV6")}
+        )
         self.client.run("create .")
         server_rrev = self.client.cache.get_latest_recipe_reference(self.liba)
         self.the_time = 3000000020.0
@@ -303,7 +344,9 @@ class TestUpdateFlows:
         # |             | REV0 (1000)|            |           |            |
         # |             |            |            |           |            |
 
-        self.client.run(f"install --requires={server_rrev}@#{server_rrev.revision} --update")
+        self.client.run(
+            f"install --requires={server_rrev}@#{server_rrev.revision} --update"
+        )
 
         # now we have the same revision with different dates in the servers and in the cache
         # in this case, if we specify --update we will check all the remotes, if that revision
@@ -313,7 +356,9 @@ class TestUpdateFlows:
 
         latest_rrev_cache = self.client.cache.get_latest_recipe_reference(self.liba)
         assert latest_server_time == latest_rrev_cache.timestamp
-        self.client.assert_listed_require({"liba/1.0.0": "Cache (Updated date) (server2)"})
+        self.client.assert_listed_require(
+            {"liba/1.0.0": "Cache (Updated date) (server2)"}
+        )
 
         # | CLIENT      | CLIENT2    | SERVER0    | SERVER1   | SERVER2    |
         # |-------------|------------|------------|-----------|------------|
@@ -329,7 +374,9 @@ class TestUpdateFlows:
         # |             | REV0 (1000)|            |           |            |
         # |             |            |            |           |            |
 
-        self.client.run(f"install --requires={server_rrev}@#{server_rrev.revision} --update")
+        self.client.run(
+            f"install --requires={server_rrev}@#{server_rrev.revision} --update"
+        )
 
         # now we have the same revision with different dates in the servers and in the cache
         # in this case, if we specify --update we will check all the remotes and will install
@@ -349,12 +396,22 @@ class TestUpdateFlows:
     def test_version_ranges(self):
         # create a revision 0 in client2, client2 will have an older revision than all the servers
         for minor in range(3):
-            self.client2.save({"conanfile.py": GenConanfile("liba", f"1.{minor}.0").with_build_msg("REV0")})
+            self.client2.save(
+                {
+                    "conanfile.py": GenConanfile("liba", f"1.{minor}.0").with_build_msg(
+                        "REV0"
+                    )
+                }
+            )
             self.client2.run("create .")
-            self.the_time = 10.0 + minor*10.0
-            self._upload_ref_to_server(f"liba/1.{minor}.0", f"server{minor}", self.client2)
+            self.the_time = 10.0 + minor * 10.0
+            self._upload_ref_to_server(
+                f"liba/1.{minor}.0", f"server{minor}", self.client2
+            )
 
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")}
+        )
         self.client.run("create .")
 
         # NOW WE HAVE:
@@ -384,7 +441,9 @@ class TestUpdateFlows:
         assert "liba/[>0.9.0]: liba/1.0.0" in self.client.out
         self.client.assert_listed_require({"liba/1.0.0": "Downloaded (server0)"})
 
-        latest_rrev = self.client.cache.get_latest_recipe_reference(RecipeReference.loads("liba/1.0.0@"))
+        latest_rrev = self.client.cache.get_latest_recipe_reference(
+            RecipeReference.loads("liba/1.0.0@")
+        )
         assert latest_rrev.timestamp == self.server_times["server0"]
 
         # | CLIENT         | CLIENT2        | SERVER0        | SERVER1        | SERVER2        |
@@ -425,47 +484,59 @@ class TestUpdateFlows:
 
         # now we are uploading different revisions with different dates, but the same version
         for minor in range(3):
-            self.client2.save({"conanfile.py": GenConanfile("liba", f"1.2.0").with_build_msg(f"REV{minor}")})
+            self.client2.save(
+                {
+                    "conanfile.py": GenConanfile("liba", "1.2.0").with_build_msg(
+                        f"REV{minor}"
+                    )
+                }
+            )
             self.client2.run("create .")
-            self.the_time = 10.0 + minor*10.0
-            self._upload_ref_to_server(f"liba/1.2.0", f"server{minor}", self.client2)
+            self.the_time = 10.0 + minor * 10.0
+            self._upload_ref_to_server("liba/1.2.0", f"server{minor}", self.client2)
 
-        self.client.save({"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")})
+        self.client.save(
+            {"conanfile.py": GenConanfile("liba", "1.0.0").with_build_msg("REV0")}
+        )
         self.client.run("create .")
 
         self.client.run("install --requires=liba/[>1.0.0]@ --update")
         assert "liba/[>1.0.0]: liba/1.2.0" in self.client.out
         self.client.assert_listed_require({"liba/1.2.0": "Downloaded (server2)"})
-        assert f"liba/1.2.0: Retrieving package {NO_SETTINGS_PACKAGE_ID} " \
-               "from remote 'server2' " in self.client.out
+        assert (
+            f"liba/1.2.0: Retrieving package {NO_SETTINGS_PACKAGE_ID} "
+            "from remote 'server2' " in self.client.out
+        )
 
 
-@pytest.mark.parametrize("update,result", [
-                                           # Not a real pattern, works to support legacy syntax
-                                           ["*", {"liba/1.1": "Downloaded (default)",
-                                                  "libb/1.1": "Downloaded (default)"}],
-                                           ["libc", {"liba/1.0": "Cache",
-                                                     "libb/1.0": "Cache"}],
-                                           ["liba", {"liba/1.1": "Downloaded (default)",
-                                                       "libb/1.0": "Cache"}],
-                                           ["libb", {"liba/1.0": "Cache",
-                                                       "libb/1.1": "Downloaded (default)"}],
-                                           ["", {"liba/1.0": "Cache",
-                                                 "libb/1.0": "Cache"}],
-                                           # Patterns not supported, only full name match
-                                           ["lib*", {"liba/1.0": "Cache",
-                                                     "libb/1.0": "Cache"}],
-                                           ["liba/*", {"liba/1.0": "Cache",
-                                                       "libb/1.0": "Cache"}],
-                                           # None only passes legacy --update without args,
-                                           # to ensure it works, it should be the same as passing *
-                                           [None, {"liba/1.1": "Downloaded (default)",
-                                                   "libb/1.1": "Downloaded (default)"}]
-                                           ])
+@pytest.mark.parametrize(
+    "update,result",
+    [
+        # Not a real pattern, works to support legacy syntax
+        ["*", {"liba/1.1": "Downloaded (default)", "libb/1.1": "Downloaded (default)"}],
+        ["libc", {"liba/1.0": "Cache", "libb/1.0": "Cache"}],
+        ["liba", {"liba/1.1": "Downloaded (default)", "libb/1.0": "Cache"}],
+        ["libb", {"liba/1.0": "Cache", "libb/1.1": "Downloaded (default)"}],
+        ["", {"liba/1.0": "Cache", "libb/1.0": "Cache"}],
+        # Patterns not supported, only full name match
+        ["lib*", {"liba/1.0": "Cache", "libb/1.0": "Cache"}],
+        ["liba/*", {"liba/1.0": "Cache", "libb/1.0": "Cache"}],
+        # None only passes legacy --update without args,
+        # to ensure it works, it should be the same as passing *
+        [
+            None,
+            {"liba/1.1": "Downloaded (default)", "libb/1.1": "Downloaded (default)"},
+        ],
+    ],
+)
 def test_muliref_update_pattern(update, result):
     tc = TestClient(light=True, default_server_user=True)
-    tc.save({"liba/conanfile.py": GenConanfile("liba"),
-             "libb/conanfile.py": GenConanfile("libb")})
+    tc.save(
+        {
+            "liba/conanfile.py": GenConanfile("liba"),
+            "libb/conanfile.py": GenConanfile("libb"),
+        }
+    )
     tc.run("create liba --version=1.0")
     tc.run("create libb --version=1.0")
 
@@ -477,6 +548,8 @@ def test_muliref_update_pattern(update, result):
 
     update_flag = f"--update={update}" if update is not None else "--update"
 
-    tc.run(f'install --requires="liba/[>=1.0]" --requires="libb/[>=1.0]" -r default {update_flag}')
+    tc.run(
+        f'install --requires="liba/[>=1.0]" --requires="libb/[>=1.0]" -r default {update_flag}'
+    )
 
     tc.assert_listed_require(result)

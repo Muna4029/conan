@@ -35,19 +35,29 @@ def test_nmakedeps():
     """)
     client.save({"conanfile.py": conanfile})
     client.run("create . -s arch=x86_64")
-    client.run("install --requires=test-nmakedeps/1.0"
-               " -g NMakeDeps -s build_type=Release -s arch=x86_64")
+    client.run(
+        "install --requires=test-nmakedeps/1.0"
+        " -g NMakeDeps -s build_type=Release -s arch=x86_64"
+    )
     # Checking that NMakeDeps builds correctly .bat file
     bat_file = client.load("conannmakedeps.bat")
     # Checking that defines are added to CL
     for flag in (
-        r'/D"TEST_DEFINITION1"', '/D"TEST_DEFINITION2#0"',
-        r'/D"TEST_DEFINITION3#"', '/D"TEST_DEFINITION4#"foo""',
+        r'/D"TEST_DEFINITION1"',
+        '/D"TEST_DEFINITION2#0"',
+        r'/D"TEST_DEFINITION3#"',
+        '/D"TEST_DEFINITION4#"foo""',
         r'/D"TEST_DEFINITION5#"__declspec\(dllexport\)""',
         r'/D"TEST_DEFINITION6#"foo bar""',
-        r'/D"TEST_DEFINITION7#7"'
+        r'/D"TEST_DEFINITION7#7"',
     ):
-        assert re.search(fr'set "CL=%CL%.*\s{flag}(?:\s|")', bat_file)
+        assert re.search(rf'set "CL=%CL%.*\s{flag}(?:\s|")', bat_file)
     # Checking that libs and system libs are added to _LINK_
-    for flag in (r"pkg-1\.lib", r"pkg-2\.lib", r"pkg-3\.lib", r"pkg-4\.lib", r"ws2_32\.lib"):
-        assert re.search(fr'set "_LINK_=%_LINK_%.*\s{flag}(?:\s|")', bat_file)
+    for flag in (
+        r"pkg-1\.lib",
+        r"pkg-2\.lib",
+        r"pkg-3\.lib",
+        r"pkg-4\.lib",
+        r"ws2_32\.lib",
+    ):
+        assert re.search(rf'set "_LINK_=%_LINK_%.*\s{flag}(?:\s|")', bat_file)

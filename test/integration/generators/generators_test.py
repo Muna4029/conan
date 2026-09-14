@@ -2,7 +2,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestGenerators:
-
     def test_error(self):
         client = TestClient()
         client.save({"conanfile.txt": "[generators]\nunknown"})

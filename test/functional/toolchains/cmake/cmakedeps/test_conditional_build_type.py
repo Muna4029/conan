@@ -83,9 +83,9 @@ def test_conditional_build_type(matrix_client_debug):
             #endif
         }
         """)
-    c.save({"conanfile.py": conanfile,
-            "CMakeLists.txt": cmake,
-            "src/pkgb.cpp": pkgb_cpp})
+    c.save(
+        {"conanfile.py": conanfile, "CMakeLists.txt": cmake, "src/pkgb.cpp": pkgb_cpp}
+    )
     c.run("create . -s build_type=Debug -tf=")
     assert "matrix/1.0" in c.out
     c.run("create . -s build_type=Release -tf=")  # without dep to matrix

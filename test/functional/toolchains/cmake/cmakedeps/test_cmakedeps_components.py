@@ -8,11 +8,11 @@ from conan.test.utils.tools import TestClient
 
 class PropagateSpecificComponents(unittest.TestCase):
     """
-        Feature: recipes can declare the components they are consuming from their requirements,
-        only those components should be propagated to their own consumers. If required components
-        doesn't exist, Conan will fail:
-         * Resolved versions/revisions of the requirement might provide different components or
-           no components at all.
+    Feature: recipes can declare the components they are consuming from their requirements,
+    only those components should be propagated to their own consumers. If required components
+    doesn't exist, Conan will fail:
+     * Resolved versions/revisions of the requirement might provide different components or
+       no components at all.
     """
 
     top = textwrap.dedent("""
@@ -47,32 +47,28 @@ class PropagateSpecificComponents(unittest.TestCase):
 
     def setUp(self):
         client = TestClient()
-        client.save({
-            'top.py': self.top,
-            'middle.py': self.middle,
-            'app.py': self.app
-        })
-        client.run('create top.py --name=top --version=version')
-        client.run('create middle.py --name=middle --version=version')
+        client.save({"top.py": self.top, "middle.py": self.middle, "app.py": self.app})
+        client.run("create top.py --name=top --version=version")
+        client.run("create middle.py --name=middle --version=version")
         self.cache_folder = client.cache_folder
 
     def test_cmakedeps_app(self):
         t = TestClient(cache_folder=self.cache_folder)
-        t.save({'conanfile.py': self.app})
+        t.save({"conanfile.py": self.app})
         t.run("install .  -g CMakeDeps")
         config = t.load("middle-Target-release.cmake")
-        self.assertIn('top::cmp1', config)
+        self.assertIn("top::cmp1", config)
         self.assertNotIn("top::top", config)
 
     def test_cmakedeps_multi(self):
         t = TestClient(cache_folder=self.cache_folder)
-        t.run('install --requires=middle/version@ -g CMakeDeps')
-        host_arch = t.get_default_host_profile().settings['arch']
+        t.run("install --requires=middle/version@ -g CMakeDeps")
+        host_arch = t.get_default_host_profile().settings["arch"]
 
-        content = t.load(f'middle-release-{host_arch}-data.cmake')
+        content = t.load(f"middle-release-{host_arch}-data.cmake")
         self.assertIn("list(APPEND middle_FIND_DEPENDENCY_NAMES top)", content)
 
-        content = t.load('middle-Target-release.cmake')
+        content = t.load("middle-Target-release.cmake")
         self.assertNotIn("top::top", content)
         self.assertNotIn("top::cmp2", content)
         self.assertIn("top::cmp1", content)
@@ -93,9 +89,9 @@ def top_conanfile():
 
 @pytest.mark.parametrize("from_component", [False, True])
 def test_wrong_component(top_conanfile, from_component):
-    """ If the requirement doesn't provide the component, it fails.
-        We can only raise this error after the graph is fully resolved, it is when we
-        know the actual components that the requirement is going to provide.
+    """If the requirement doesn't provide the component, it fails.
+    We can only raise this error after the graph is fully resolved, it is when we
+    know the actual components that the requirement is going to provide.
     """
     # TODO: This test is specific of CMakeDeps, could be made general?
     consumer = textwrap.dedent("""
@@ -108,12 +104,14 @@ def test_wrong_component(top_conanfile, from_component):
     """).format("components['foo']." if from_component else "")
 
     t = TestClient()
-    t.save({'top.py': top_conanfile, 'consumer.py': consumer})
-    t.run('create top.py --name=top --version=version')
-    t.run('create consumer.py --name=wrong --version=version')
+    t.save({"top.py": top_conanfile, "consumer.py": consumer})
+    t.run("create top.py --name=top --version=version")
+    t.run("create consumer.py --name=wrong --version=version")
 
-    t.run('install --requires=wrong/version@ -g CMakeDeps', assert_error=True)
-    assert "Component 'top::not-existing' not found in 'top' package requirement" in t.out
+    t.run("install --requires=wrong/version@ -g CMakeDeps", assert_error=True)
+    assert (
+        "Component 'top::not-existing' not found in 'top' package requirement" in t.out
+    )
 
 
 @pytest.mark.tool("cmake")
@@ -166,13 +164,21 @@ def test_components_system_libs():
 
     t.save({"conanfile.py": conanfile, "CMakeLists.txt": cmakelists})
     t.run("create . --build missing -s build_type=Release")
-    assert 'component libs: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;requirement_requirement_component_DEPS_TARGET' in t.out
-    assert 'component deps: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:system_lib_component>;' in t.out
-    assert ('component options: '
-            '$<$<CONFIG:Release>:'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:>>') in t.out
+    assert (
+        "component libs: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;requirement_requirement_component_DEPS_TARGET"
+        in t.out
+    )
+    assert (
+        "component deps: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:system_lib_component>;"
+        in t.out
+    )
+    assert (
+        "component options: "
+        "$<$<CONFIG:Release>:"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:>>"
+    ) in t.out
     # NOTE: If there is no "conan install -s build_type=Debug", the properties won't contain the
     #       <CONFIG:Debug>
 
@@ -222,11 +228,13 @@ def test_components_exelinkflags():
 
     t.save({"conanfile.py": conanfile, "CMakeLists.txt": cmakelists})
     t.run("create . --build missing -s build_type=Release")
-    assert ('component options: '
-            '$<$<CONFIG:Release>:'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-Wl,-link1;-Wl,-link2>>') in t.out
+    assert (
+        "component options: "
+        "$<$<CONFIG:Release>:"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:-Wl,-link1;-Wl,-link2>>"
+    ) in t.out
     # NOTE: If there is no "conan install -s build_type=Debug", the properties won't contain the
     #       <CONFIG:Debug>
 
@@ -276,11 +284,13 @@ def test_components_sharedlinkflags():
 
     t.save({"conanfile.py": conanfile, "CMakeLists.txt": cmakelists})
     t.run("create . --build missing -s build_type=Release")
-    assert ('component options: '
-            '$<$<CONFIG:Release>:'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:-Wl,-link1;-Wl,-link2>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:-Wl,-link1;-Wl,-link2>;'
-            '$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:>>') in t.out
+    assert (
+        "component options: "
+        "$<$<CONFIG:Release>:"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:-Wl,-link1;-Wl,-link2>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:-Wl,-link1;-Wl,-link2>;"
+        "$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:>>"
+    ) in t.out
     # NOTE: If there is no "conan install -s build_type=Debug", the properties won't contain the
     #       <CONFIG:Debug>
 
@@ -288,7 +298,7 @@ def test_components_sharedlinkflags():
 @pytest.mark.tool("cmake")
 def test_cmake_add_subdirectory():
     """https://github.com/conan-io/conan/issues/11743
-       https://github.com/conan-io/conan/issues/11755"""
+    https://github.com/conan-io/conan/issues/11755"""
 
     t = TestClient()
     boost = textwrap.dedent("""
@@ -352,15 +362,32 @@ def test_cmake_add_subdirectory():
 
     """)
 
-    t.save({"conanfile.py": conanfile,
-            "CMakeLists.txt": cmakelists, "src/CMakeLists.txt": sub_cmakelists})
+    t.save(
+        {
+            "conanfile.py": conanfile,
+            "CMakeLists.txt": cmakelists,
+            "src/CMakeLists.txt": sub_cmakelists,
+        }
+    )
     t.run("install .")
     # only doing the configure failed before #11743 fix
     t.run("build .")
     # The boost::boost target has linked the two components
     assert "AGGREGATED LIBS: boost::boost" in t.out
     assert "AGGREGATED LINKED: boost::B;boost::A" in t.out
-    assert "BOOST_B LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;boost_boost_B_DEPS_TARGET" in t.out
-    assert "BOOST_A LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;boost_boost_A_DEPS_TARGET" in t.out
-    assert "BOOST_B_DEPS LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:B_1;B_2>" in t.out
-    assert "BOOST_A_DEPS LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:A_1;A_2>;" in t.out
+    assert (
+        "BOOST_B LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;boost_boost_B_DEPS_TARGET"
+        in t.out
+    )
+    assert (
+        "BOOST_A LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:>;boost_boost_A_DEPS_TARGET"
+        in t.out
+    )
+    assert (
+        "BOOST_B_DEPS LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:B_1;B_2>"
+        in t.out
+    )
+    assert (
+        "BOOST_A_DEPS LINKED: $<$<CONFIG:Release>:>;$<$<CONFIG:Release>:A_1;A_2>;"
+        in t.out
+    )

@@ -25,7 +25,6 @@ class MyTest(ConanFile):
 
 
 class TestBuildIdTest:
-
     def test_create(self):
         # Ensure that build_id() works when multiple create calls are made
         client = TestClient()
@@ -54,32 +53,32 @@ class TestBuildIdTest:
         client.save({"conanfile.py": conanfile})
         client.run("export . ")
         # Windows Debug
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Debug')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Debug")
         assert "Building my code!" in client.out
         assert "Packaging Debug!" in client.out
 
         # Package Windows Release, it will reuse the previous build
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Release')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Release")
         assert "Building my code!" not in client.out
         assert "Packaging Release!" in client.out
 
         # Now Linux Debug
-        client.run('install --requires=pkg/0.1 -s os=Linux -s build_type=Debug')
+        client.run("install --requires=pkg/0.1 -s os=Linux -s build_type=Debug")
         assert "Building my code!" in client.out
         assert "Packaging Debug!" in client.out
 
         # Linux Release must build again, as it is not affected by build_id()
-        client.run('install --requires=pkg/0.1 -s os=Linux -s build_type=Release')
+        client.run("install --requires=pkg/0.1 -s os=Linux -s build_type=Release")
         assert "Building my code!" in client.out
         assert "Packaging Release!" in client.out
 
         # But if the packages are removed, and we change the order, keeps working
         client.run("remove *:* -c")
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Release')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Release")
         assert "Building my code!" in client.out
         assert "Packaging Release!" in client.out
 
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Debug')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Debug")
         assert "Building my code!" not in client.out
         assert "Packaging Debug!" in client.out
 
@@ -87,26 +86,30 @@ class TestBuildIdTest:
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("export . ")
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Debug')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Debug")
         # Package Windows Release, it will reuse the previous build
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Release')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Release")
         assert "Building my code!" not in client.out
         assert "Packaging Release!" in client.out
 
         client.run("cache clean")  # packages are still there
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Debug')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Debug")
         assert "Building my code!" not in client.out
         assert "Packaging Release!" not in client.out
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Release')
+        client.run("install --requires=pkg/0.1 -s os=Windows -s build_type=Release")
         assert "Building my code!" not in client.out
         assert "Packaging Release!" not in client.out
 
         # Lets force the first rebuild, different order Linux first
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Release --build=pkg*')
+        client.run(
+            "install --requires=pkg/0.1 -s os=Windows -s build_type=Release --build=pkg*"
+        )
         assert "Building my code!" in client.out
         assert "Packaging Release!" in client.out
 
-        client.run('install --requires=pkg/0.1 -s os=Windows -s build_type=Debug --build=pkg*')
+        client.run(
+            "install --requires=pkg/0.1 -s os=Windows -s build_type=Debug --build=pkg*"
+        )
         assert "Building my code!" not in client.out
         assert "Packaging Debug!" in client.out
 
@@ -127,8 +130,12 @@ class TestBuildIdTest:
         client.run("create . --name=pkg --version=0.1 ", assert_error=True)
         assert "ERROR: pkg/0.1: Error in build() method, line 5" in client.out
         # now test with build_id
-        client.save({"conanfile.py": fail_conanfile +
-                     "    def build_id(self): self.info_build.settings.build_type = 'any'"})
+        client.save(
+            {
+                "conanfile.py": fail_conanfile
+                + "    def build_id(self): self.info_build.settings.build_type = 'any'"
+            }
+        )
         client.run("create . --name=pkg --version=0.1 ", assert_error=True)
         assert "ERROR: pkg/0.1: Error in build() method, line 5" in client.out
         client.run("create . --name=pkg --version=0.1 ", assert_error=True)
@@ -181,8 +188,12 @@ def test_remove_require():
             def build_id(self):
                 self.info_build.requires.remove("dep")
         """)
-    c.save({"dep/conanfile.py": GenConanfile("dep", "1.0"),
-            "consumer/conanfile.py": remove})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "1.0"),
+            "consumer/conanfile.py": remove,
+        }
+    )
     c.run("create dep")
     c.run("create consumer")
 
@@ -228,28 +239,60 @@ def test_build_id_error():
         os = Linux
     """)
 
-    c.save({"conanfile.py": myconan,
-            "myprofile": host_profile})
-    c.run("create . "
-          "-pr:h myprofile -pr:b myprofile "
-          "-s build_type=Debug -o pkg/*:shared=True")
-    c.assert_listed_binary({"pkg/0.1": ("538f60f3919ea9b8ea9e7c63c5948abe44913bec", "Build")})
-    assert "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
-    c.run("create . "
-          "-pr:h myprofile -pr:b myprofile "
-          "-s build_type=Debug -o pkg/*:shared=False")
-    c.assert_listed_binary({"pkg/0.1": ("ba41c80b0373ef66e2ca95ed56961153082fbcd9", "Build")})
-    assert "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
-    assert "pkg/0.1: Won't be built, using previous build folder as defined in build_id()" in c.out
-    c.run("create . "
-          "-pr:h myprofile -pr:b myprofile "
-          "-s build_type=Release -o pkg/*:shared=True")
-    c.assert_listed_binary({"pkg/0.1": ("2eb252449df37d245568e32e5a41d0540db3c6e2", "Build")})
-    assert "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
-    assert "pkg/0.1: Won't be built, using previous build folder as defined in build_id()" in c.out
-    c.run("create . "
-          "-pr:h myprofile -pr:b myprofile "
-          "-s build_type=Release -o pkg/*:shared=False")
-    c.assert_listed_binary({"pkg/0.1": ("978c5442906f96846ccb201129ba1559071ce4ab", "Build")})
-    assert "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
-    assert "pkg/0.1: Won't be built, using previous build folder as defined in build_id()" in c.out
+    c.save({"conanfile.py": myconan, "myprofile": host_profile})
+    c.run(
+        "create . "
+        "-pr:h myprofile -pr:b myprofile "
+        "-s build_type=Debug -o pkg/*:shared=True"
+    )
+    c.assert_listed_binary(
+        {"pkg/0.1": ("538f60f3919ea9b8ea9e7c63c5948abe44913bec", "Build")}
+    )
+    assert (
+        "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
+    )
+    c.run(
+        "create . "
+        "-pr:h myprofile -pr:b myprofile "
+        "-s build_type=Debug -o pkg/*:shared=False"
+    )
+    c.assert_listed_binary(
+        {"pkg/0.1": ("ba41c80b0373ef66e2ca95ed56961153082fbcd9", "Build")}
+    )
+    assert (
+        "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
+    )
+    assert (
+        "pkg/0.1: Won't be built, using previous build folder as defined in build_id()"
+        in c.out
+    )
+    c.run(
+        "create . "
+        "-pr:h myprofile -pr:b myprofile "
+        "-s build_type=Release -o pkg/*:shared=True"
+    )
+    c.assert_listed_binary(
+        {"pkg/0.1": ("2eb252449df37d245568e32e5a41d0540db3c6e2", "Build")}
+    )
+    assert (
+        "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
+    )
+    assert (
+        "pkg/0.1: Won't be built, using previous build folder as defined in build_id()"
+        in c.out
+    )
+    c.run(
+        "create . "
+        "-pr:h myprofile -pr:b myprofile "
+        "-s build_type=Release -o pkg/*:shared=False"
+    )
+    c.assert_listed_binary(
+        {"pkg/0.1": ("978c5442906f96846ccb201129ba1559071ce4ab", "Build")}
+    )
+    assert (
+        "pkg/0.1: build_id() computed 7d169d0d018d239cff27eb081e3f6575554e05c5" in c.out
+    )
+    assert (
+        "pkg/0.1: Won't be built, using previous build folder as defined in build_id()"
+        in c.out
+    )

@@ -17,10 +17,9 @@ def test_package_python_files():
             def package(self):
                 copy(self, "*", self.source_folder, self.package_folder)
         """)
-    client.save({"conanfile.py": conanfile,
-                 "myfile.pyc": "",
-                 "myfile.pyo": "",
-                 ".DS_Store": ""})
+    client.save(
+        {"conanfile.py": conanfile, "myfile.pyc": "", "myfile.pyo": "", ".DS_Store": ""}
+    )
     client.run("create . --name=pkg --version=0.1")
     ref_layout = client.exported_layout()
     pkg_layout = client.created_layout()

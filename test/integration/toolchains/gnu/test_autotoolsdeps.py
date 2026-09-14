@@ -15,7 +15,9 @@ def test_link_lib_correct_order():
     libb = GenConanfile().with_name("libb").with_version("0.1").with_require("liba/0.1")
     libc = GenConanfile().with_name("libc").with_version("0.1").with_require("libb/0.1")
     consumer = GenConanfile().with_require("libc/0.1")
-    client.save({"liba.py": liba, "libb.py": libb, "libc.py": libc, "consumer.py": consumer})
+    client.save(
+        {"liba.py": liba, "libb.py": libb, "libc.py": libc, "consumer.py": consumer}
+    )
     client.run("create liba.py")
     folder_a = client.created_layout().package()
     client.run("create libb.py")
@@ -25,12 +27,13 @@ def test_link_lib_correct_order():
     client.run("install consumer.py -g AutotoolsDeps")
     deps = client.load("conanautotoolsdeps.sh")
     # check the libs are added in the correct order with this regex
-    assert re.search("export LDFLAGS.*{}.*{}.*{}".format(folder_c, folder_b, folder_a), deps)
+    assert re.search(
+        "export LDFLAGS.*{}.*{}.*{}".format(folder_c, folder_b, folder_a), deps
+    )
 
 
 @pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Autotools")
 def test_cpp_info_aggregation():
-
     profile = textwrap.dedent("""
          [settings]
          build_type=Release

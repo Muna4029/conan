@@ -40,26 +40,42 @@ def test_make_dirs_with_abs_path():
 
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
     print(makefile_content)
-    prefix = pathlib.Path(client.current_folder).drive if platform.system() == "Windows" else ""
-    assert 'CONAN_NAME_MYLIB = mylib' in makefile_content
-    assert 'CONAN_VERSION_MYLIB = 0.1' in makefile_content
-    assert f'CONAN_LIB_DIRS_MYLIB = \\\n\t$(CONAN_LIB_DIR_FLAG){prefix}/my_absoulte_path/fake/mylib/lib \\\n\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_MYLIB)/lib2' in makefile_content
-    assert f'CONAN_INCLUDE_DIRS_MYLIB = $(CONAN_INCLUDE_DIR_FLAG){prefix}/my_absoulte_path/fake/mylib/include' in makefile_content
-    assert 'CONAN_BIN_DIRS_MYLIB = $(CONAN_BIN_DIR_FLAG)$(CONAN_ROOT_MYLIB)/bin' in makefile_content
-    assert 'CONAN_PROPERTY_MYLIB_MY_PROP = my prop value' in makefile_content
-    assert 'CONAN_PROPERTY_MYLIB_MY_PROP_WITH_NEWLINE' not in makefile_content
-    assert "WARN: Skipping propery 'my_prop_with_newline' because it contains newline" in client.stderr
+    prefix = (
+        pathlib.Path(client.current_folder).drive
+        if platform.system() == "Windows"
+        else ""
+    )
+    assert "CONAN_NAME_MYLIB = mylib" in makefile_content
+    assert "CONAN_VERSION_MYLIB = 0.1" in makefile_content
+    assert (
+        f"CONAN_LIB_DIRS_MYLIB = \\\n\t$(CONAN_LIB_DIR_FLAG){prefix}/my_absoulte_path/fake/mylib/lib \\\n\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_MYLIB)/lib2"
+        in makefile_content
+    )
+    assert (
+        f"CONAN_INCLUDE_DIRS_MYLIB = $(CONAN_INCLUDE_DIR_FLAG){prefix}/my_absoulte_path/fake/mylib/include"
+        in makefile_content
+    )
+    assert (
+        "CONAN_BIN_DIRS_MYLIB = $(CONAN_BIN_DIR_FLAG)$(CONAN_ROOT_MYLIB)/bin"
+        in makefile_content
+    )
+    assert "CONAN_PROPERTY_MYLIB_MY_PROP = my prop value" in makefile_content
+    assert "CONAN_PROPERTY_MYLIB_MY_PROP_WITH_NEWLINE" not in makefile_content
+    assert (
+        "WARN: Skipping propery 'my_prop_with_newline' because it contains newline"
+        in client.stderr
+    )
 
     lines = makefile_content.splitlines()
     for line_no, line in enumerate(lines):
         includedir_pattern = "CONAN_INCLUDE_DIRS_MYLIB = $(CONAN_INCLUDE_DIR_FLAG)"
         if line.startswith(includedir_pattern):
-            assert os.path.isabs(line[len(includedir_pattern):])
+            assert os.path.isabs(line[len(includedir_pattern) :])
             assert line.endswith("include")
-        elif line.startswith("\t$(CONAN_LIB_DIR_FLAG)") and 'my_absoulte_path' in line:
-            assert os.path.isabs(line[len("\t$(CONAN_LIB_DIR_FLAG)"):-2])
+        elif line.startswith("\t$(CONAN_LIB_DIR_FLAG)") and "my_absoulte_path" in line:
+            assert os.path.isabs(line[len("\t$(CONAN_LIB_DIR_FLAG)") : -2])
             assert line.endswith("lib \\")
-        elif line.startswith("\t$(CONAN_LIB_DIR_FLAG)") and line.endswith('lib2'):
+        elif line.startswith("\t$(CONAN_LIB_DIR_FLAG)") and line.endswith("lib2"):
             assert "\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_MYLIB)/lib2" in line
 
 
@@ -88,14 +104,14 @@ def test_make_empty_dirs():
     client.run("install --requires=mylib/0.1@ -g MakeDeps")
 
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-    assert 'CONAN_ROOT_MYLIB' in makefile_content
-    assert 'SYSROOT' not in makefile_content
-    assert 'CONAN_INCLUDE_DIRS' not in makefile_content
-    assert 'CONAN_LIB_DIRS' not in makefile_content
-    assert 'CONAN_BIN_DIRS' not in makefile_content
-    assert 'CONAN_LIBS' not in makefile_content
-    assert 'CONAN_FRAMEWORK_DIRS' not in makefile_content
-    assert 'CONAN_PROPERTY' not in makefile_content
+    assert "CONAN_ROOT_MYLIB" in makefile_content
+    assert "SYSROOT" not in makefile_content
+    assert "CONAN_INCLUDE_DIRS" not in makefile_content
+    assert "CONAN_LIB_DIRS" not in makefile_content
+    assert "CONAN_BIN_DIRS" not in makefile_content
+    assert "CONAN_LIBS" not in makefile_content
+    assert "CONAN_FRAMEWORK_DIRS" not in makefile_content
+    assert "CONAN_PROPERTY" not in makefile_content
 
 
 def test_libs_and_system_libs():
@@ -124,8 +140,14 @@ def test_libs_and_system_libs():
     client.run("install --requires=mylib/0.1@ -g MakeDeps")
 
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-    assert "CONAN_LIBS_MYLIB = \\\n\t$(CONAN_LIB_FLAG)mylib1 \\\n\t$(CONAN_LIB_FLAG)mylib2" in makefile_content
-    assert "CONAN_SYSTEM_LIBS_MYLIB = \\\n\t$(CONAN_SYSTEM_LIB_FLAG)system_lib1 \\\n\t$(CONAN_SYSTEM_LIB_FLAG)system_lib2" in makefile_content
+    assert (
+        "CONAN_LIBS_MYLIB = \\\n\t$(CONAN_LIB_FLAG)mylib1 \\\n\t$(CONAN_LIB_FLAG)mylib2"
+        in makefile_content
+    )
+    assert (
+        "CONAN_SYSTEM_LIBS_MYLIB = \\\n\t$(CONAN_SYSTEM_LIB_FLAG)system_lib1 \\\n\t$(CONAN_SYSTEM_LIB_FLAG)system_lib2"
+        in makefile_content
+    )
     assert "CONAN_LIBS = $(CONAN_LIBS_MYLIB)" in makefile_content
     assert "CONAN_SYSTEM_LIBS = $(CONAN_SYSTEM_LIBS_MYLIB)" in makefile_content
 
@@ -154,13 +176,17 @@ def test_multiple_include_and_lib_dirs():
     client.run("install --requires=pkg/0.1@ -g MakeDeps")
 
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-    assert "CONAN_INCLUDE_DIRS_PKG = \\\n" \
-           "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc1 \\\n" \
-           "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc2 \\\n" \
-           "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc3/foo\n" in makefile_content
-    assert "CONAN_LIB_DIRS_PKG = \\\n" \
-           "\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_PKG)/lib1 \\\n" \
-           "\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_PKG)/lib2\n" in makefile_content
+    assert (
+        "CONAN_INCLUDE_DIRS_PKG = \\\n"
+        "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc1 \\\n"
+        "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc2 \\\n"
+        "\t$(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_PKG)/inc3/foo\n" in makefile_content
+    )
+    assert (
+        "CONAN_LIB_DIRS_PKG = \\\n"
+        "\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_PKG)/lib1 \\\n"
+        "\t$(CONAN_LIB_DIR_FLAG)$(CONAN_ROOT_PKG)/lib2\n" in makefile_content
+    )
     assert "CONAN_INCLUDE_DIRS = $(CONAN_INCLUDE_DIRS_PKG)\n" in makefile_content
     assert "CONAN_LIB_DIRS = $(CONAN_LIB_DIRS_PKG)\n" in makefile_content
 
@@ -191,7 +217,13 @@ def test_make_with_public_deps_and_component_requires():
     """)
     client.save({"conanfile.py": conanfile})
     client.run("create . --name=lib --version=0.1")
-    client.save({"conanfile.py": GenConanfile("other", "0.1").with_package_file("file.h", "0.1")})
+    client.save(
+        {
+            "conanfile.py": GenConanfile("other", "0.1").with_package_file(
+                "file.h", "0.1"
+            )
+        }
+    )
     client.run("create .")
 
     conanfile = textwrap.dedent("""
@@ -209,10 +241,15 @@ def test_make_with_public_deps_and_component_requires():
         """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("create . --name=second --version=0.1")
-    client.save({"conanfile.py": GenConanfile("third", "0.1").with_package_file("file.h", "0.1")
-                                                             .with_require("second/0.1")
-                                                             .with_require("other/0.1")},
-                clean_first=True)
+    client.save(
+        {
+            "conanfile.py": GenConanfile("third", "0.1")
+            .with_package_file("file.h", "0.1")
+            .with_require("second/0.1")
+            .with_require("other/0.1")
+        },
+        clean_first=True,
+    )
     client.run("create .")
 
     client2 = TestClient(cache_folder=client.cache_folder)
@@ -227,26 +264,38 @@ def test_make_with_public_deps_and_component_requires():
     client2.run("install .")
 
     makefile_content = client2.load(CONAN_MAKEFILE_FILENAME)
-    assert "CONAN_DEPS = \\\n" \
-           "\tthird \\\n" \
-           "\tsecond \\\n" \
-           "\tlib \\\n" \
-           "\tother\n" in makefile_content
-    assert 'CONAN_REQUIRES_SECOND = \\\n' \
-           '\t$(CONAN_REQUIRES_SECOND_MYCOMPONENT) \\\n' \
-           '\t$(CONAN_REQUIRES_SECOND_MYFIRSTCOMP)\n' in makefile_content
-    assert 'SYSROOT' not in makefile_content
-    assert 'CONAN_REQUIRES_SECOND_MYFIRSTCOMP = mycomponent\n' in makefile_content
-    assert 'CONAN_LIBS_LIB = $(CONAN_LIBS_LIB_CMP1)\n' in makefile_content
+    assert (
+        "CONAN_DEPS = \\\n"
+        "\tthird \\\n"
+        "\tsecond \\\n"
+        "\tlib \\\n"
+        "\tother\n" in makefile_content
+    )
+    assert (
+        "CONAN_REQUIRES_SECOND = \\\n"
+        "\t$(CONAN_REQUIRES_SECOND_MYCOMPONENT) \\\n"
+        "\t$(CONAN_REQUIRES_SECOND_MYFIRSTCOMP)\n" in makefile_content
+    )
+    assert "SYSROOT" not in makefile_content
+    assert "CONAN_REQUIRES_SECOND_MYFIRSTCOMP = mycomponent\n" in makefile_content
+    assert "CONAN_LIBS_LIB = $(CONAN_LIBS_LIB_CMP1)\n" in makefile_content
 
-    assert 'CONAN_COMPONENTS_LIB = cmp1\n' in makefile_content
-    assert 'CONAN_LIBS_LIB_CMP1 = $(CONAN_LIB_FLAG)libcmp1\n' in makefile_content
-    assert 'CONAN_REQUIRES = $(CONAN_REQUIRES_SECOND)\n' in makefile_content
-    assert 'CONAN_LIBS = $(CONAN_LIBS_LIB)\n' in makefile_content
+    assert "CONAN_COMPONENTS_LIB = cmp1\n" in makefile_content
+    assert "CONAN_LIBS_LIB_CMP1 = $(CONAN_LIB_FLAG)libcmp1\n" in makefile_content
+    assert "CONAN_REQUIRES = $(CONAN_REQUIRES_SECOND)\n" in makefile_content
+    assert "CONAN_LIBS = $(CONAN_LIBS_LIB)\n" in makefile_content
 
-    assert 'CONAN_PROPERTY_SECOND_MYFIRSTCOMP_MY_PROP = my prop value\n' in makefile_content
-    assert 'CONAN_PROPERTY_SECOND_MYFIRSTCOMP_MY_PROP_WITH_NEWLINE' not in makefile_content
-    assert "WARN: Skipping propery 'my_prop_with_newline' because it contains newline" in client2.stderr
+    assert (
+        "CONAN_PROPERTY_SECOND_MYFIRSTCOMP_MY_PROP = my prop value\n"
+        in makefile_content
+    )
+    assert (
+        "CONAN_PROPERTY_SECOND_MYFIRSTCOMP_MY_PROP_WITH_NEWLINE" not in makefile_content
+    )
+    assert (
+        "WARN: Skipping propery 'my_prop_with_newline' because it contains newline"
+        in client2.stderr
+    )
 
 
 def test_make_with_public_deps_and_component_requires_second():
@@ -298,15 +347,21 @@ def test_make_with_public_deps_and_component_requires_second():
     client2.save({"conanfile.txt": conanfile})
     client2.run("install .")
     make_content = client2.load(CONAN_MAKEFILE_FILENAME)
-    assert 'CONAN_REQUIRES_PKG = other::cmp1\n' in make_content
-    assert 'CONAN_REQUIRES_OTHER = $(CONAN_REQUIRES_OTHER_CMP3)\n' in make_content
-    assert 'CONAN_REQUIRES_OTHER_CMP3 = cmp1\n' in make_content
-    assert 'CONAN_COMPONENTS_OTHER = \\\n\tcmp1 \\\n\tcmp2 \\\n\tcmp3\n' in make_content
-    assert 'CONAN_LIBS_OTHER = \\\n\t$(CONAN_LIBS_OTHER_CMP1) \\\n\t$(CONAN_LIBS_OTHER_CMP2)\n' in make_content
-    assert 'CONAN_LIBS_OTHER_CMP1 = $(CONAN_LIB_FLAG)other_cmp1\n' in make_content
-    assert 'CONAN_LIBS_OTHER_CMP2 = $(CONAN_LIB_FLAG)other_cmp2\n' in make_content
-    assert 'CONAN_LIBS = $(CONAN_LIBS_OTHER)\n' in make_content
-    assert 'CONAN_REQUIRES = \\\n\t$(CONAN_REQUIRES_PKG) \\\n\t$(CONAN_REQUIRES_OTHER)\n' in make_content
+    assert "CONAN_REQUIRES_PKG = other::cmp1\n" in make_content
+    assert "CONAN_REQUIRES_OTHER = $(CONAN_REQUIRES_OTHER_CMP3)\n" in make_content
+    assert "CONAN_REQUIRES_OTHER_CMP3 = cmp1\n" in make_content
+    assert "CONAN_COMPONENTS_OTHER = \\\n\tcmp1 \\\n\tcmp2 \\\n\tcmp3\n" in make_content
+    assert (
+        "CONAN_LIBS_OTHER = \\\n\t$(CONAN_LIBS_OTHER_CMP1) \\\n\t$(CONAN_LIBS_OTHER_CMP2)\n"
+        in make_content
+    )
+    assert "CONAN_LIBS_OTHER_CMP1 = $(CONAN_LIB_FLAG)other_cmp1\n" in make_content
+    assert "CONAN_LIBS_OTHER_CMP2 = $(CONAN_LIB_FLAG)other_cmp2\n" in make_content
+    assert "CONAN_LIBS = $(CONAN_LIBS_OTHER)\n" in make_content
+    assert (
+        "CONAN_REQUIRES = \\\n\t$(CONAN_REQUIRES_PKG) \\\n\t$(CONAN_REQUIRES_OTHER)\n"
+        in make_content
+    )
 
 
 def test_makedeps_with_test_requires():
@@ -334,8 +389,8 @@ def test_makedeps_with_test_requires():
         """)
     client.save({"conanfile.py": conanfile}, clean_first=True)
     client.run("install . -g MakeDeps")
-    assert 'CONAN_DEPS = test\n' in client.load(CONAN_MAKEFILE_FILENAME)
-    assert 'app' not in client.load(CONAN_MAKEFILE_FILENAME)
+    assert "CONAN_DEPS = test\n" in client.load(CONAN_MAKEFILE_FILENAME)
+    assert "app" not in client.load(CONAN_MAKEFILE_FILENAME)
 
 
 def test_makedeps_with_editable_layout():
@@ -354,16 +409,23 @@ def test_makedeps_with_editable_layout():
             def package_info(self):
                 self.cpp_info.libs = ["mylib"]
         """)
-    client.save({"dep/conanfile.py": dep,
-                 "dep/include/header.h": "",
-                 "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1")})
+    client.save(
+        {
+            "dep/conanfile.py": dep,
+            "dep/include/header.h": "",
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1"),
+        }
+    )
     client.run("create dep")
     client.run("editable add dep")
     with client.chdir("pkg"):
         client.run("install . -g MakeDeps")
         makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-        assert 'CONAN_LIBS_DEP = $(CONAN_LIB_FLAG)mylib\n' in makefile_content
-        assert 'CONAN_INCLUDE_DIRS_DEP = $(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_DEP)/include\n' in makefile_content
+        assert "CONAN_LIBS_DEP = $(CONAN_LIB_FLAG)mylib\n" in makefile_content
+        assert (
+            "CONAN_INCLUDE_DIRS_DEP = $(CONAN_INCLUDE_DIR_FLAG)$(CONAN_ROOT_DEP)/include\n"
+            in makefile_content
+        )
 
 
 def test_makedeps_tool_requires():
@@ -411,12 +473,23 @@ def test_makedeps_tool_requires():
     assert "CONAN_NAME_OTHER" not in make_content
 
 
-@pytest.mark.parametrize("pattern, result, expected",
-                         [("libs = []", False, 'SYSROOT'),
-                          ("sysroot = ['/foo/bar/sysroot']", True, 'CONAN_SYSROOT_PACKAGE = /foo/bar/sysroot')
-                          if platform.system() != "Windows" else
-                          ("sysroot = ['C:/my_sysroot']", True, 'CONAN_SYSROOT_PACKAGE = C:/my_sysroot')])
-
+@pytest.mark.parametrize(
+    "pattern, result, expected",
+    [
+        ("libs = []", False, "SYSROOT"),
+        (
+            "sysroot = ['/foo/bar/sysroot']",
+            True,
+            "CONAN_SYSROOT_PACKAGE = /foo/bar/sysroot",
+        )
+        if platform.system() != "Windows"
+        else (
+            "sysroot = ['C:/my_sysroot']",
+            True,
+            "CONAN_SYSROOT_PACKAGE = C:/my_sysroot",
+        ),
+    ],
+)
 def test_makefile_sysroot(pattern, result, expected):
     """
     The MakeDeps should not enforce sysroot in case not defined
@@ -430,7 +503,9 @@ def test_makefile_sysroot(pattern, result, expected):
             """)
     client.save({"conanfile.py": conanfile.replace("{{ pattern }}", pattern)})
     client.run("create . --name package --version 0.1.0")
-    client.run("install --requires=package/0.1.0 -pr:h default -pr:b default -g MakeDeps")
+    client.run(
+        "install --requires=package/0.1.0 -pr:h default -pr:b default -g MakeDeps"
+    )
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
     assert (expected in makefile_content) == result
 
@@ -449,12 +524,16 @@ def test_makefile_reference():
 
     # official packages <name>/<version>
     client.run("create . --name package --version 0.1.0")
-    client.run("install --requires=package/0.1.0 -pr:h default -pr:b default -g MakeDeps")
+    client.run(
+        "install --requires=package/0.1.0 -pr:h default -pr:b default -g MakeDeps"
+    )
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-    assert 'CONAN_REFERENCE_PACKAGE = package/0.1.0\n' in makefile_content
+    assert "CONAN_REFERENCE_PACKAGE = package/0.1.0\n" in makefile_content
 
     # custom packages <name>/<version>@<user>/<channel>
     client.run("create . --name package --version 0.1.0 --user user --channel channel")
-    client.run("install --requires=package/0.1.0@user/channel -pr:h default -pr:b default -g MakeDeps")
+    client.run(
+        "install --requires=package/0.1.0@user/channel -pr:h default -pr:b default -g MakeDeps"
+    )
     makefile_content = client.load(CONAN_MAKEFILE_FILENAME)
-    assert 'CONAN_REFERENCE_PACKAGE = package/0.1.0@user/channel\n' in makefile_content
+    assert "CONAN_REFERENCE_PACKAGE = package/0.1.0@user/channel\n" in makefile_content

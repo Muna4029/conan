@@ -23,8 +23,8 @@ def test_plugin_cmd_wrapper():
         """)
     c.save({"conanfile.py": conanfile})
     c.run("install .")
-    assert 'Hello world' in c.out
-    assert 'Other stuff' in c.out
+    assert "Hello world" in c.out
+    assert "Other stuff" in c.out
 
 
 def test_plugin_cmd_wrapper_conanfile():
@@ -46,28 +46,56 @@ def test_plugin_cmd_wrapper_conanfile():
         """)
     c.save({"conanfile.py": conanfile})
     c.run("install . --name=pkg --version=0.1")
-    assert 'pkg/0.1!:Hello world!' in c.out
+    assert "pkg/0.1!:Hello world!" in c.out
 
 
 def test_plugin_profile_error_vs():
     c = TestClient()
     c.save({"conanfile.py": GenConanfile("pkg", "1.0")})
-    c.run("create . -s compiler=msvc -s compiler.version=15 -s compiler.cppstd=14",
-          assert_error=True)
-    assert "The provided compiler.cppstd=14 is not supported by msvc 15. Supported values are: []" in c.out
-    c.run("create . -s compiler=msvc -s compiler.version=170 -s compiler.cppstd=14",
-          assert_error=True)
-    assert "The provided compiler.cppstd=14 is not supported by msvc 170. Supported values are: []" in c.out
+    c.run(
+        "create . -s compiler=msvc -s compiler.version=15 -s compiler.cppstd=14",
+        assert_error=True,
+    )
+    assert (
+        "The provided compiler.cppstd=14 is not supported by msvc 15. Supported values are: []"
+        in c.out
+    )
+    c.run(
+        "create . -s compiler=msvc -s compiler.version=170 -s compiler.cppstd=14",
+        assert_error=True,
+    )
+    assert (
+        "The provided compiler.cppstd=14 is not supported by msvc 170. Supported values are: []"
+        in c.out
+    )
     c.run("create . -s compiler=msvc -s compiler.version=190 -s compiler.cppstd=14")
     assert "Installing packages" in c.out
 
 
 def test_plugin_profile_error_vscstd():
     c = TestClient()
-    c.save({"conanfile.py": GenConanfile("pkg", "1.0").with_class_attribute("languages = 'C'")})
-    c.run("create . -s compiler=msvc -s compiler.version=190 -s compiler.cstd=23", assert_error=True)
-    assert "The provided compiler.cstd=23 is not supported by msvc 190. Supported values are: []" in c.out
-    c.run("create . -s compiler=msvc -s compiler.version=193 -s compiler.cstd=23", assert_error=True)
-    assert "The provided compiler.cstd=23 is not supported by msvc 193. Supported values are: ['11', '17']" in c.out
+    c.save(
+        {
+            "conanfile.py": GenConanfile("pkg", "1.0").with_class_attribute(
+                "languages = 'C'"
+            )
+        }
+    )
+    c.run(
+        "create . -s compiler=msvc -s compiler.version=190 -s compiler.cstd=23",
+        assert_error=True,
+    )
+    assert (
+        "The provided compiler.cstd=23 is not supported by msvc 190. Supported values are: []"
+        in c.out
+    )
+    c.run(
+        "create . -s compiler=msvc -s compiler.version=193 -s compiler.cstd=23",
+        assert_error=True,
+    )
+    assert (
+        "The provided compiler.cstd=23 is not supported by msvc 193. Supported values are: ['11', '17']"
+        in c.out
+    )
     c.run("create . -s compiler=msvc -s compiler.version=193 -s compiler.cstd=17")
     assert "Installing packages" in c.out

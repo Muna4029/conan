@@ -19,10 +19,26 @@ class ExceptionsTest(ConanFile):
 
 
 @pytest.mark.parametrize("direct", [True, False])
-@pytest.mark.parametrize("method",
-                         ["source", "build", "package", "package_info", "configure", "build_id",
-                          "package_id", "requirements", "config_options", "layout", "generate",
-                          "export", "export_sources", "build_requirements", "init"])
+@pytest.mark.parametrize(
+    "method",
+    [
+        "source",
+        "build",
+        "package",
+        "package_info",
+        "configure",
+        "build_id",
+        "package_id",
+        "requirements",
+        "config_options",
+        "layout",
+        "generate",
+        "export",
+        "export_sources",
+        "build_requirements",
+        "init",
+    ],
+)
 def test_all_methods(direct, method):
     client = TestClient()
     if direct:
@@ -30,7 +46,9 @@ def test_all_methods(direct, method):
     else:
         throw = "self._aux_method()"
 
-    client.save({"conanfile.py": conanfile.format(method=method, method_contents=throw)})
+    client.save(
+        {"conanfile.py": conanfile.format(method=method, method_contents=throw)}
+    )
     client.run("create . ", assert_error=True)
     assert "Error in %s() method, line 9" % method in client.out
     assert "Oh! an error!" in client.out
@@ -44,7 +62,9 @@ def test_complete_traceback_debug():
     """
     client = TestClient()
     throw = "self._aux_method()"
-    client.save({"conanfile.py": conanfile.format(method="source", method_contents=throw)})
+    client.save(
+        {"conanfile.py": conanfile.format(method="source", method_contents=throw)}
+    )
     client.run("create . -vv", assert_error=True)
     assert "Exception: Oh! an error!" in client.out
     assert "ERROR: Traceback (most recent call last):" in client.out

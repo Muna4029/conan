@@ -14,7 +14,6 @@ from conan.test.utils.tools import TestClient, NO_SETTINGS_PACKAGE_ID
 from conan.internal.util.files import save, load
 
 
-
 def test_cache_save_restore():
     c = TestClient()
     c.save({"conanfile.py": GenConanfile().with_settings("os")})
@@ -28,7 +27,7 @@ def test_cache_save_restore():
     _validate_restore(cache_path)
 
     # Lets test that the pkglist does not contain windows backslash paths to make it portable
-    with open(cache_path, mode='rb') as file_handler:
+    with open(cache_path, mode="rb") as file_handler:
         the_tar = tarfile.open(fileobj=file_handler)
         fileobj = the_tar.extractfile("pkglist.json")
         pkglist = fileobj.read()
@@ -41,9 +40,11 @@ def test_cache_save_restore():
 def test_cache_save_restore_with_package_file():
     """If we have some sources in the root (like the CMakeLists.txt)
     we don't declare folders.source"""
-    conan_file = GenConanfile() \
-        .with_settings("os") \
+    conan_file = (
+        GenConanfile()
+        .with_settings("os")
         .with_package_file("bin/file.txt", "content!!")
+    )
 
     client = TestClient()
     client.save({"conanfile.py": conan_file})
@@ -69,7 +70,7 @@ def test_cache_save_restore_with_package_file():
 
 
 def test_cache_save_downloaded_restore():
-    """ what happens if we save packages downloaded from server, not
+    """what happens if we save packages downloaded from server, not
     created
     """
     c = TestClient(default_server_user=True)
@@ -127,17 +128,29 @@ def _validate_restore(cache_path):
 def test_cache_save_excluded_folders():
     # https://github.com/conan-io/conan/issues/18234
     c = TestClient(default_server_user=True)
-    c.save({"conanfile.py": GenConanfile().with_exports("*.py").with_exports_sources("*.c"),
+    c.save(
+        {
+            "conanfile.py": GenConanfile()
+            .with_exports("*.py")
+            .with_exports_sources("*.c"),
             "somefile.py": "",
-            "mysrc.c": ""})
+            "mysrc.c": "",
+        }
+    )
     c.run("create . --name=pkg --version=1.0")
     ref_layout = c.exported_layout()
     pkg_layout = c.created_layout()
     c.run("upload * --dry-run -r=default -c")
-    assert os.path.exists(os.path.join(ref_layout.download_export(), "conan_export.tgz"))
-    assert os.path.exists(os.path.join(ref_layout.download_export(), "conan_sources.tgz"))
+    assert os.path.exists(
+        os.path.join(ref_layout.download_export(), "conan_export.tgz")
+    )
+    assert os.path.exists(
+        os.path.join(ref_layout.download_export(), "conan_sources.tgz")
+    )
     assert os.path.exists(os.path.join(ref_layout.source(), "mysrc.c"))
-    assert os.path.exists(os.path.join(pkg_layout.download_package(), "conan_package.tgz"))
+    assert os.path.exists(
+        os.path.join(pkg_layout.download_package(), "conan_package.tgz")
+    )
     assert os.path.exists(pkg_layout.build())
 
     c.run("cache save *:*")
@@ -149,11 +162,19 @@ def test_cache_save_excluded_folders():
 
     ref = RecipeReference.loads("pkg/1.0")
     ref_layout = c2.get_latest_ref_layout(ref)
-    pkg_layout = c2.get_latest_pkg_layout(PkgReference(ref_layout.reference, NO_SETTINGS_PACKAGE_ID))
+    pkg_layout = c2.get_latest_pkg_layout(
+        PkgReference(ref_layout.reference, NO_SETTINGS_PACKAGE_ID)
+    )
     assert os.path.exists(os.path.join(ref_layout.source(), "mysrc.c"))
-    assert not os.path.exists(os.path.join(ref_layout.download_export(), "conan_export.tgz"))
-    assert not os.path.exists(os.path.join(ref_layout.download_export(), "conan_sources.tgz"))
-    assert not os.path.exists(os.path.join(pkg_layout.download_package(), "conan_package.tgz"))
+    assert not os.path.exists(
+        os.path.join(ref_layout.download_export(), "conan_export.tgz")
+    )
+    assert not os.path.exists(
+        os.path.join(ref_layout.download_export(), "conan_sources.tgz")
+    )
+    assert not os.path.exists(
+        os.path.join(pkg_layout.download_package(), "conan_package.tgz")
+    )
     assert not os.path.exists(pkg_layout.build())
 
     # exclude source
@@ -199,7 +220,10 @@ def test_cache_save_restore_metadata():
 
 
 # FIXME: check the timestamps of the conan cache restore
-@pytest.mark.skipif(platform.system() == "Windows", reason="Fails in windows in ci because of the low precission of the clock")
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Fails in windows in ci because of the low precission of the clock",
+)
 def test_cache_save_restore_multiple_revisions():
     c = TestClient()
     c.save({"conanfile.py": GenConanfile("pkg", "0.1")})
@@ -213,7 +237,6 @@ def test_cache_save_restore_multiple_revisions():
     c.save({"conanfile.py": GenConanfile("pkg", "0.1").with_class_attribute("var=123")})
     c.run("create .")
     rrev3 = c.exported_recipe_revision()
-
 
     def check_ordered_revisions(client):
         client.run("list *#* --format=json")
@@ -234,11 +257,14 @@ def test_cache_save_restore_multiple_revisions():
 
 
 def test_cache_save_restore_graph():
-    """ It is possible to save package list
-    """
+    """It is possible to save package list"""
     c = TestClient()
-    c.save({"dep/conanfile.py": GenConanfile("dep", "0.1"),
-            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1")})
+    c.save(
+        {
+            "dep/conanfile.py": GenConanfile("dep", "0.1"),
+            "pkg/conanfile.py": GenConanfile("pkg", "0.1").with_requires("dep/0.1"),
+        }
+    )
     c.run("create dep")
     c.run("create pkg --format=json", redirect_stdout="graph.json")
     c.run("list --graph=graph.json --format=json", redirect_stdout="list.json")
@@ -257,7 +283,7 @@ def test_cache_save_restore_graph():
 
 
 def test_cache_save_subfolder():
-    """ It is possible to save package list in subfolder that doesn't exist
+    """It is possible to save package list in subfolder that doesn't exist
     https://github.com/conan-io/conan/issues/15362
     """
     c = TestClient()

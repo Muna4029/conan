@@ -18,7 +18,9 @@ def test_settings_user():
         new_global: ["42", "21"]
         """)
     save(os.path.join(c.cache_folder, "settings_user.yml"), settings_user)
-    c.save({"conanfile.py": GenConanfile().with_settings("os").with_settings("new_global")})
+    c.save(
+        {"conanfile.py": GenConanfile().with_settings("os").with_settings("new_global")}
+    )
     # New settings are there
     c.run("install . -s os=Windows -s os.subsystem=new_sub -s new_global=42")
     assert "new_global=42" in c.out
@@ -92,7 +94,9 @@ def test_settings_user_error():
         """)
     save(os.path.join(c.cache_folder, "settings_user.yml"), settings_user)
     c.run("profile show", assert_error=True)
-    assert "ERROR: Definition of settings.yml 'settings.os.libc' cannot be null" in c.out
+    assert (
+        "ERROR: Definition of settings.yml 'settings.os.libc' cannot be null" in c.out
+    )
 
 
 def test_settings_user_breaking_universal_binaries():
@@ -104,6 +108,13 @@ def test_settings_user_breaking_universal_binaries():
         arch: [universal]
         """)
     save(os.path.join(c.cache_folder, "settings_user.yml"), settings_user)
-    c.save({"conanfile.py": GenConanfile().with_settings("os").with_settings("arch").with_generator("CMakeToolchain")})
+    c.save(
+        {
+            "conanfile.py": GenConanfile()
+            .with_settings("os")
+            .with_settings("arch")
+            .with_generator("CMakeToolchain")
+        }
+    )
     c.run('install . -s="arch=universal"')
     assert "CMakeToolchain generated: conan_toolchain.cmake" in c.out

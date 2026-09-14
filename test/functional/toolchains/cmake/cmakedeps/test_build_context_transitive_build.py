@@ -17,7 +17,7 @@ but neither will be included as find_dependencies()
 @pytest.fixture
 def client():
     c = TestClient()
-    zlib_conanfile = textwrap.dedent('''
+    zlib_conanfile = textwrap.dedent("""
     from conan import ConanFile
 
     class Zlib(ConanFile):
@@ -27,11 +27,11 @@ def client():
         def package_info(self):
             self.cpp_info.includedirs = []
             self.cpp_info.cxxflags = ["foo"]
-    ''')
+    """)
     c.save({"conanfile.py": zlib_conanfile})
     c.run("create . ")
 
-    doxygen_conanfile = textwrap.dedent('''
+    doxygen_conanfile = textwrap.dedent("""
     from conan import ConanFile
     from conan.tools.files import save, chdir
     import os
@@ -43,7 +43,7 @@ def client():
         def package(self):
             with chdir(self, self.package_folder):
                 save(self, "include/doxygen.h", "int foo=1;")
-    ''')
+    """)
     c.save({"conanfile.py": doxygen_conanfile})
     c.run("create . --name=doxygen --version=1.0")
     return c
@@ -51,11 +51,12 @@ def client():
 
 @pytest.mark.tool("cmake")
 def test_zlib_not_included(client):
-
     main = gen_function_cpp(name="main", includes=["doxygen.h"])
-    cmake = gen_cmakelists(find_package=["doxygen"], appsources=["main.cpp"], appname="main")
+    cmake = gen_cmakelists(
+        find_package=["doxygen"], appsources=["main.cpp"], appname="main"
+    )
 
-    conanfile_consumer = textwrap.dedent('''
+    conanfile_consumer = textwrap.dedent("""
         from conan import ConanFile
         from conan.tools.cmake import CMakeDeps
 
@@ -68,13 +69,17 @@ def test_zlib_not_included(client):
                 d = CMakeDeps(self)
                 d.build_context_activated = ["doxygen"]
                 d.generate()
-        ''')
+        """)
 
-    client.save({"main.cpp": main, "CMakeLists.txt": cmake, "conanfile.py": conanfile_consumer},
-                clean_first=True)
+    client.save(
+        {"main.cpp": main, "CMakeLists.txt": cmake, "conanfile.py": conanfile_consumer},
+        clean_first=True,
+    )
     client.run("install . -pr:h=default -pr:b=default")
     # The compilation works, so it finds the doxygen without transitive failures
-    client.run_command("cmake . -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release")
+    client.run_command(
+        "cmake . -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release"
+    )
 
     # Assert there is no zlib target
     assert "Target declared 'zlib::zlib'" not in client.out
@@ -129,11 +134,17 @@ def test_error_cmakedeps_transitive_build_requires():
                 assert os.path.exists("protobufTargets.cmake")
                 assert os.path.exists("protobuf-Target-release.cmake")
         """)
-    c.save({"tool/conanfile.py": tool,
-            "consumer/conanfile.py": GenConanfile().with_build_requires("tool/0.1")},
-           clean_first=True)
+    c.save(
+        {
+            "tool/conanfile.py": tool,
+            "consumer/conanfile.py": GenConanfile().with_build_requires("tool/0.1"),
+        },
+        clean_first=True,
+    )
     c.run("export tool")
-    c.run("install consumer --build=missing -s:b build_type=Release -s:h build_type=Debug")
+    c.run(
+        "install consumer --build=missing -s:b build_type=Release -s:h build_type=Debug"
+    )
     assert "tool/0.1: Created package" in c.out
 
 
@@ -144,12 +155,20 @@ def test_transitive_tool_requires_visible():
     # dependencies. tool_requires(..., visible=True) only affects at the moment and version conflict
     # detection
     c = TestClient()
-    c.save({"tool/conanfile.py": GenConanfile("tool", "0.1").with_package_type("application"),
-            "pkgb/conanfile.py": GenConanfile("pkgb", "0.1").with_tool_requirement("tool/0.1",
-                                                                                   visible=True),
-            "app/conanfile.py": GenConanfile("app", "0.1").with_requires("pkgb/0.1")
-                                                          .with_settings("build_type")
-                                                          .with_generator("CMakeDeps")})
+    c.save(
+        {
+            "tool/conanfile.py": GenConanfile("tool", "0.1").with_package_type(
+                "application"
+            ),
+            "pkgb/conanfile.py": GenConanfile("pkgb", "0.1").with_tool_requirement(
+                "tool/0.1", visible=True
+            ),
+            "app/conanfile.py": GenConanfile("app", "0.1")
+            .with_requires("pkgb/0.1")
+            .with_settings("build_type")
+            .with_generator("CMakeDeps"),
+        }
+    )
 
     c.run("create tool")
     c.run("create pkgb")

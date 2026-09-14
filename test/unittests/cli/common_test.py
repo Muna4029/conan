@@ -36,14 +36,13 @@ def argparse_args():
     )
 
 
-@pytest.mark.parametrize("conf_name", [
-    "core.doesnotexist:never",
-    "core:doesnotexist"
-])
+@pytest.mark.parametrize("conf_name", ["core.doesnotexist:never", "core:doesnotexist"])
 def test_core_confs_not_allowed_via_cli(conan_api, argparse_args, conf_name):
     argparse_args.conf_build = [conf_name]
     argparse_args.conf_host = [conf_name]
 
     with pytest.raises(ConanException) as exc:
         conan_api.profiles.get_profiles_from_args(argparse_args)
-    assert "[conf] 'core.*' configurations are not allowed in profiles" in str(exc.value)
+    assert "[conf] 'core.*' configurations are not allowed in profiles" in str(
+        exc.value
+    )

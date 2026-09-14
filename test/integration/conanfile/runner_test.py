@@ -4,7 +4,6 @@ from conan.test.utils.tools import TestClient
 
 
 class TestRunner:
-
     def test_ignore_error(self):
         conanfile = """from conan import ConanFile
 class Pkg(ConanFile):
@@ -43,7 +42,7 @@ class Pkg(ConanFile):
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("source .")
-        assert 'conanfile.py: Buffer got msgs Hello' in client.out
+        assert "conanfile.py: Buffer got msgs Hello" in client.out
 
     def test_custom_stream_stderr(self):
         conanfile = textwrap.dedent("""
@@ -58,4 +57,4 @@ class Pkg(ConanFile):
         client = TestClient()
         client.save({"conanfile.py": conanfile})
         client.run("source .")
-        assert 'conanfile.py: Buffer got stderr msgs Hello' in client.out
+        assert "conanfile.py: Buffer got stderr msgs Hello" in client.out

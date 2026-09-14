@@ -4,11 +4,12 @@ from conan.internal.util.files import save
 
 
 class TestConditionalReqsTest:
-
     def test_conditional_requirements(self):
-        conanfile = GenConanfile("hello", "0.1").with_settings("os", "build_type", "product")
+        conanfile = GenConanfile("hello", "0.1").with_settings(
+            "os", "build_type", "product"
+        )
 
-        test_conanfile = '''
+        test_conanfile = """
 from conan import ConanFile
 
 class TestConanLib(ConanFile):
@@ -20,10 +21,13 @@ class TestConanLib(ConanFile):
 
     def test(self):
         pass
-'''
+"""
         client = TestClient()
         save(client.paths.settings_path_user, "product: [onion, potato]")
-        client.save({"conanfile.py": conanfile,
-                     "test_package/conanfile.py": test_conanfile})
+        client.save(
+            {"conanfile.py": conanfile, "test_package/conanfile.py": test_conanfile}
+        )
         client.run("create . -s os=Windows -s product=onion -s build_type=Release")
-        assert"hello/0.1 (test package): TestSettings: Windows, Release, onion", client.out
+        assert "hello/0.1 (test package): TestSettings: Windows, Release, onion", (
+            client.out
+        )

@@ -7,14 +7,14 @@ from conan.test.utils.tools import TestClient
 class TestConanFile:
     def test_conanfile_naming(self):
         for member in vars(ConanFile):
-            if member.startswith('_') and not member.startswith("__"):
-                assert member.startswith('_conan')
+            if member.startswith("_") and not member.startswith("__"):
+                assert member.startswith("_conan")
 
         conanfile = ConanFile(None)
 
         for member in vars(conanfile):
-            if member.startswith('_') and not member.startswith("__"):
-                assert member.startswith('_conan')
+            if member.startswith("_") and not member.startswith("__"):
+                assert member.startswith("_conan")
 
     def test_conanfile_naming_complete(self):
         client = TestClient()
@@ -31,11 +31,21 @@ class Pkg(ConanFile):
 """
         client.save({"conanfile.py": conanfile})
         client.run("create . --name=pkga --version=0.1 --user=user --channel=testing")
-        client.save({"conanfile.py": conanfile.replace("pass",
-                                                       "requires = 'pkga/0.1@user/testing'")})
+        client.save(
+            {
+                "conanfile.py": conanfile.replace(
+                    "pass", "requires = 'pkga/0.1@user/testing'"
+                )
+            }
+        )
         client.run("create . --name=pkgb --version=0.1 --user=user --channel=testing")
-        client.save({"conanfile.py": conanfile.replace("pass",
-                                                       "requires = 'pkgb/0.1@user/testing'")})
+        client.save(
+            {
+                "conanfile.py": conanfile.replace(
+                    "pass", "requires = 'pkgb/0.1@user/testing'"
+                )
+            }
+        )
         client.run("create . --name=pkgc --version=0.1 --user=user --channel=testing")
 
     def test_conanfile_new_print(self):

@@ -109,19 +109,27 @@ def client():
             set(CMAKE_CXX_STANDARD_LIBRARIES "-lnet --start-group --as-needed -lc -lc_internal -lllvm -lcplusplus -lllvmcplus -ldl --end-group")
             set(CMAKE_EXE_LINKER_FLAGS "--defsym __wrs_rtp_base=0x80000000 -u __wr_need_frame_add -u __tls__ -T${vsb}/usr/ldscripts/rtp.ld -static -EL ${vsb}/usr/lib/common/crt0.o" CACHE STRING "" FORCE)
         """)
-    c.save({"conanfile.py": conanfile,
+    c.save(
+        {
+            "conanfile.py": conanfile,
             "clang": clang_profile,
             "toolchain-vxworks.cmake": toolchain_file,
-            "CMakeLists.txt": gen_cmakelists(appname="my_app", appsources=["src/main.cpp"]),
-            "src/main.cpp": gen_function_cpp(name="main")})
+            "CMakeLists.txt": gen_cmakelists(
+                appname="my_app", appsources=["src/main.cpp"]
+            ),
+            "src/main.cpp": gen_function_cpp(name="main"),
+        }
+    )
     return c
 
 
 @pytest.mark.tool("cmake")
 @pytest.mark.tool("clang", "12")
 def test_clang_cmake_ninja(client):
-    client.run("create . --name=pkg --version=0.1 -pr=clang "
-               "-c tools.cmake.cmaketoolchain:generator=Ninja "
-               "-c tools.cmake.cmaketoolchain:toolchain_file=../../toolchain-vxworks.cmake")
+    client.run(
+        "create . --name=pkg --version=0.1 -pr=clang "
+        "-c tools.cmake.cmaketoolchain:generator=Ninja "
+        "-c tools.cmake.cmaketoolchain:toolchain_file=../../toolchain-vxworks.cmake"
+    )
     assert 'cmake -G "Ninja"' in client.out
     assert "__wrs_rtp_" in client.out

@@ -6,7 +6,6 @@ from conan.test.utils.mocks import ConanFileMock, MockSettings
 
 
 class TestCheckMinVS:
-
     parametrize_vars = "compiler,version,update,minimum"
     valid_parametrize_values = [
         ("Visual Studio", "15", None, "191"),
@@ -26,9 +25,13 @@ class TestCheckMinVS:
 
     @staticmethod
     def _create_conanfile(compiler, version, update=None):
-        settings = MockSettings({"compiler": compiler,
-                                 "compiler.version": version,
-                                 "compiler.update": update})
+        settings = MockSettings(
+            {
+                "compiler": compiler,
+                "compiler.version": version,
+                "compiler.update": update,
+            }
+        )
         conanfile = ConanFileMock(settings)
         return conanfile
 

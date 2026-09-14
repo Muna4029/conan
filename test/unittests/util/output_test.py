@@ -10,7 +10,6 @@ from conan.internal.util.files import load, save
 
 
 class TestOutput:
-
     def test_error(self):
         client = TestClient()
         conanfile = textwrap.dedent("""
@@ -31,8 +30,8 @@ class TestOutput:
         file_path = os.path.join(tmp_dir, "example.txt")
         save(file_path, "Hello world!")
 
-        zip_path = os.path.join(tmp_dir, 'example.zip')
-        zipf = zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED)
+        zip_path = os.path.join(tmp_dir, "example.zip")
+        zipf = zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED)
         for root, _, files in os.walk(tmp_dir):
             for f in files:
                 zipf.write(os.path.join(root, f), f)

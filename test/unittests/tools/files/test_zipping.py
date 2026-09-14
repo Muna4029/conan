@@ -13,7 +13,7 @@ from conan.errors import ConanException
 
 def test_impossible_to_import_untargz():
     with pytest.raises(ImportError) as exc:
-        from conan.tools.files import untargz
+        pass
 
 
 def create_example_zip(root_file=True, subfolder=False):
@@ -105,7 +105,7 @@ def test_untargz():
     archive = create_example_tar(subfolder=True)
     conanfile = ConanFileMock({})
 
-    with patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+    with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
         # Unzip and check permissions are kept
         dest_dir = temp_folder()
         unzip(conanfile, archive, dest_dir)
@@ -144,7 +144,10 @@ def test_untargz_with_strip_root_fails():
     dest_dir = temp_folder()
     with pytest.raises(ConanException) as error:
         unzip(conanfile, archive, dest_dir, strip_root=True)
-    assert "Can't untar a tgz containing files in the root with strip_root enabled" in str(error.value)
+    assert (
+        "Can't untar a tgz containing files in the root with strip_root enabled"
+        in str(error.value)
+    )
 
 
 def test_untargz_with_strip_root_and_pattern():

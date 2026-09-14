@@ -43,17 +43,23 @@ class BuildRequiresFromProfileTest(unittest.TestCase):
 
     def test_br_from_profile_host_and_profile_build(self):
         t = TestClient()
-        t.save({'profile_host': self.profile_host,
-                'profile_build': self.profile_build,
-                'library.py': self.library_conanfile,
-                'br1.py': GenConanfile(),
-                'br2.py': GenConanfile(),
-                'br3.py': GenConanfile()})
+        t.save(
+            {
+                "profile_host": self.profile_host,
+                "profile_build": self.profile_build,
+                "library.py": self.library_conanfile,
+                "br1.py": GenConanfile(),
+                "br2.py": GenConanfile(),
+                "br3.py": GenConanfile(),
+            }
+        )
         t.run("export br1.py --name=br1 --version=version")
         t.run("export br2.py --name=br2 --version=version")
         t.run("export br3.py --name=br3 --version=version")
-        t.run("create library.py --profile:host=profile_host --profile:build=profile_build "
-              "--build='*'")
+        t.run(
+            "create library.py --profile:host=profile_host --profile:build=profile_build "
+            "--build='*'"
+        )
 
 
 class BuildRequiresContextHostFromProfileTest(unittest.TestCase):
@@ -110,12 +116,18 @@ class BuildRequiresContextHostFromProfileTest(unittest.TestCase):
 
     def test_br_from_profile_host_and_profile_build(self):
         t = TestClient()
-        t.save({'profile_host': self.profile_host,
-                'profile_build': self.profile_build,
-                'library.py': self.library_conanfile,
-                'mytoolchain.py': self.toolchain,
-                "gtest.py": self.gtest})
-        t.run("create mytoolchain.py -pr:h=profile_host -pr:b=profile_build --build-require")
+        t.save(
+            {
+                "profile_host": self.profile_host,
+                "profile_build": self.profile_build,
+                "library.py": self.library_conanfile,
+                "mytoolchain.py": self.toolchain,
+                "gtest.py": self.gtest,
+            }
+        )
+        t.run(
+            "create mytoolchain.py -pr:h=profile_host -pr:b=profile_build --build-require"
+        )
 
         t.run("create gtest.py -pr=profile_host -pr:b=profile_build")
         self.assertIn("mytoolchain/1.0: PackageInfo OS=Windows", t.out)
@@ -208,23 +220,33 @@ class BuildRequiresBothContextsTest(unittest.TestCase):
 
     def test_build_requires_both_contexts(self):
         t = TestClient()
-        t.save({'profile_host': self.profile_host,
-                'profile_build': self.profile_build,
-                'library.py': self.library_conanfile,
-                'creator.py': self.toolchain_creator,
-                'mytoolchain.py': self.toolchain,
-                "gtest.py": self.gtest})
+        t.save(
+            {
+                "profile_host": self.profile_host,
+                "profile_build": self.profile_build,
+                "library.py": self.library_conanfile,
+                "creator.py": self.toolchain_creator,
+                "mytoolchain.py": self.toolchain,
+                "gtest.py": self.gtest,
+            }
+        )
         t.run("create creator.py -pr=profile_build")
-        t.run("create mytoolchain.py -pr:h=profile_host -pr:b=profile_build --build-require")
+        t.run(
+            "create mytoolchain.py -pr:h=profile_host -pr:b=profile_build --build-require"
+        )
         self.assertIn("creator/1.0: PackageInfo OS=Windows", t.out)
         self.assertIn("mytoolchain/1.0: Build OS=Windows", t.out)
 
         # new way, the toolchain can now run in Windows, but gtest in Linux
         t.run("create gtest.py --profile=profile_host --profile:build=profile_build")
-        self.assertNotIn("creator/1.0: PackageInfo", t.out)  # Creator is skipped now, not needed
+        self.assertNotIn(
+            "creator/1.0: PackageInfo", t.out
+        )  # Creator is skipped now, not needed
         self.assertIn("gtest/1.0: PackageInfo OS=Linux", t.out)
 
-        t.run("create gtest.py --profile=profile_host --profile:build=profile_build --build=*")
+        t.run(
+            "create gtest.py --profile=profile_host --profile:build=profile_build --build=*"
+        )
         self.assertIn("creator/1.0: PackageInfo OS=Windows", t.out)
         self.assertIn("gtest/1.0: PackageInfo OS=Linux", t.out)
 
@@ -245,17 +267,21 @@ class BuildRequiresBothContextsTest(unittest.TestCase):
                 def package_info(self):
                     self.output.info("PackageInfo OS=%s" % self.settings.os)
             """)
-        t.save({'mytoolchain.py': toolchain})
+        t.save({"mytoolchain.py": toolchain})
         t.run("create mytoolchain.py --profile:host=profile_build -pr:b=profile_build")
         self.assertIn("creator/1.0: PackageInfo OS=Windows", t.out)
         self.assertIn("mytoolchain/1.0: Build OS=Windows", t.out)
 
-        t.run("create gtest.py --profile=profile_host --profile:build=profile_build --build=*")
+        t.run(
+            "create gtest.py --profile=profile_host --profile:build=profile_build --build=*"
+        )
         self.assertIn("creator/1.0: PackageInfo OS=Windows", t.out)
         self.assertIn("mytoolchain/1.0: Build OS=Windows", t.out)
         self.assertIn("gtest/1.0: Build OS=Linux", t.out)
 
-        t.run("create library.py -pr:h=profile_host --profile:build=profile_build --build=*")
+        t.run(
+            "create library.py -pr:h=profile_host --profile:build=profile_build --build=*"
+        )
         self.assertIn("creator/1.0: PackageInfo OS=Windows", t.out)
         self.assertIn("mytoolchain/1.0: Build OS=Windows", t.out)
         self.assertIn("gtest/1.0: Build OS=Linux", t.out)
@@ -275,10 +301,14 @@ def test_consumer_get_profile_tool_requires():
             def package_info(self):
                 self.buildenv_info.define("MYVAR", "MYVALUE")
         """)
-    t.save({'profile': "[tool_requires]\ntool/1.0",
-            'dep.py': GenConanfile("dep", "1.0"),
-            'tool.py': tool,
-            'conanfile.txt': ""})
+    t.save(
+        {
+            "profile": "[tool_requires]\ntool/1.0",
+            "dep.py": GenConanfile("dep", "1.0"),
+            "tool.py": tool,
+            "conanfile.txt": "",
+        }
+    )
     t.run("create tool.py")
     t.run("create dep.py")
     t.run("install . --profile ./profile")

@@ -15,8 +15,11 @@ def get_latest_package_reference(cache, ref, pkgid):
 
 def test_auto_package_no_components():
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("from conan.tools.files import AutoPackager, save"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
     conan_file += """
 
     def source(self):
@@ -147,9 +150,11 @@ def test_auto_package_no_components():
 def test_auto_package_with_components():
     """The files from the components are not mixed in package if they belong to different dirs"""
     client = TestClient()
-    conan_file = str(GenConanfile()
-                     .with_settings("build_type")
-                     .with_import("from conan.tools.files import AutoPackager, save"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
     conan_file += """
 
     def source(self):
@@ -213,8 +218,11 @@ def test_auto_package_with_components():
 
 def test_auto_package_with_components_declared_badly():
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("from conan.tools.files import AutoPackager"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("from conan.tools.files import AutoPackager")
+    )
     conan_file += """
 
     def layout(self):
@@ -236,21 +244,26 @@ def test_auto_package_with_components_declared_badly():
 
     client.save({"conanfile.py": conan_file})
     client.run("create . --name=lib --version=1.0", assert_error=True)
-    assert "There are components declared in cpp.source.components or in " \
-           "cpp.build.components that are not declared in " \
-           "cpp.package.components" in client.out
+    assert (
+        "There are components declared in cpp.source.components or in "
+        "cpp.build.components that are not declared in "
+        "cpp.package.components" in client.out
+    )
 
 
 def test_auto_package_default_patterns():
     """By default:
-        self.patterns.source.include = ["*.h", "*.hpp", "*.hxx"]
-        self.patterns.build.lib = ["*.so", "*.so.*", "*.a", "*.lib", "*.dylib"]
-        self.patterns.build.bin = ["*.exe", "*.dll"]
+    self.patterns.source.include = ["*.h", "*.hpp", "*.hxx"]
+    self.patterns.build.lib = ["*.so", "*.so.*", "*.a", "*.lib", "*.dylib"]
+    self.patterns.build.bin = ["*.exe", "*.dll"]
     """
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("import os")
-                     .with_import("from conan.tools.files import AutoPackager, save"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("import os")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
     conan_file += """
     def source(self):
         save(self, "myincludes/mylib.header","")
@@ -283,19 +296,30 @@ def test_auto_package_default_patterns():
     pref = get_latest_package_reference(client.cache, ref, package_id)
     p_folder = client.cache.pkg_layout(pref).package()
 
-    assert set(os.listdir(os.path.join(p_folder, "lib"))) == {"mylib.a", "mylib.so", "mylib.so.0",
-                                                              "mylib.dylib", "mylib.lib"}
-    assert set(os.listdir(os.path.join(p_folder, "include"))) == {"mylib.h", "mylib.hpp",
-                                                                  "mylib.hxx"}
+    assert set(os.listdir(os.path.join(p_folder, "lib"))) == {
+        "mylib.a",
+        "mylib.so",
+        "mylib.so.0",
+        "mylib.dylib",
+        "mylib.lib",
+    }
+    assert set(os.listdir(os.path.join(p_folder, "include"))) == {
+        "mylib.h",
+        "mylib.hpp",
+        "mylib.hxx",
+    }
     assert set(os.listdir(os.path.join(p_folder, "bin"))) == {"app.exe", "app.dll"}
 
 
 def test_auto_package_default_folders_with_components():
     """By default, the cpp_info of the components are empty"""
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("import os")
-                     .with_import("from conan.tools.files import AutoPackager"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("import os")
+        .with_import("from conan.tools.files import AutoPackager")
+    )
     conan_file += """
     def layout(self):
         for el in [self.cpp.source, self.cpp.build]:
@@ -322,11 +346,14 @@ def test_auto_package_default_folders_with_components():
 
 def test_auto_package_with_custom_package_too():
     """We can also declare the package() method and call explicitly to the
-       self.folders.package_files()"""
+    self.folders.package_files()"""
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("import os")
-                     .with_import("from conan.tools.files import AutoPackager, save"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("import os")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
     conan_file += """
     def source(self):
         save(self, "myincludes/mylib.header","")
@@ -357,9 +384,12 @@ def test_auto_package_only_one_destination():
     """If the layout declares more than one destination folder it fails, because it cannot guess
     where to put the artifacts (very weird situation a package with two include/)"""
     client = TestClient()
-    conan_file = str(GenConanfile().with_settings("build_type")
-                     .with_import("import os")
-                     .with_import("from conan.tools.files import AutoPackager, save"))
+    conan_file = str(
+        GenConanfile()
+        .with_settings("build_type")
+        .with_import("import os")
+        .with_import("from conan.tools.files import AutoPackager, save")
+    )
     conan_file += """
     def source(self):
         save(self, "myincludes/mylib.header","")
@@ -385,9 +415,19 @@ def test_auto_package_only_one_destination():
         packager.run()
 
     """
-    for dirs in ["includedirs", "builddirs", "bindirs", "srcdirs", "frameworkdirs", "libdirs",
-                 "resdirs"]:
+    for dirs in [
+        "includedirs",
+        "builddirs",
+        "bindirs",
+        "srcdirs",
+        "frameworkdirs",
+        "libdirs",
+        "resdirs",
+    ]:
         client.save({"conanfile.py": conan_file.format(dirs)})
         client.run("create . --name=lib --version=1.0", assert_error=True)
-        assert "The package has more than 1 cpp_info.{}, " \
-               "cannot package automatically".format(dirs) in client.out
+        assert (
+            "The package has more than 1 cpp_info.{}, "
+            "cannot package automatically".format(dirs)
+            in client.out
+        )

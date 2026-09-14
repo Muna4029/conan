@@ -6,7 +6,6 @@ from conan.test.utils.tools import TestClient
 
 
 class CppStdMinimumVersionTests(unittest.TestCase):
-
     CONANFILE = dedent("""
         import os
         from conan import ConanFile
@@ -37,18 +36,27 @@ class CppStdMinimumVersionTests(unittest.TestCase):
 
     @parameterized.expand(["17", "gnu17"])
     def test_cppstd_from_settings(self, cppstd):
-        profile = CppStdMinimumVersionTests.PROFILE.replace("{}", "compiler.cppstd=%s" % cppstd)
-        self.client.save({"myprofile":  profile})
+        profile = CppStdMinimumVersionTests.PROFILE.replace(
+            "{}", "compiler.cppstd=%s" % cppstd
+        )
+        self.client.save({"myprofile": profile})
         self.client.run("create . --user=user --channel=channel -pr myprofile")
         self.assertIn("valid standard", self.client.out)
 
     @parameterized.expand(["11", "gnu11"])
     def test_invalid_cppstd_from_settings(self, cppstd):
-        profile = CppStdMinimumVersionTests.PROFILE.replace("{}", "compiler.cppstd=%s" % cppstd)
+        profile = CppStdMinimumVersionTests.PROFILE.replace(
+            "{}", "compiler.cppstd=%s" % cppstd
+        )
         self.client.save({"myprofile": profile})
-        self.client.run("create . --user=user --channel=channel -pr myprofile", assert_error=True)
-        self.assertIn("Invalid: Current cppstd (%s) is lower than the required C++ standard (17)."
-                      % cppstd, self.client.out)
+        self.client.run(
+            "create . --user=user --channel=channel -pr myprofile", assert_error=True
+        )
+        self.assertIn(
+            "Invalid: Current cppstd (%s) is lower than the required C++ standard (17)."
+            % cppstd,
+            self.client.out,
+        )
 
 
 def test_header_only_check_min_cppstd():
@@ -103,8 +111,11 @@ def test_validate_build_check_min_cppstd():
     client = TestClient()
     client.save({"conanfile.py": conanfile})
     client.run("create . -s compiler.cppstd=14", assert_error=True)
-    assert "fake/0.1: Cannot build for this configuration: " \
-           "Current cppstd (14) is lower than the required C++ standard (17)." in client.out
+    assert (
+        "fake/0.1: Cannot build for this configuration: "
+        "Current cppstd (14) is lower than the required C++ standard (17)."
+        in client.out
+    )
     client.run("create . -s compiler.cppstd=17")
     client.run("install --require=fake/0.1@")
     assert "fake/0.1: Already installed!" in client.out

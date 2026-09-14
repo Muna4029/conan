@@ -10,6 +10,7 @@ class TestInvalidConfiguration:
     """
     ConanInvalidConfiguration without a binary fall backs, result in errors
     """
+
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.errors import ConanInvalidConfiguration
@@ -54,16 +55,24 @@ class TestInvalidConfiguration:
         assert "pkg/0.1: Already installed!" in client.out
 
     def test_invalid_build_require(self, client):
-        conanfile_consumer = GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        conanfile_consumer = (
+            GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        )
         client.save({"consumer/conanfile.py": conanfile_consumer})
-        client.run("install consumer -s:h os=Windows -s:b os=Windows", assert_error=True)
+        client.run(
+            "install consumer -s:h os=Windows -s:b os=Windows", assert_error=True
+        )
         assert "pkg/0.1: Invalid: Package does not work in Windows!" in client.out
 
     def test_valid_build_require_two_profiles(self, client):
-        conanfile_consumer = GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        conanfile_consumer = (
+            GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        )
         client.save({"consumer/conanfile.py": conanfile_consumer})
         client.run("install consumer -s:b os=Linux -s:h os=Windows")
-        client.assert_listed_binary({"pkg/0.1": (self.linux_package_id, "Cache")}, build=True)
+        client.assert_listed_binary(
+            {"pkg/0.1": (self.linux_package_id, "Cache")}, build=True
+        )
         assert "pkg/0.1: Already installed!" in client.out
 
 
@@ -71,6 +80,7 @@ class TestErrorConfiguration(TestInvalidConfiguration):
     """
     A configuration error is unsolvable, even if a binary exists
     """
+
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.errors import ConanInvalidConfiguration
@@ -93,6 +103,7 @@ class TestErrorConfigurationCompatible(TestInvalidConfiguration):
     """
     A configuration error is unsolvable, even if a binary exists
     """
+
     conanfile = textwrap.dedent("""
         from conan import ConanFile
         from conan.errors import ConanInvalidConfiguration
@@ -116,6 +127,7 @@ class TestInvalidBuildPackageID:
     """
     ConanInvalidBuildConfiguration will not block if setting is removed from package_id
     """
+
     conanfile = textwrap.dedent("""
        from conan import ConanFile
        from conan.errors import ConanInvalidConfiguration
@@ -160,14 +172,20 @@ class TestInvalidBuildPackageID:
         assert "Package does not work in Windows!" in client.out
 
     def test_valid_build_require_two_profiles(self, client):
-        conanfile_consumer = GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        conanfile_consumer = (
+            GenConanfile().with_tool_requires("pkg/0.1").with_settings("os")
+        )
         client.save({"consumer/conanfile.py": conanfile_consumer})
         client.run("install consumer -s:b os=Linux -s:h os=Windows")
-        client.assert_listed_binary({"pkg/0.1": (self.linux_package_id, "Cache")}, build=True)
+        client.assert_listed_binary(
+            {"pkg/0.1": (self.linux_package_id, "Cache")}, build=True
+        )
         assert "pkg/0.1: Already installed!" in client.out
 
         client.run("install consumer -s:b os=Windows -s:h os=Windows")
-        client.assert_listed_binary({"pkg/0.1": (self.linux_package_id, "Cache")}, build=True)
+        client.assert_listed_binary(
+            {"pkg/0.1": (self.linux_package_id, "Cache")}, build=True
+        )
         assert "pkg/0.1: Already installed!" in client.out
 
 
@@ -175,6 +193,7 @@ class TestInvalidBuildCompatible(TestInvalidBuildPackageID):
     """
     ConanInvalidBuildConfiguration will not block if compatible_packages fallback
     """
+
     conanfile = textwrap.dedent("""
        from conan import ConanFile
        from conan.errors import ConanInvalidConfiguration

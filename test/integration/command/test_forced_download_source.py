@@ -29,12 +29,16 @@ def client():
 def test_install(client):
     client.run("install --requires=dep/0.1")
     assert "RUNNING SOURCE" not in client.out
-    client.run("install --requires=dep/0.1 -c tools.build:download_source=True --format=json")
+    client.run(
+        "install --requires=dep/0.1 -c tools.build:download_source=True --format=json"
+    )
     assert "RUNNING SOURCE" in client.out
     graph = json.loads(client.stdout)
     zlib = graph["graph"]["nodes"]["1"]
     assert os.path.exists(zlib["source_folder"])
-    client.run("install --requires=dep/0.1 -c tools.build:download_source=True --format=json")
+    client.run(
+        "install --requires=dep/0.1 -c tools.build:download_source=True --format=json"
+    )
     assert "RUNNING SOURCE" not in client.out
     graph = json.loads(client.stdout)
     zlib = graph["graph"]["nodes"]["1"]
@@ -54,7 +58,7 @@ def test_info(client):
 
 
 def test_info_editable():
-    """ graph info for editable shouldn't crash, but it also shoudn't do anythin
+    """graph info for editable shouldn't crash, but it also shoudn't do anythin
     # https://github.com/conan-io/conan/issues/15003
     """
     c = TestClient()

@@ -4,13 +4,15 @@ from conan.internal.model.settings import Settings
 
 
 def test_false_values_affect_none():
-    """ False value do become part of conaninfo.txt and package_id
+    """False value do become part of conaninfo.txt and package_id
     Only "None" Python values are discarded from conaninfo.txt
     """
     reqs = RequirementsInfo({})
     build_reqs = RequirementsInfo({})
     python_reqs = PythonRequiresInfo({}, default_package_id_mode=None)
-    options = Options({"shared": [True, False], "other": [None, "1"]}, {"shared": False})
+    options = Options(
+        {"shared": [True, False], "other": [None, "1"]}, {"shared": False}
+    )
     settings = Settings({"mysetting": [1, 2, 3]})
     c = ConanInfo(settings, options, reqs, build_reqs, python_reqs)
     conaninfo = c.dumps()

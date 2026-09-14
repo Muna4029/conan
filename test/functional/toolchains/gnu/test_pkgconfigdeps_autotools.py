@@ -98,15 +98,18 @@ def test_pkgconfigdeps_and_autotools():
     main_LDADD = $(pkg_LIBS)
     """)
     client.run("new autotools_lib -d name=pkg -d version=1.0")
-    client.save({"conanfile.py": conanfile_pkg,
-                 "test_package/conanfile.py": conanfile_test,
-                 "test_package/configure.ac": configure_test,
-                 "test_package/Makefile.am": makefile_test,
-                 })
+    client.save(
+        {
+            "conanfile.py": conanfile_pkg,
+            "test_package/conanfile.py": conanfile_test,
+            "test_package/configure.ac": configure_test,
+            "test_package/Makefile.am": makefile_test,
+        }
+    )
     # client.run("new autotools_lib -d name=pkg -d version=1.0")
     client.run("create .")
     if platform.system() == "Darwin":
         # Checking that frameworkdirs appear all together instead of "-F /whatever/f1"
         # Issue: https://github.com/conan-io/conan/issues/11867
-        assert '-F/my/framework/file1' in client.out
-        assert '-F/my/framework/file2' in client.out
+        assert "-F/my/framework/file1" in client.out
+        assert "-F/my/framework/file2" in client.out

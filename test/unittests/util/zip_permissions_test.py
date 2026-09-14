@@ -12,7 +12,6 @@ from conan.internal.util.files import save
 
 
 class ZipPermissionsTest(TestCase):
-
     def test_permissions(self):
         if platform.system() != "Windows":
             for keep_permissions in [True, False]:
@@ -21,17 +20,25 @@ class ZipPermissionsTest(TestCase):
                     file_path = os.path.join(tmp_dir, "a_file.txt")
                     save(file_path, "contents")
                     os.chmod(file_path, perm_set)
-                    zf = zipfile.ZipFile(os.path.join(tmp_dir, 'zipfile.zip'), mode='w')
+                    zf = zipfile.ZipFile(os.path.join(tmp_dir, "zipfile.zip"), mode="w")
                     zf.write(file_path, basename(file_path))
                     zf.close()
 
                     # Unzip and check permissions are kept
                     dest_dir = temp_folder()
-                    unzip(ConanFileMock(), os.path.join(tmp_dir, 'zipfile.zip'), dest_dir,
-                          keep_permissions=keep_permissions)
+                    unzip(
+                        ConanFileMock(),
+                        os.path.join(tmp_dir, "zipfile.zip"),
+                        dest_dir,
+                        keep_permissions=keep_permissions,
+                    )
 
                     dest_file = os.path.join(dest_dir, "a_file.txt")
                     if keep_permissions:
-                        self.assertEqual(stat.S_IMODE(os.stat(dest_file).st_mode), perm_set)
+                        self.assertEqual(
+                            stat.S_IMODE(os.stat(dest_file).st_mode), perm_set
+                        )
                     else:
-                        self.assertNotEqual(stat.S_IMODE(os.stat(dest_file).st_mode), perm_set)
+                        self.assertNotEqual(
+                            stat.S_IMODE(os.stat(dest_file).st_mode), perm_set
+                        )

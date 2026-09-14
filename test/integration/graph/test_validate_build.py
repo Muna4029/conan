@@ -6,7 +6,6 @@ from conan.test.utils.tools import TestClient
 
 
 def test_basic_validate_build_test():
-
     t = TestClient()
     conanfile = textwrap.dedent("""
     from conan import ConanFile
@@ -25,13 +24,18 @@ def test_basic_validate_build_test():
             del self.info.settings.compiler
     """)
 
-    settings_gcc = "-s compiler=gcc -s compiler.libcxx=libstdc++11 -s compiler.version=11"
+    settings_gcc = (
+        "-s compiler=gcc -s compiler.libcxx=libstdc++11 -s compiler.version=11"
+    )
     settings_clang = "-s compiler=clang -s compiler.libcxx=libc++ -s compiler.version=8"
 
     t.save({"conanfile.py": conanfile})
     t.run(f"create . {settings_gcc}", assert_error=True)
 
-    assert "foo/1.0: Cannot build for this configuration: This doesn't build in GCC" in t.out
+    assert (
+        "foo/1.0: Cannot build for this configuration: This doesn't build in GCC"
+        in t.out
+    )
 
     t.run(f"create . {settings_clang}")
 
@@ -41,14 +45,23 @@ def test_basic_validate_build_test():
 
     # But if I force the build... it will fail
     t.run(f"create . {settings_gcc} ", assert_error=True)
-    assert "foo/1.0: Cannot build for this configuration: This doesn't build in GCC" in t.out
+    assert (
+        "foo/1.0: Cannot build for this configuration: This doesn't build in GCC"
+        in t.out
+    )
 
     # What happens with a conan info?
-    t.run(f"graph info --requires=foo/1.0 {settings_gcc} --format=json", redirect_stdout="myjson")
+    t.run(
+        f"graph info --requires=foo/1.0 {settings_gcc} --format=json",
+        redirect_stdout="myjson",
+    )
     myjson = json.loads(t.load("myjson"))["graph"]["nodes"]
     assert myjson["1"]["invalid_build"] == "This doesn't build in GCC"
 
-    t.run(f"graph info --requires=foo/1.0 {settings_clang} --format=json", redirect_stdout="myjson")
+    t.run(
+        f"graph info --requires=foo/1.0 {settings_clang} --format=json",
+        redirect_stdout="myjson",
+    )
     myjson = json.loads(t.load("myjson"))["graph"]["nodes"]
     assert myjson["1"]["invalid_build"] is False
 
@@ -72,17 +85,23 @@ def test_with_options_validate_build_test():
     """)
     t.save({"conanfile.py": conanfile})
     t.run("export .")
-    consumer = GenConanfile().with_require("foo/1.0").with_name("consumer").with_version("1.0")
+    consumer = (
+        GenConanfile().with_require("foo/1.0").with_name("consumer").with_version("1.0")
+    )
     t.save({"consumer.py": consumer})
-    t.run("create consumer.py --build missing -o foo/*:my_option=False", assert_error=True)
-    assert "foo/1.0: Cannot build for this configuration: This doesn't build " \
-           "with False option" in t.out
+    t.run(
+        "create consumer.py --build missing -o foo/*:my_option=False", assert_error=True
+    )
+    assert (
+        "foo/1.0: Cannot build for this configuration: This doesn't build "
+        "with False option" in t.out
+    )
 
     t.run("create consumer.py --build missing -o foo/*:my_option=True")
 
 
 def test_basic_validate_build_command_build():
-    """ the "conan build" command should fail for a validate_build() too
+    """the "conan build" command should fail for a validate_build() too
     https://github.com/conan-io/conan/issues/12571
     """
     t = TestClient()
@@ -99,8 +118,10 @@ def test_basic_validate_build_command_build():
         """)
 
     t.save({"conanfile.py": conanfile})
-    t.run(f"build . -s os=Windows", assert_error=True)
-    assert "ERROR: conanfile.py: Cannot build for this configuration: " \
-           "This doesn't build in Windows" in t.out
+    t.run("build . -s os=Windows", assert_error=True)
+    assert (
+        "ERROR: conanfile.py: Cannot build for this configuration: "
+        "This doesn't build in Windows" in t.out
+    )
     t.run("build . -s os=Linux")
     # It doesn't fail

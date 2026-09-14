@@ -12,19 +12,26 @@ def test_build_requires_options_different():
     client = TestClient()
 
     conanfile_openssl_1_1_1 = GenConanfile("openssl", "1.1.1")
-    conanfile_openssl_3_0_0 = GenConanfile("openssl", "3.0.0") \
-        .with_option("no_fips", [True, False]) \
+    conanfile_openssl_3_0_0 = (
+        GenConanfile("openssl", "3.0.0")
+        .with_option("no_fips", [True, False])
         .with_default_option("no_fips", True)
-    conanfile_cmake = GenConanfile("cmake", "0.1") \
-        .with_requires("openssl/1.1.1")
-    conanfile_consumer = GenConanfile("consumer", "0.1") \
-        .with_build_requires("cmake/0.1") \
+    )
+    conanfile_cmake = GenConanfile("cmake", "0.1").with_requires("openssl/1.1.1")
+    conanfile_consumer = (
+        GenConanfile("consumer", "0.1")
+        .with_build_requires("cmake/0.1")
         .with_requires("openssl/3.0.0")
+    )
 
-    client.save({"openssl_1_1_1.py": conanfile_openssl_1_1_1,
-                 "openssl_3_0_0.py": conanfile_openssl_3_0_0,
-                 "conanfile_cmake.py": conanfile_cmake,
-                 "conanfile.py": conanfile_consumer})
+    client.save(
+        {
+            "openssl_1_1_1.py": conanfile_openssl_1_1_1,
+            "openssl_3_0_0.py": conanfile_openssl_3_0_0,
+            "conanfile_cmake.py": conanfile_cmake,
+            "conanfile.py": conanfile_consumer,
+        }
+    )
 
     client.run("create openssl_1_1_1.py")
     client.run("create openssl_3_0_0.py")
@@ -54,9 +61,14 @@ def test_different_options_values_profile():
                 self.output.info("MYOPTION: {}-{}".format(self.context, self.options.shared))
         """)
 
-    c.save({"protobuf/conanfile.py": protobuf,
-            "consumer/conanfile.py": GenConanfile().with_requires("protobuf/1.0")
-           .with_build_requires("protobuf/1.0")})
+    c.save(
+        {
+            "protobuf/conanfile.py": protobuf,
+            "consumer/conanfile.py": GenConanfile()
+            .with_requires("protobuf/1.0")
+            .with_build_requires("protobuf/1.0"),
+        }
+    )
 
     c.run("create protobuf --name=protobuf --version=1.0")
     c.run("create protobuf --name=protobuf --version=1.0 -o protobuf/*:shared=True")
@@ -110,7 +122,13 @@ def test_different_options_values_recipe(scope):
     c.run("create . --name=protobuf --version=1.0 -o protobuf/*:shared=True")
 
     for host, build in ((True, True), (True, False), (False, True), (False, False)):
-        c.save({"conanfile.py": consumer_recipe.format(host=host, build=build, scope=scope)})
+        c.save(
+            {
+                "conanfile.py": consumer_recipe.format(
+                    host=host, build=build, scope=scope
+                )
+            }
+        )
         c.run("install .")
         assert f"protobuf/1.0: MYOPTION: host-{host}" in c.out
         assert f"protobuf/1.0: MYOPTION: build-{build}" in c.out
@@ -181,15 +199,20 @@ def test_different_options_values_recipe_priority():
             def build_requirements(self):
                 self.build_requires("protobuf/1.0", options={"shared": 2})
         """)
-    c.save({"protobuf/conanfile.py": protobuf,
+    c.save(
+        {
+            "protobuf/conanfile.py": protobuf,
             "mypkg/conanfile.py": my_pkg,
-            "consumer/conanfile.py": GenConanfile().with_requires("mypkg/1.0")
-           .with_default_option("protobuf/*:shared", 3)})
+            "consumer/conanfile.py": GenConanfile()
+            .with_requires("mypkg/1.0")
+            .with_default_option("protobuf/*:shared", 3),
+        }
+    )
 
     c.run("create protobuf --name=protobuf --version=1.0 -o protobuf/*:shared=2")
     c.run("create protobuf --name=protobuf --version=1.0 -o protobuf/*:shared=3")
     c.run("create mypkg --name=mypkg --version=1.0")
 
     c.run("install consumer")
-    assert f"protobuf/1.0: MYOPTION: host-3" in c.out
-    assert f"protobuf/1.0: MYOPTION: build-2" in c.out
+    assert "protobuf/1.0: MYOPTION: host-3" in c.out
+    assert "protobuf/1.0: MYOPTION: build-2" in c.out

@@ -8,7 +8,9 @@ import pytest
 from conan.test.utils.tools import TestClient
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_lib_template():
     client = TestClient(path_with_spaces=False)
@@ -61,7 +63,9 @@ def test_autotools_lib_template():
         assert "libhello.so.0" in client.out
 
 
-@pytest.mark.skipif(platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools")
+@pytest.mark.skipif(
+    platform.system() not in ["Linux", "Darwin"], reason="Requires Autotools"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_exe_template():
     client = TestClient(path_with_spaces=False)
@@ -73,12 +77,22 @@ def test_autotools_exe_template():
     # Create works
     client.run("create .")
     # check that for exe's we don't add any static/shared flag
-    for flag in ["--enable-static", "--disable-static", "--disable-shared", "--with-pic"]:
+    for flag in [
+        "--enable-static",
+        "--disable-static",
+        "--disable-shared",
+        "--with-pic",
+    ]:
         assert flag not in client.out
     assert "greet/0.1: Hello World Release!" in client.out
 
     client.run("create . -s build_type=Debug")
-    for flag in ["--enable-static", "--disable-static", "--disable-shared", "--with-pic"]:
+    for flag in [
+        "--enable-static",
+        "--disable-static",
+        "--disable-shared",
+        "--with-pic",
+    ]:
         assert flag not in client.out
     assert "greet/0.1: Hello World Debug!" in client.out
 
@@ -107,27 +121,37 @@ def test_autotools_relocatable_libs_darwin():
 
     # move to another location so that the path set in the rpath does not exist
     # then the execution should fail
-    shutil.move(os.path.join(package_folder, "lib"), os.path.join(client.current_folder, "tempfolder"))
+    shutil.move(
+        os.path.join(package_folder, "lib"),
+        os.path.join(client.current_folder, "tempfolder"),
+    )
     # will fail because rpath does not exist
     client.run_command(f"test_package/{build_folder}/main", assert_error=True)
-    assert "Library not loaded: @rpath/libhello.0.dylib" in str(client.out).replace("'", "")
+    assert "Library not loaded: @rpath/libhello.0.dylib" in str(client.out).replace(
+        "'", ""
+    )
 
     # Use DYLD_LIBRARY_PATH and should run
-    client.run_command("DYLD_LIBRARY_PATH={} test_package/{}/main".format(os.path.join(client.current_folder, "tempfolder"),
-                                                                          build_folder))
+    client.run_command(
+        "DYLD_LIBRARY_PATH={} test_package/{}/main".format(
+            os.path.join(client.current_folder, "tempfolder"), build_folder
+        )
+    )
     assert "hello/0.1: Hello World Release!" in client.out
 
 
 # FIXME: investigate this test
 @pytest.mark.skipif(platform.system() not in ["Darwin"], reason="Requires Autotools")
 @pytest.mark.tool("autotools")
-@pytest.mark.xfail(reason="This test is failing for newer MacOS versions, but used to pass in the ci")
+@pytest.mark.xfail(
+    reason="This test is failing for newer MacOS versions, but used to pass in the ci"
+)
 def test_autotools_relocatable_libs_darwin_downloaded():
     client = TestClient(default_server_user=True, path_with_spaces=False)
     client2 = TestClient(servers=client.servers, path_with_spaces=False)
     assert client2.cache_folder != client.cache_folder
     client.run("new autotools_lib -d name=hello -d version=0.1")
-    client.run("create . -o hello/*:shared=True -tf=\"\"")
+    client.run('create . -o hello/*:shared=True -tf=""')
     client.run("upload hello/0.1 -c -r default")
     client.run("remove * -c")
 
@@ -176,10 +200,14 @@ def test_autotools_relocatable_libs_darwin_downloaded():
         AC_OUTPUT
         """)
 
-    client2.save({"conanfile.py": conanfile,
-                  "main.cpp": main,
-                  "makefile.am": makefileam,
-                  "configure.ac": configureac})
+    client2.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": main,
+            "makefile.am": makefileam,
+            "configure.ac": configureac,
+        }
+    )
 
     client2.run("install . -o hello/*:shared=True -r default")
     client2.run("build . -o hello/*:shared=True -r default")
@@ -188,11 +216,13 @@ def test_autotools_relocatable_libs_darwin_downloaded():
     # it fails with LC_RPATH's not found
     client2.run_command("build-release/greet")
     # activating the environment should not be needed as the rpath is set when linking greet
-    #client2.run_command(". build-release/conan/conanrun.sh && build-release/greet")
+    # client2.run_command(". build-release/conan/conanrun.sh && build-release/greet")
     assert "Hello World Release!" in client2.out
 
 
-@pytest.mark.skipif(platform.system() not in ["Darwin"], reason="Only affects apple platforms")
+@pytest.mark.skipif(
+    platform.system() not in ["Darwin"], reason="Only affects apple platforms"
+)
 @pytest.mark.tool("autotools")
 def test_autotools_fix_shared_libs():
     """
@@ -309,31 +339,51 @@ def test_autotools_fix_shared_libs():
         int main() { bye(); }
     """)
 
-    client.save({
-        "src/makefile.am": makefile_am,
-        "src/bye.cpp": bye_cpp,
-        "src/bye.h": bye_h,
-        "src/main.cpp": test_src,
-        "test_package/main.cpp": test_src,
-        "conanfile.py": conanfile,
-    })
+    client.save(
+        {
+            "src/makefile.am": makefile_am,
+            "src/bye.cpp": bye_cpp,
+            "src/bye.h": bye_h,
+            "src/main.cpp": test_src,
+            "test_package/main.cpp": test_src,
+            "conanfile.py": conanfile,
+        }
+    )
 
-    client.run("create . -o hello/*:shared=True -tf=\"\"")
+    client.run('create . -o hello/*:shared=True -tf=""')
 
     package_folder = client.created_layout().package()
 
     # install name fixed
-    client.run_command("otool -D {}".format(os.path.join(package_folder, "lib", "libhello.0.dylib")))
+    client.run_command(
+        "otool -D {}".format(os.path.join(package_folder, "lib", "libhello.0.dylib"))
+    )
     assert "@rpath/libhello.dylib" in client.out
-    client.run_command("otool -D {}".format(os.path.join(package_folder, "lib", "libbye.0.dylib")))
+    client.run_command(
+        "otool -D {}".format(os.path.join(package_folder, "lib", "libbye.0.dylib"))
+    )
     assert "@rpath/libbye.dylib" in client.out
 
     # dependencies fixed
-    client.run_command("otool -L {}".format(os.path.join(package_folder, "lib", "libbye.0.dylib")))
-    assert "/lib/libhello.dylib (compatibility version 1.0.0, current version 1.0.0)" not in client.out
-    assert "/lib/libbye.dylib (compatibility version 1.0.0, current version 1.0.0)" not in client.out
-    assert "@rpath/libhello.dylib (compatibility version 1.0.0, current version 1.0.0)" in client.out
-    assert "@rpath/libbye.dylib (compatibility version 1.0.0, current version 1.0.0)" in client.out
+    client.run_command(
+        "otool -L {}".format(os.path.join(package_folder, "lib", "libbye.0.dylib"))
+    )
+    assert (
+        "/lib/libhello.dylib (compatibility version 1.0.0, current version 1.0.0)"
+        not in client.out
+    )
+    assert (
+        "/lib/libbye.dylib (compatibility version 1.0.0, current version 1.0.0)"
+        not in client.out
+    )
+    assert (
+        "@rpath/libhello.dylib (compatibility version 1.0.0, current version 1.0.0)"
+        in client.out
+    )
+    assert (
+        "@rpath/libbye.dylib (compatibility version 1.0.0, current version 1.0.0)"
+        in client.out
+    )
 
     # app rpath fixed in executable
     exe_path = os.path.join(package_folder, "bin", "main")

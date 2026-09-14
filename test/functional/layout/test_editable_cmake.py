@@ -12,7 +12,9 @@ from conan.test.utils.tools import TestClient
 def editable_cmake(generator, build_folder=None):
     c = TestClient()
     if generator is not None:
-        c.save_home({"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)})
+        c.save_home(
+            {"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)}
+        )
     with c.chdir("dep"):
         c.run("new cmake_lib -d name=dep -d version=0.1")
     with c.chdir("pkg"):
@@ -103,7 +105,9 @@ def test_editable_cmake_osx(generator):
 def editable_cmake_exe(generator):
     c = TestClient()
     if generator is not None:
-        c.save_home({"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)})
+        c.save_home(
+            {"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)}
+        )
 
     c.run("new cmake_exe -d name=dep -d version=0.1 -o=dep")
 
@@ -116,13 +120,15 @@ def editable_cmake_exe(generator):
         build_dep()
 
     def run_pkg(msg):
-        host_arch = c.get_default_host_profile().settings['arch']
-        cmd_release = environment_wrap_command(ConanFileMock(), f"conanrunenv-release-{host_arch}",
-                                               c.current_folder, "dep")
+        host_arch = c.get_default_host_profile().settings["arch"]
+        cmd_release = environment_wrap_command(
+            ConanFileMock(), f"conanrunenv-release-{host_arch}", c.current_folder, "dep"
+        )
         c.run_command(cmd_release)
         assert "{}: Hello World Release!".format(msg) in c.out
-        cmd_release = environment_wrap_command(ConanFileMock(), f"conanrunenv-debug-{host_arch}",
-                                               c.current_folder, "dep")
+        cmd_release = environment_wrap_command(
+            ConanFileMock(), f"conanrunenv-debug-{host_arch}", c.current_folder, "dep"
+        )
         c.run_command(cmd_release)
         assert "{}: Hello World Debug!".format(msg) in c.out
 

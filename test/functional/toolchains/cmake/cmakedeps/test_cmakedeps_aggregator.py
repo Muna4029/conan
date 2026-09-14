@@ -34,11 +34,16 @@ def test_aggregator(transitive_libraries):
         target_link_libraries(app ${CONANDEPS_LEGACY})
         """)
 
-    c.save({
-        "conanfile.py": conanfile,
-        "main.cpp": gen_function_cpp(name="main", includes=["engine"], calls=["engine"]),
-        "CMakeLists.txt": cmakelists
-    }, clean_first=True)
+    c.save(
+        {
+            "conanfile.py": conanfile,
+            "main.cpp": gen_function_cpp(
+                name="main", includes=["engine"], calls=["engine"]
+            ),
+            "CMakeLists.txt": cmakelists,
+        },
+        clean_first=True,
+    )
     c.run("build .")
     assert "matrix/1.0: Hello World Release!" in c.out
     assert "engine/1.0: Hello World Release!" in c.out

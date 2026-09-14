@@ -26,8 +26,7 @@ def application_folder():
         }
         return 0;
     }
-    """
-    )
+    """)
 
     cmake = textwrap.dedent("""
     cmake_minimum_required(VERSION 3.15)
@@ -51,14 +50,17 @@ def application_folder():
 
 @pytest.mark.tool("cmake")
 @pytest.mark.skipif(platform.system() == "Windows", reason="Unix console parsing")
-@pytest.mark.parametrize("_input, output", [
-         (['.', 'foo'], '. foo'),
-         (['.', 'foo with sp'], ". 'foo with sp'"),
-         (['.', 'foo "with" sp'], ". 'foo \"with\" sp'"),
-         (['.', '\'foo with sp\''], '. \'\'"\'"\'foo with sp\'"\'"\'\''),
-         (['"."', 'foo'], '\'"."\' foo'),
-         (['".', 'foo'], '\'".\' foo'),
-])
+@pytest.mark.parametrize(
+    "_input, output",
+    [
+        ([".", "foo"], ". foo"),
+        ([".", "foo with sp"], ". 'foo with sp'"),
+        ([".", 'foo "with" sp'], ". 'foo \"with\" sp'"),
+        ([".", "'foo with sp'"], ". ''\"'\"'foo with sp'\"'\"''"),
+        (['"."', "foo"], "'\".\"' foo"),
+        (['".', "foo"], "'\".' foo"),
+    ],
+)
 def test_unix_cases(application_folder, _input, output):
     _input = ["arg_printer"] + _input
     output = "arg_printer {}".format(output)
@@ -74,15 +76,19 @@ def test_unix_cases(application_folder, _input, output):
 
 @pytest.mark.tool("cmake")
 @pytest.mark.skipif(platform.system() != "Windows", reason="Windows console parsing")
-@pytest.mark.parametrize("_input, output", [
-         (['.', 'foo'], '. foo'),
-         (['"."', '"foo"'], r'\".\" \"foo\"'),
-         ([r'\".\"', '"foo"'], r'\\\".\\\" \"foo\"'),
-         (['path with spaces/foo', 'var'], '"path with spaces/foo" var'),
-         ([r'c:\path with spaces\foo', '%var$:.'], r'"c:\path with spaces\foo" %var$:.'),
-])
+@pytest.mark.parametrize(
+    "_input, output",
+    [
+        ([".", "foo"], ". foo"),
+        (['"."', '"foo"'], r"\".\" \"foo\""),
+        ([r"\".\"", '"foo"'], r"\\\".\\\" \"foo\""),
+        (["path with spaces/foo", "var"], '"path with spaces/foo" var'),
+        ([r"c:\path with spaces\foo", "%var$:."], r'"c:\path with spaces\foo" %var$:.'),
+    ],
+)
 def test_windows_cases(application_folder, _input, output):
     from subprocess import list2cmdline
+
     _input = ["arg_printer.exe"] + _input
     output = "arg_printer.exe {}".format(output)
     assert list2cmdline(_input) == output
