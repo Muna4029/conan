@@ -403,6 +403,15 @@ class EnvVars:
             os.environ.clear()
             os.environ.update(old_env)
 
+    def save_dotenv(self, file_location):
+        result = []
+        for varname, varvalues in self._values.items():
+            value = varvalues.get_value(subsystem=self._subsystem, pathsep=self._pathsep)
+            result.append('{}={}'.format(varname, value))
+        content = "
+".join(result)
+        save(file_location, content)
+
     def save_bat(self, file_location, generate_deactivate=True):
         _, filename = os.path.split(file_location)
         deactivate_file = "deactivate_{}".format(filename)
@@ -567,6 +576,13 @@ class EnvVars:
             self.save_ps1(path)
         else:
             self.save_sh(path)
+
+        if self._conanfile.conf.get("tools.env:dotenv", check_type=bool):
+            bt = self._conanfile.settings.get_safe("build_type")
+            arch = self._conanfile.settings.get_safe("arch")
+            name = name.replace(bt.lower(), bt) if bt else name
+            name = name.replace(arch.lower(), arch) if arch else name
+            self.save_dotenv(f"{name}.env")
 
         if self._scope:
             register_env_script(self._conanfile, path, self._scope)
