@@ -168,7 +168,8 @@ tools_locations = {
         "exe": "premake5",
         "default": "5.0.0",
         "5.0.0": {
-            "path": {'Linux': '/usr/share/premake'}
+            "path": {'Linux': '/usr/share/premake',
+                     'Darwin': 'skip-tests'}
         }
     },
     'xcodegen': {"platform": "Darwin"},
@@ -187,10 +188,12 @@ tools_locations = {
         "exe": "qbs",
         "default": "2.6.0",
         "2.6.0": {
-            "path": {'Linux': '/usr/share/qbs/bin'}
+            "path": {'Linux': '/usr/share/qbs/bin',
+                     'Darwin': 'skip-tests'}
         }
     },
-    "emcc": {},
+    "emcc": {"disabled": True},
+    "scons": {"disabled": True},
     "node": {},
     # TODO: Intel oneAPI is not installed in CI yet. Uncomment this line whenever it's done.
     # "intel_oneapi": {
@@ -274,7 +277,7 @@ def _get_individual_tool(name, version):
         if tool_path == "skip-tests":
             return False
         elif tool_path is not None and not os.path.isdir(tool_path):
-            return True
+            return False
     else:
         if version is not None:  # if the version is specified, it should be in the conf
             return True
