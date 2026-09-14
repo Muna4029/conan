@@ -153,7 +153,7 @@ tools_locations = {
         "system": {"path": {'Windows': "C:/tools/cygwin/bin"}},
     },
     'bazel': {
-        "default": "7",
+        "default": "7.4.1",
         "6.5.0": {"path": {'Linux': '/usr/share/bazel-6.5.0/bin',
                            'Windows': 'C:/tools/bazel/6.5.0',
                            'Darwin': '/Users/runner/Applications/bazel/6.5.0'}},
@@ -276,7 +276,7 @@ def _get_individual_tool(name, version):
         if tool_path == "skip-tests":
             return False
         elif tool_path is not None and not os.path.isdir(tool_path):
-            return True
+            tool_path = None
     else:
         if version is not None:  # if the version is specified, it should be in the conf
             return True
@@ -301,7 +301,7 @@ def _get_individual_tool(name, version):
         cached = True
         if tool_path is None:
             # will fail the test, not exe found and path None
-            cached = True
+            cached = False
     elif tool_path is not None and tool_path not in exe_found:
         # finds the exe in a path that is not the one set in the conf -> fail
         cached = True
