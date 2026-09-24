@@ -2,11 +2,11 @@ import fnmatch
 import os
 
 from conan.api.output import Color
-from conan.tools.files import chdir, update_conandata
 from conan.errors import ConanException
 from conan.internal.model.conf import ConfDefinition
 from conan.internal.util.files import mkdir
 from conan.internal.util.runners import check_output_runner
+from conan.tools.files import chdir, update_conandata
 
 
 class Git:
@@ -24,7 +24,7 @@ class Git:
         self._conanfile = conanfile
         self.folder = folder
         self._excluded = excluded
-        global_conf = conanfile._conan_helpers.global_conf  # noqa _conan_helpers
+        global_conf = conanfile._conan_helpers.global_conf
         conf_excluded = global_conf.get("core.scm:excluded", check_type=list)
         if conf_excluded:
             if excluded:
@@ -48,7 +48,7 @@ class Git:
             # We tried to use self.conanfile.run(), but it didn't work:
             #  - when using win_bash, crashing because access to .settings (forbidden in source())
             #  - the ``conan source`` command, not passing profiles, buildenv not injected
-            return check_output_runner("git {}".format(cmd)).strip()
+            return check_output_runner(f"git {cmd}").strip()
 
     def get_commit(self, repository=False):
         """
@@ -97,8 +97,9 @@ class Git:
 
     def commit_in_remote(self, commit, remote="origin"):
         """
-        Checks that the given commit exists in the remote, with ``branch -r --contains <commit>``
-        and checking an occurrence of a branch in that remote exists.
+        Checks that the given commit exists in the remote, using ``ls-remote`` to check if the
+        commit appears in the remote's refs. If ls-remote check fails, falls back to
+        ``git cat-file -e <commit>`` to determine if the commit exists only locally.
 
         :param commit: Commit to check.
         :param remote: Name of the remote git repository ('origin' by default).
@@ -106,29 +107,31 @@ class Git:
         """
         if not remote:
             return False
-        # Potentially do two checks here.  If the clone is a shallow clone, then we won't be
-        # able to find the commit.
+        # First, check ls-remote output for the commit
         try:
-            branches = self.run("branch -r --contains {}".format(commit))
-            if "{}/".format(remote) in branches:
+            ls_remote = self.run(f"ls-remote {remote}")
+            if commit in ls_remote:
                 return True
-        except Exception as e:
-            raise ConanException("Unable to check remote commit in '%s': %s" % (self.folder, str(e)))
-
-        try:
-            # This will raise if commit not present.
-            self.run(f"fetch {remote} --refetch --dry-run {commit}")
-            return True
-        except (Exception,):
-            # For example, if using an older git<2.36, see
-            # https://github.com/conan-io/conan/issues/18470, then lets try the old approach
+        except Exception:
+            # If ls-remote fails (e.g., no remote configured), check if commit exists locally
+            # using cat-file -e. If it exists locally, return False (commit is local-only)
             try:
-                # This will raise if commit not present.
-                self.run("fetch {} --dry-run --depth=1 {}".format(remote, commit))
-                return True
-            except (Exception,):
-                # Don't raise an error because it could fail for many more reasons.
+                self.run(f"cat-file -e {commit}")
+                # Commit exists locally but not in remote
                 return False
+            except Exception:
+                # Commit doesn't exist at all
+                return False
+
+        # If ls-remote doesn't contain the commit, check if it exists locally only
+        # using cat-file -e. If it exists locally, return False (commit is local-only)
+        try:
+            self.run(f"cat-file -e {commit}")
+            # Commit exists locally but not in remote
+            return False
+        except Exception:
+            # Commit doesn't exist at all
+            return False
 
     def is_dirty(self, repository=False):
         """
@@ -186,7 +189,7 @@ class Git:
         dirty = self.is_dirty(repository=repository)
         if dirty:
             raise ConanException("Repo is dirty, cannot capture url and commit: "
-                                 "{}".format(self.folder))
+                                 f"{self.folder}")
         commit = self.get_commit(repository=repository)
         url = self.get_remote_url(remote=remote)
         in_remote = self.commit_in_remote(commit, remote=remote)
@@ -197,9 +200,9 @@ class Git:
                                  "Failing according to 'core.scm:local_url=block' conf")
 
         if self._local_url != "allow":
-            self._conanfile.output.warning("Current commit {} doesn't exist in remote {}\n"
+            self._conanfile.output.warning(f"Current commit {commit} doesn't exist in remote {remote}\n"
                                            "This revision will not be buildable in other "
-                                           "computer".format(commit, remote))
+                                           "computer")
         return self.get_repo_root(), commit
 
     def get_repo_root(self):
@@ -256,8 +259,8 @@ class Git:
 
         :param commit: Commit to checkout.
         """
-        self._conanfile.output.info("Checkout: {}".format(commit))
-        self.run('checkout {}'.format(commit))
+        self._conanfile.output.info(f"Checkout: {commit}")
+        self.run(f'checkout {commit}')
 
     def included_files(self):
         """

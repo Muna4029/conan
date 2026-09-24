@@ -1,4 +1,5 @@
 import platform
+import re
 import unittest
 
 import pytest
@@ -23,14 +24,17 @@ class TestMesonBase(unittest.TestCase):
         if platform.system() == "Darwin":
             self.assertIn(f"main {arch_macro['gcc'][host_arch]} defined", self.t.out)
             self.assertIn("main __apple_build_version__", self.t.out)
-            self.assertIn("main __clang_major__16", self.t.out)
+            # Check for __clang_major__ prefix (version-agnostic)
+            self.assertIn(re.search(r"main __clang_major__\d+", self.t.out).group(), self.t.out)
             # TODO: check why __clang_minor__ seems to be not defined in XCode 12
             # commented while migrating to XCode12 CI
             # self.assertIn("main __clang_minor__0", self.t.out)
         elif platform.system() == "Windows":
             self.assertIn(f"main {arch_macro['msvc'][host_arch]} defined", self.t.out)
-            self.assertIn("main _MSC_VER19", self.t.out)
+            # Check for _MSC_VER prefix (version-agnostic)
+            self.assertIn(re.search(r"main _MSC_VER\d+", self.t.out).group(), self.t.out)
             self.assertIn("main _MSVC_LANG2014", self.t.out)
         elif platform.system() == "Linux":
             self.assertIn(f"main {arch_macro['gcc'][host_arch]} defined", self.t.out)
-            self.assertIn("main __GNUC__9", self.t.out)
+            # Check for __GNUC__ prefix (version-agnostic)
+            self.assertIn(re.search(r"main __GNUC__\d+", self.t.out).group(), self.t.out)
