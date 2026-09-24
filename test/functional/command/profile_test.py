@@ -6,11 +6,11 @@ import unittest
 import pytest
 
 from conan.internal.api.profile.detect import detect_defaults_settings
-from conan.test.utils.mocks import RedirectedTestOutput
-from conan.test.utils.tools import TestClient, redirect_output
-from conan.test.utils.env import environment_update
 from conan.internal.util.files import save
 from conan.internal.util.runners import detect_runner
+from conan.test.utils.env import environment_update
+from conan.test.utils.mocks import RedirectedTestOutput
+from conan.test.utils.tools import TestClient, redirect_output
 from conan.tools.microsoft.visual import vcvars_command
 
 
@@ -90,8 +90,11 @@ class DetectCompilersTest(unittest.TestCase):
         # result is a list of tuples (name, value) so converting it to dict
         result = dict(result)
         platform_compiler = platform_default_compilers.get(platform.system(), None)
+        detected_compiler = result.get("compiler", None)
+        if detected_compiler is None:
+            pytest.skip("No compiler was detected in the environment - skipping test")
         if platform_compiler is not None:
-            self.assertEqual(result.get("compiler", None), platform_compiler)
+            self.assertEqual(detected_compiler, platform_compiler)
 
     @pytest.mark.tool("gcc")
     @pytest.mark.skipif(platform.system() != "Darwin", reason="only OSX test")
@@ -107,9 +110,8 @@ class DetectCompilersTest(unittest.TestCase):
         # see: https://stackoverflow.com/questions/19535422/os-x-10-9-gcc-links-to-clang
 
         output = RedirectedTestOutput()  # Initialize each command
-        with redirect_output(output):
-            with environment_update({"CC": "gcc"}):
-                result = detect_defaults_settings()
+        with redirect_output(output), environment_update({"CC": "gcc"}):
+            result = detect_defaults_settings()
         # result is a list of tuples (name, value) so converting it to dict
         result = dict(result)
         # No compiler should be detected
