@@ -1,3 +1,4 @@
+from conan.test.assets.genconanfile import GenConanfile
 import json
 import textwrap
 
