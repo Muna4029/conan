@@ -1,8 +1,8 @@
 import os
 
-from conan.test.utils.test_files import temp_folder
-from conan.internal.util.files import save_files, chdir
+from conan.internal.util.files import chdir, save_files
 from conan.internal.util.runners import detect_runner
+from conan.test.utils.test_files import temp_folder
 
 
 def git_create_bare_repo(folder=None, reponame="repo.git"):
@@ -10,8 +10,11 @@ def git_create_bare_repo(folder=None, reponame="repo.git"):
     cwd = os.getcwd()
     try:
         os.chdir(folder)
-        detect_runner('git init --bare {}'.format(reponame))
-        return os.path.join(folder, reponame).replace("\\", "/")
+        detect_runner(f'git init --bare {reponame}')
+        repo_path = os.path.join(folder, reponame)
+        # Configure the bare repo to allow pushing to the current branch
+        detect_runner(f'git -C "{repo_path}" config receive.denyCurrentBranch updateInstead')
+        return repo_path.replace("\\", "/")
     finally:
         os.chdir(cwd)
 
@@ -24,16 +27,16 @@ def create_local_git_repo(files=None, branch=None, submodules=None, folder=None,
 
     def _run(cmd, p):
         with chdir(p):
-            _, out = detect_runner("git {}".format(cmd))
+            _, out = detect_runner(f"git {cmd}")
             return out.strip()
 
     _run("init .", tmp)
     _run('config user.name "Your Name"', tmp)
     _run('config user.email "you@example.com"', tmp)
-    _run("checkout -b {}".format(branch or main_branch), tmp)
+    _run(f"checkout -b {branch or main_branch}", tmp)
 
     _run("add .", tmp)
-    for i in range(0, commits):
+    for i in range(commits):
         _run('commit --allow-empty -m "commiting"', tmp)
 
     tags = tags or []
@@ -46,7 +49,7 @@ def create_local_git_repo(files=None, branch=None, submodules=None, folder=None,
         _run('commit -m "add submodules"', tmp)
 
     if origin_url:
-        _run('remote add origin {}'.format(origin_url), tmp)
+        _run(f'remote add origin {origin_url}', tmp)
 
     commit = _run('rev-list HEAD -n 1', tmp)
     return tmp.replace("\\", "/"), commit
@@ -59,7 +62,7 @@ def git_add_changes_commit(folder, msg="fix"):
         # Make sure user and email exist, otherwise it can error
         detect_runner('git config user.name "Your Name"')
         detect_runner('git config user.email "you@example.com"')
-        detect_runner('git add . && git commit -m "{}"'.format(msg))
+        detect_runner(f'git add . && git commit -m "{msg}"')
         _, out = detect_runner("git rev-parse HEAD")
         return out.strip()
     finally:
