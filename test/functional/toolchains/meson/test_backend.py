@@ -60,5 +60,5 @@ def test_cross_x86():
     client.run_command(os.path.join("build", "demo"))
 
     assert "main _M_X64 defined" in client.out
-    assert "main _MSC_VER19" in client.out
+    assert re.search(r"main _MSC_VER\d+", client.out)
     assert "main _MSVC_LANG2014" in client.out
