@@ -871,7 +871,7 @@ def test_dotenv():
     c.run("install . -pr=myprofile")
     dotenv = c.load("conanbuildenv.env")
     assert f'CONAN_DOTENV_FOLDER="{c.current_folder}"' in dotenv
-    assert r'MYOTHER_PATH="${CONAN_DOTENV_FOLDER}\my\rel\path;${MYOTHER_PATH}"' in dotenv
-    assert 'MYPATH="${MYPATH};/some/path/here"' in dotenv
+    assert f'MYOTHER_PATH="${{CONAN_DOTENV_FOLDER}}{os.sep}my{os.sep}rel{os.sep}path{os.pathsep}${{MYOTHER_PATH}}"' in dotenv
+    assert f'MYPATH="${{MYPATH}}{os.pathsep}/some/path/here"' in dotenv
     assert 'MYVAR3="${MYVAR3} MyVal3"' in dotenv
     assert 'MYVAR1="MyVal1"' in dotenv
