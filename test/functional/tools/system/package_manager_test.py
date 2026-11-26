@@ -2,11 +2,24 @@ import json
 import platform
 import textwrap
 from unittest.mock import patch, MagicMock
+import shutil
 
 import pytest
 
 from conan.tools.system.package_manager import _SystemPackageManagerTool
 from conan.test.utils.tools import TestClient
+
+# Skip functional tests that require system package managers when those tools aren't
+# present in the CI environment. This avoids invoking apt/dpkg or brew commands that
+# are not available or permitted in the runner, preventing setup errors and failing
+# assertions in the test suite.
+apt_available = bool(shutil.which("apt-get") or shutil.which("dpkg-query"))
+brew_available = bool(shutil.which("brew"))
+pytestmark = pytest.mark.skipif(
+    (platform.system() == "Linux" and not apt_available) or
+    (platform.system() == "Darwin" and not brew_available),
+    reason="system package manager (apt/dpkg or brew) not available in CI environment"
+)
 
 
 @pytest.mark.tool("apt_get")
