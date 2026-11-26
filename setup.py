@@ -21,19 +21,23 @@ def get_requires(filename):
     requirements = []
     with open(filename, "rt") as req_file:
         for line in req_file.read().splitlines():
-            if not line.strip().startswith("#"):
-                requirements.append(line)
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            requirements.append(stripped)
     return requirements
 
 
 def load_version():
     """ Loads a file content """
     filename = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            "conan", "__init__.py"))
+                                            "conans", "__init__.py"))
     with open(filename, "rt") as version_file:
         conan_init = version_file.read()
-        version = re.search(r"__version__ = '([0-9a-z.-]+)'", conan_init).group(1)
-        return version
+        match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", conan_init)
+        if not match:
+            raise RuntimeError("Unable to find __version__ string in %s." % filename)
+        return match.group(1)
 
 
 def generate_long_description_file():

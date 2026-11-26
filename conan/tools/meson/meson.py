@@ -111,8 +111,11 @@ class Meson(object):
         # https://github.com/mesonbuild/meson/blob/master/mesonbuild/minstall.py#L81
         # Errors are always logged, and status about installed files is controlled by this flag,
         # so it's a bit backwards
-        verbosity = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
-        return "--quiet" if verbosity else ""
+        # Use the same verbosity configuration key as the build step and only emit the
+        # quiet flag when explicitly requested. Previously any truthy value produced
+        # "--quiet", which suppressed output when "verbose" was set.
+        verbosity = self._conanfile.conf.get("tools.compilation:verbosity", choices=("quiet", "verbose"))
+        return "--quiet" if verbosity == "quiet" else ""
 
     @property
     def _prefix(self):
