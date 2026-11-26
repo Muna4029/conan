@@ -102,7 +102,7 @@ class Meson(object):
     def _build_verbosity(self):
         # verbosity of build tools. This passes -v to ninja, for example.
         # See https://github.com/mesonbuild/meson/blob/master/mesonbuild/mcompile.py#L156
-        verbosity = self._conanfile.conf.get("tools.compilation:verbosity",
+        verbosity = self._conanfile.conf.get("tools.build:verbosity",
                                              choices=("quiet", "verbose"))
         return "--verbose" if verbosity == "verbose" else ""
 
@@ -112,7 +112,7 @@ class Meson(object):
         # Errors are always logged, and status about installed files is controlled by this flag,
         # so it's a bit backwards
         verbosity = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
-        return "--quiet" if verbosity else ""
+        return "--quiet" if verbosity == "quiet" else ""
 
     @property
     def _prefix(self):
