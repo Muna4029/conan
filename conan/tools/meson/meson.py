@@ -25,22 +25,29 @@ class Meson(object):
         :param reconfigure: ``bool`` value that adds ``--reconfigure`` param to the final command.
         """
         if reconfigure:
-            self._conanfile.output.warning("reconfigure param has been deprecated."
-                                           " Removing in Conan 2.x.", warn_tag="deprecated")
+            self._conanfile.output.warning(
+                "reconfigure param has been deprecated." " Removing in Conan 2.x.",
+                warn_tag="deprecated",
+            )
         source_folder = self._conanfile.source_folder
         build_folder = self._conanfile.build_folder
         generators_folder = self._conanfile.generators_folder
         cross = os.path.join(generators_folder, MesonToolchain.cross_filename)
         native = os.path.join(generators_folder, MesonToolchain.native_filename)
         is_cross_build = os.path.exists(cross)
-        machine_files = self._conanfile.conf.get("tools.meson.mesontoolchain:extra_machine_files",
-                                                 default=[], check_type=list)
+        machine_files = self._conanfile.conf.get(
+            "tools.meson.mesontoolchain:extra_machine_files",
+            default=[],
+            check_type=list,
+        )
         cmd = "meson setup "
         if is_cross_build:
             machine_files.insert(0, cross)
             cmd += " ".join([f'--cross-file "{file}"' for file in machine_files])
         if os.path.exists(native):
-            if not is_cross_build:  # machine files are only appended to the cross or the native one
+            if (
+                not is_cross_build
+            ):  # machine files are only appended to the cross or the native one
                 machine_files.insert(0, native)
                 cmd += " ".join([f'--native-file "{file}"' for file in machine_files])
             else:  # extra native file for cross-building scenarios
@@ -100,8 +107,9 @@ class Meson(object):
     def _build_verbosity(self):
         # verbosity of build tools. This passes -v to ninja, for example.
         # See https://github.com/mesonbuild/meson/blob/master/mesonbuild/mcompile.py#L156
-        verbosity = self._conanfile.conf.get("tools.compilation:verbosity",
-                                             choices=("quiet", "verbose"))
+        verbosity = self._conanfile.conf.get(
+            "tools.compilation:verbosity", choices=("quiet", "verbose")
+        )
         return "--verbose" if verbosity == "verbose" else ""
 
     @property
@@ -109,8 +117,11 @@ class Meson(object):
         # https://github.com/mesonbuild/meson/blob/master/mesonbuild/minstall.py#L81
         # Errors are always logged, and status about installed files is controlled by this flag,
         # so it's a bit backwards
-        verbosity = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
-        return "--quiet" if verbosity else ""
+        # Use the same configuration key as build verbosity and interpret the value explicitly.
+        verbosity = self._conanfile.conf.get(
+            "tools.compilation:verbosity", choices=("quiet", "verbose")
+        )
+        return "--quiet" if verbosity == "quiet" else ""
 
     @property
     def _prefix(self):

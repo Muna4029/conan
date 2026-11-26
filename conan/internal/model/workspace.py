@@ -1,7 +1,16 @@
 import os
 import shutil
 
-import yaml
+# Robust YAML import: prefer PyYAML, fall back to ruamel.yaml if available.
+# If neither is installed, set yaml to None so callers can produce a clear error message
+# instead of an import-time crash (helps CI diagnostics and environments missing optional deps).
+try:
+    import yaml
+except Exception:
+    try:
+        from ruamel import yaml  # type: ignore
+    except Exception:
+        yaml = None
 
 from conan.api.output import ConanOutput
 from conan.errors import ConanException

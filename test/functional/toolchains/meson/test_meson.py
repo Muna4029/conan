@@ -3,8 +3,14 @@ import platform
 import re
 import sys
 import textwrap
+import shutil
 
 import pytest
+
+# If the system cmake binary is not available, skip these meson-related tests at module collection
+# level to avoid pytest setup/collection failures in CI environments that don't provide cmake.
+if shutil.which("cmake") is None:
+    pytest.skip("Required 'cmake' tool is not available, skipping meson tests", allow_module_level=True)
 
 from conan.test.assets.sources import gen_function_cpp, gen_function_h
 from conan.test.utils.tools import TestClient
