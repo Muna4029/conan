@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import os
 import platform
 import unittest
@@ -94,7 +94,7 @@ class ToolCopyTest(unittest.TestCase):
         copy(None, "*", folder1, folder2)
         symlink = os.path.join(folder2, "foo", "symlink")
         self.assertTrue(os.path.islink(symlink))
-        self.assertTrue(load(os.path.join(symlink, "file.txt")), "Hello")
+        self.assertEqual(load(os.path.join(symlink, "file.txt")), "Hello")
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="Requires Symlinks")
     def test_linked_folder_nested(self):

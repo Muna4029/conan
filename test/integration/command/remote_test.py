@@ -20,7 +20,7 @@ class RemoteServerTest(unittest.TestCase):
 
     def test_list_json(self):
         self.client.run("remote list --format=json")
-        data = json.loads(self.client.stdout)
+        data = json.loads(self.client.out)
 
         assert data[0]["name"] == "remote0"
         assert data[1]["name"] == "remote1"

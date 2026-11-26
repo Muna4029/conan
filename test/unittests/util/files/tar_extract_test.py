@@ -30,7 +30,9 @@ class TarExtractTest(unittest.TestCase):
                 files, _ = gather_files(ori_files_dir)
                 for filename, abs_path in files.items():
                     info = tarfile.TarInfo(name=filename)
-                    with open(file1, 'rb') as file_handler:
+                    # Set the size so tarfile knows how many bytes to read from fileobj
+                    info.size = os.path.getsize(abs_path)
+                    with open(abs_path, 'rb') as file_handler:
                         tgz.addfile(tarinfo=info, fileobj=file_handler)
                 tgz.close()
 

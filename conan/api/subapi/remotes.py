@@ -116,7 +116,6 @@ class RemotesAPI:
         :param index: if not defined, the new remote will be last one. Pass an integer to insert
           the remote in that position instead of the last one
         """
-        add_local_recipes_index_remote(self._home_folder, remote)
         remotes = _load(self._remotes_file)
         if remote.remote_type != LOCAL_RECIPES_INDEX:
             _validate_url(remote.url)
@@ -137,6 +136,9 @@ class RemotesAPI:
         else:
             remotes = [r for r in remotes if r.name != remote.name]
             remotes.insert(index, remote)
+        # Only add local recipes index metadata when the remote is actually a LOCAL_RECIPES_INDEX
+        if remote.remote_type == LOCAL_RECIPES_INDEX:
+            add_local_recipes_index_remote(self._home_folder, remote)
         _save(self._remotes_file, remotes)
 
     def remove(self, pattern):
@@ -307,16 +309,18 @@ def _load(remotes_file):
 def _save(remotes_file, remotes):
     remote_list = []
     for r in remotes:
-        remote = {"name": r.name, "url": r.url, "verify_ssl": r.verify_ssl}
-        if r.disabled:
-            remote["disabled"] = True
-        if r.allowed_packages:
-            remote["allowed_packages"] = r.allowed_packages
-        if r.remote_type:
-            remote["remote_type"] = r.remote_type
+        # Persist all important fields explicitly, even if falsy, to preserve the remotes.json shape
+        remote = {
+            "name": r.name,
+            "url": r.url,
+            "verify_ssl": r.verify_ssl,
+            "disabled": bool(r.disabled),
+            "allowed_packages": r.allowed_packages,
+            "remote_type": r.remote_type,
+        }
         remote_list.append(remote)
     # This atomic replace avoids a corrupted remotes.json file if this is killed during the process
-    save(remotes_file + ".tmp", json.dumps({"remotes": remote_list}, indent=True))
+    save(remotes_file + ".tmp", json.dumps({"remotes": remote_list}, indent=2))
     os.replace(remotes_file + ".tmp", remotes_file)
 
 

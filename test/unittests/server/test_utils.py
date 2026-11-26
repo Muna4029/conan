@@ -1,6 +1,6 @@
 import os
 
-from conans.server.utils.files import path_exists
+from conan.server.utils.files import path_exists
 from conan.test.utils.test_files import temp_folder
 from conan.internal.util.files import mkdir
 

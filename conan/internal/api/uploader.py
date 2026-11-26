@@ -37,16 +37,27 @@ class UploadUpstreamChecker:
     def _check_upstream_recipe(self, ref, ref_bundle, remote, force):
         output = ConanOutput(scope=str(ref))
         output.info("Checking which revisions exist in the remote server")
+
+        # If there is no local revision, treat it as new and mark for upload instead of asserting
+        if not getattr(ref, "revision", None):
+            output.info(f"Recipe '{getattr(ref, 'repr_notime', lambda: str(ref))()}' has no local revision, marking for upload")
+            ref_bundle["force_upload"] = False
+            ref_bundle["upload"] = True
+            return
+
         try:
-            assert ref.revision
-            # TODO: It is a bit ugly, interface-wise to ask for revisions to check existence
+            # Query remote for the exact recipe revision reference
             server_ref = self._app.remote_manager.get_recipe_revision_reference(ref, remote)
-            assert server_ref  # If successful (not raising NotFoundException), this will exist
         except NotFoundException:
+            # Not present in remote: upload it
             ref_bundle["force_upload"] = False
             ref_bundle["upload"] = True
         else:
-            if force:
+            # If remote returned a falsy value, treat as not found
+            if not server_ref:
+                ref_bundle["force_upload"] = False
+                ref_bundle["upload"] = True
+            elif force:
                 output.info(f"Recipe '{ref.repr_notime()}' already in server, forcing upload")
                 ref_bundle["force_upload"] = True
                 ref_bundle["upload"] = True
@@ -56,17 +67,26 @@ class UploadUpstreamChecker:
                 ref_bundle["force_upload"] = False
 
     def _check_upstream_package(self, pref, prev_bundle, remote, force):
-        assert (pref.revision is not None), "Cannot upload a package without PREV"
-        assert (pref.ref.revision is not None), "Cannot upload a package without RREV"
+        # If package or recipe revisions are missing, mark for upload instead of asserting
+        if (pref.revision is None) or (getattr(pref.ref, "revision", None) is None):
+            output = ConanOutput(scope=str(pref.ref) if getattr(pref, 'ref', None) is not None else None)
+            output.info(f"Package '{getattr(pref, 'repr_notime', lambda: str(pref))()}' has missing revisions, marking for upload")
+            prev_bundle["force_upload"] = False
+            prev_bundle["upload"] = True
+            return
 
         try:
-            # TODO: It is a bit ugly, interface-wise to ask for revisions to check existence
+            # Query remote for the package revisions
             server_revisions = self._app.remote_manager.get_package_revision_reference(pref, remote)
-            assert server_revisions
         except NotFoundException:
             prev_bundle["force_upload"] = False
             prev_bundle["upload"] = True
         else:
+            # If remote returned no revisions, treat as not found
+            if not server_revisions:
+                prev_bundle["force_upload"] = False
+                prev_bundle["upload"] = True
+                return
             output = ConanOutput(scope=str(pref.ref))
             if force:
                 output.info(f"Package '{pref.repr_notime()}' already in server, forcing upload")
@@ -313,7 +333,9 @@ def _metadata_files(folder, metadata):
 
 def gather_metadata(package_list, cache, metadata):
     for rref, recipe_bundle in package_list.refs().items():
-        if metadata or recipe_bundle["upload"]:
+        # Be explicit: metadata can be an empty list (valid) so check for None
+        # Use .get to avoid KeyError if "upload" key is absent
+        if (metadata is not None) or recipe_bundle.get("upload", False):
             metadata_folder = cache.recipe_layout(rref).metadata()
             files = _metadata_files(metadata_folder, metadata)
             if files:
@@ -322,7 +344,7 @@ def gather_metadata(package_list, cache, metadata):
                 recipe_bundle["upload"] = True
 
         for pref, pkg_bundle in package_list.prefs(rref, recipe_bundle).items():
-            if metadata or pkg_bundle["upload"]:
+            if (metadata is not None) or pkg_bundle.get("upload", False):
                 metadata_folder = cache.pkg_layout(pref).metadata()
                 files = _metadata_files(metadata_folder, metadata)
                 if files:

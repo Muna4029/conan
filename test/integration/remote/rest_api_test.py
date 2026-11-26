@@ -112,7 +112,11 @@ class RestApiTest(unittest.TestCase):
 
         # Get the info about this ConanFileReference
         info = self.api.search_packages(ref1)
-        self.assertEqual(conan_info, info["1F23223EFDA"]["content"])
+        # Guard against missing keys in the API response to avoid KeyError and provide clearer test failure
+        self.assertIn("1F23223EFDA", info, "Package ID '1F23223EFDA' not found in search_packages response")
+        pkg_info = info["1F23223EFDA"]
+        self.assertIn("content", pkg_info, "'content' key missing for package '1F23223EFDA'")
+        self.assertEqual(conan_info, pkg_info["content"])
 
         # Search packages
         results = self.api.search("HelloOnly*", ignorecase=False)
@@ -173,7 +177,7 @@ class RestApiTest(unittest.TestCase):
 
         files = {"conanfile.py": GenConanfile("3").with_requires("1", "12").with_exports("*"),
                  "hello.cpp": "hello",
-                 "conanmanifest.txt": ""}
+                 CONAN_MANIFEST: ""}
         if base_files:
             files.update(base_files)
 
@@ -181,7 +185,8 @@ class RestApiTest(unittest.TestCase):
         abs_paths = {}
         for filename, content in files.items():
             abs_path = os.path.join(tmp_dir, filename)
-            save(abs_path, str(content))
+            # Save the content as provided (consistent with _upload_recipe) to avoid altering serialized data
+            save(abs_path, content)
             abs_paths[filename] = abs_path
 
         self.api.upload_package(package_reference, abs_paths)

@@ -16,8 +16,8 @@ def client():
                  "profiles/default":  "[settings]\nos=Windows"})
 
     def base_conanfile(name):
-        return GenConanfile(name, "0.1").with_option("language", [0, 1])\
-            .with_default_option("language", 0).with_settings("os")
+        return GenConanfile(name, "0.1").with_option("language", ["0", "1"])\
+            .with_default_option("language", "0").with_settings("os")
 
     c.save({"conanfile.py": base_conanfile("hello0")})
     c.run("export . --user=lasote --channel=stable")

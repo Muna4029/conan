@@ -1,6 +1,5 @@
 import os
 
-from conan.internal.model.options import Options
 from conan.internal.model.profile import Profile
 from conan.internal.util.files import save
 
@@ -9,10 +8,10 @@ def create_profile(folder, name, settings=None, package_settings=None, options=N
     profile = Profile()
     profile.settings = settings or {}
 
-    if package_settings:
-        profile.package_settings = package_settings
+    # Always set package_settings (even if empty) so it will be serialized/persisted
+    profile.package_settings = package_settings or {}
 
-    if options:
-        profile.options = Options(options_values=options)
+    # Assign options directly (or an empty dict) to ensure predictable serialization
+    profile.options = options or {}
 
     save(os.path.join(folder, name), profile.dumps())

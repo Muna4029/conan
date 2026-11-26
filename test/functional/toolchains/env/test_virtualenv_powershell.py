@@ -26,7 +26,7 @@ def client():
 
     def package_info(self):
         self.buildenv_info.define_path("MYPATH1", "c:/path/to/ar")
-        self.runenv_info.define("MYVAR1", 'some nice content\" with quotes')
+        self.runenv_info.define("MYVAR1", 'some nice content" with quotes')
     """
     client.save({"conanfile.py": conanfile})
     client.run("create .")

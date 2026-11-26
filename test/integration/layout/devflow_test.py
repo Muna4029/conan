@@ -26,7 +26,7 @@ class ConanFileToolsTest(ConanFile):
 
     def package(self):
         copy(self, "*.h", self.source_folder, self.package_folder)
-        copy(self, "*.lib", self.build_folder, self.package_folder)
+        copy(self, "**/*.lib", self.build_folder, self.package_folder)
 '''
 
 

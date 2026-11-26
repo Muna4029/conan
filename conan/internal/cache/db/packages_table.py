@@ -115,7 +115,7 @@ class PackagesDBTable(BaseDbTable):
     def remove_build_id(self, pref):
         where_clause = self._where_clause(pref)
         query = f"UPDATE {self.table_name} " \
-                f"SET {self.columns.build_id} = 'null' " \
+                f"SET {self.columns.build_id} = NULL " \
                 f"WHERE {where_clause};"
         with self.db_connection() as conn:
             try:
@@ -236,7 +236,6 @@ class PackagesDBTable(BaseDbTable):
 
         with self.db_connection() as conn:
             r = conn.execute(query)
-            row = r.fetchone()
-            if row:
-                return self._as_dict(self.row_type(*row))
-            return None
+            rows = r.fetchall()
+            results = [self._as_dict(self.row_type(*row)) for row in rows]
+            return results

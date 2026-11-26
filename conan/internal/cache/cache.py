@@ -222,16 +222,22 @@ class PkgCache:
         except ConanReferenceAlreadyExistsInDB:
             # TODO: Optimize this into 1 single UPSERT operation
             # There was a previous package folder for this same package reference (and prev)
-            pkg_layout = self.pkg_layout(pref)
+            # Try to find the existing package reference in DB (it should contain the concrete revision)
+            existing_pref = self.get_latest_package_reference(pref)
+            if existing_pref is None:
+                # If we can't find an existing pref, re-raise the original exception
+                raise
+            # Get the layout for the existing package (has revision set)
+            pkg_layout = self.pkg_layout(existing_pref)
             # We remove the old one and move the new one to the path of the previous one
             # this can be necessary in case of new metadata or build-folder because of "build_id()"
             pkg_layout.remove()
             shutil.move(layout.base_folder, pkg_layout.base_folder)  # clean unused temporary build
             layout._base_folder = pkg_layout.base_folder  # reuse existing one
-            # TODO: The relpath would be the same as the previous one, it shouldn't be ncessary to
-            #  update it, the update_package_timestamp() can be simplified and path dropped
+            # Normalize relpath again and update DB timestamp using the existing pref
             relpath = os.path.relpath(layout.base_folder, self._base_folder)
-            self._db.update_package_timestamp(pref, path=relpath, build_id=build_id)
+            relpath = relpath.replace("\\", "/")
+            self._db.update_package_timestamp(existing_pref, path=relpath, build_id=build_id)
 
     def assign_rrev(self, layout: RecipeLayout):
         """ called at export, once the exported recipe revision has been computed, it

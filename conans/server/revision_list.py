@@ -28,7 +28,7 @@ class RevisionList(object):
             # Each uploaded file calls to update the revision
             return
         index = self._find_revision_index(revision_id)
-        if index:
+        if index is not None:
             self._data.pop(index)
 
         self._data.append(_RevisionEntry(revision_id, self._now()))

@@ -11,7 +11,6 @@ from conan.tools.files import save
 from conan.internal.model.cpp_info import CppInfo
 from conan.internal.model.pkg_type import PackageType
 from conan.api.model import RecipeReference
-from conan.internal.util.files import save
 
 
 @pytest.fixture
@@ -221,7 +220,7 @@ def test_error_if_shared_and_static_found(static, conanfile):
     result = cppinfo.deduce_full_cpp_info(conanfile)
     ext = "a" if static else "so"
     assert result.location == f"{folder}/libdir/libmylib.{ext}"
-    assert result.type == (PackageType.STATIC if static else PackageType.SHARED)
+    assert result.type == ("static-library" if static else "shared-library")
 
 
 def test_warning_windows_if_more_than_one_dll(conanfile):

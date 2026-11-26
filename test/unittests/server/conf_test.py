@@ -3,7 +3,7 @@ import unittest
 from datetime import timedelta
 
 from conan.errors import ConanException
-from conans.server.conf import ConanServerConfigParser
+from conan.server.conf import ConanServerConfigParser
 from conan.test.utils.test_files import temp_folder
 from conan.internal.util.config_parser import TextINIParse
 from conan.internal.util.files import save

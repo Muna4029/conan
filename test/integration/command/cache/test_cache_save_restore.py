@@ -35,7 +35,17 @@ def test_cache_save_restore():
         the_tar.close()
 
     package_list = json.loads(pkglist)
-    assert "\\" not in package_list
+
+    def _has_backslash(obj):
+        if isinstance(obj, str):
+            return "\\" in obj
+        if isinstance(obj, dict):
+            return any(_has_backslash(k) or _has_backslash(v) for k, v in obj.items())
+        if isinstance(obj, (list, tuple, set)):
+            return any(_has_backslash(i) for i in obj)
+        return False
+
+    assert not _has_backslash(package_list)
 
 
 def test_cache_save_restore_with_package_file():

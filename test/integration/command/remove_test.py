@@ -250,9 +250,10 @@ def test_new_remove_recipes_expressions(populated_client, with_remote, data):
     r = "-r default" if with_remote else ""
     assert "error" not in data
     populated_client.run("remove {} -c {}".format(data["remove"], r))
-    populated_client.run(f"list {r} --format=json")
+    # Ensure the pattern is passed before the remote flag and read the captured output (.out)
+    populated_client.run(f"list {data['remove']} {r} --format=json")
     origin = "default" if with_remote else "Local Cache"
-    assert set(json.loads(populated_client.stdout)[origin]) == set(data["recipes"])
+    assert set(json.loads(populated_client.out)[origin]) == set(data["recipes"])
 
 
 @pytest.mark.parametrize("with_remote", [True, False])

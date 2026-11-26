@@ -59,7 +59,7 @@ def test_cps_header():
     pkg = json.loads(c.load("build/cps/msvc-191-x86_64-release/cps/pkg.cps"))
     assert pkg["name"] == "pkg"
     assert pkg["version"] == "0.1"
-    assert "configurations" not in "pkg"
+    assert "configurations" not in pkg
     assert pkg["default_components"] == ["pkg"]
     pkg_comp = pkg["components"]["pkg"]
     assert pkg_comp["type"] == "interface"
@@ -118,7 +118,7 @@ def test_cps_in_pkg():
     c.run(f"install --requires=zlib/1.3.1 {settings} -g CMakeDeps")
     cmake = c.load("zlib-release-x86_64-data.cmake")
     assert 'set(zlib_INCLUDE_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/include")' in cmake
-    assert 'set(zlib_LIB_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/lib")'
+    assert 'set(zlib_LIB_DIRS_RELEASE "${zlib_PACKAGE_FOLDER_RELEASE}/lib")' in cmake
     assert 'set(zlib_LIBS_RELEASE zlib)' in cmake
 
 

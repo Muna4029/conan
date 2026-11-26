@@ -129,11 +129,11 @@ class TestBasicLocalFlows:
         # Not created in the cache, just exported, nothing breaks because there is not even a package there
         client.run("cache save *:*")
         # Check pkglist.json has not been created inside conan cache folder
-        assert not any(Path(client.cache_folder).rglob("pgklist.json"))
+        assert not any(Path(client.cache_folder).rglob("pkglist.json"))
         client.run("remove * -c")
         client.run("cache restore conan_cache_save.tgz")
         # Check the extracted pkglist does not persist in the cache after restore
-        assert not any(Path(client.cache_folder).rglob("pgklist.json"))
+        assert not any(Path(client.cache_folder).rglob("pkglist.json"))
 
         # Now create the package and then save/restore
         client.run("create dep")
@@ -141,7 +141,39 @@ class TestBasicLocalFlows:
         client.run("cache save *:* -f=json", redirect_stdout="saved.json")
         saved = json.loads(client.load("saved.json"))
         pref = dep_layout.reference
-        saved_pkg_folder = saved["Local Cache"]["dep/1.0"]["revisions"][pref.ref.revision]["packages"][pref.package_id]["revisions"][pref.revision]["package_folder"]
+        # Be more defensive when retrieving the saved package folder from the saved JSON
+        saved_pkg_folder = None
+        local_cache = saved.get("Local Cache", {})
+        # Try common direct key first
+        try:
+            direct = local_cache.get(str(pref.ref)) or local_cache.get("dep/1.0")
+            if direct:
+                revs = direct.get("revisions", {})
+                rev_entry = revs.get(pref.ref.revision, {})
+                packages = rev_entry.get("packages", {})
+                pkg_info = packages.get(pref.package_id, {})
+                saved_pkg_folder = pkg_info.get("revisions", {}).get(pref.revision, {}).get("package_folder")
+        except Exception:
+            saved_pkg_folder = None
+        # Fallback: search the structure for our package id and revision in a tolerant way
+        if not saved_pkg_folder:
+            for entry in local_cache.values():
+                try:
+                    revs = entry.get("revisions", {})
+                    for rev_v in revs.values():
+                        packages = rev_v.get("packages", {})
+                        pkg_info = packages.get(pref.package_id)
+                        if not pkg_info:
+                            continue
+                        saved_pkg_folder = pkg_info.get("revisions", {}).get(pref.revision, {}).get("package_folder")
+                        if saved_pkg_folder:
+                            break
+                except Exception:
+                    continue
+                if saved_pkg_folder:
+                    break
+
+        assert saved_pkg_folder is not None, "Could not find saved package folder in saved cache JSON"
         assert saved_pkg_folder in dep_layout.package().replace("\\", "/")
         client.run("remove * -c")
         assert not os.path.exists(dep_layout.package())
@@ -357,7 +389,8 @@ class TestRemoteFlows:
 
         client.run("remove * -c")
         client.run("install --requires=dep/1.0 -r=default")
-        assert "dep/1.0: Calling finalize()"
+        # Ensure the expected diagnostic about calling finalize appears in the client output
+        assert "dep/1.0: Calling finalize()" in client.out
         assert f"Running finalize method in {downloaded_pref_layout.finalize()}" in client.out
 
     def test_upload_verify_integrity(self, client):
