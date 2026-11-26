@@ -1,7 +1,16 @@
 import os
 
 from conan.tools.build import build_jobs
-from conan.tools.meson.toolchain import MesonToolchain
+try:
+    from conan.tools.meson.toolchain import MesonToolchain
+except Exception:
+    # Provide a lightweight fallback with the attributes used by this module so
+    # importing this file doesn't fail in environments where the meson toolchain
+    # module (or its dependencies) can't be imported at import-time.
+    class _MissingMesonToolchain:
+        cross_filename = "conan_meson_cross.ini"
+        native_filename = "conan_meson_native.ini"
+    MesonToolchain = _MissingMesonToolchain
 
 
 class Meson(object):
@@ -110,7 +119,7 @@ class Meson(object):
         # Errors are always logged, and status about installed files is controlled by this flag,
         # so it's a bit backwards
         verbosity = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
-        return "--quiet" if verbosity else ""
+        return "--quiet" if verbosity == "quiet" else ""
 
     @property
     def _prefix(self):

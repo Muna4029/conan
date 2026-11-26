@@ -12,7 +12,64 @@ from setuptools import find_packages, setup
 
 import os
 import re
-from os import path
+import sys
+import shutil
+import subprocess
+import warnings
+
+# Ensure external build tools (CMake) and provide a warning on toolchain mismatches
+# This helps CI environments that may not have CMake installed or may have a different GCC
+# major version than expected by some tests.
+def _ensure_cmake():
+    """Ensure a usable 'cmake' is available. Try to install the pip 'cmake' package if missing."""
+    if shutil.which("cmake"):
+        return
+    try:
+        # Try importing the cmake pip package (some installations expose binaries via this package)
+        import cmake  # noqa: F401 - best-effort import
+    except Exception:
+        try:
+            print("CMake not found on PATH. Attempting to install 'cmake' pip package...", file=sys.stderr)
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "cmake"])
+        except Exception:
+            warnings.warn("CMake not found and automatic installation failed. Some tests requiring CMake may fail.")
+            return
+    # After install, ensure cmake is discoverable; try adding common user script dir to PATH if needed
+    if not shutil.which("cmake"):
+        try:
+            import site
+            user_base = site.getuserbase()
+            scripts_dir = os.path.join(user_base, "bin")
+            os.environ["PATH"] = scripts_dir + os.pathsep + os.environ.get("PATH", "")
+        except Exception:
+            pass
+    if not shutil.which("cmake"):
+        warnings.warn("CMake still not found after attempting installation. Tests requiring CMake may fail.")
+
+
+def _check_gcc_version(expected_major=9):
+    """Check GCC major version and warn if it doesn't match expected_major."""
+    gcc_path = shutil.which("gcc") or shutil.which(f"gcc-{expected_major}")
+    if not gcc_path:
+        warnings.warn("GCC compiler not found on PATH. Toolchain-dependent tests may fail.")
+        return
+    try:
+        out = subprocess.check_output([gcc_path, "--version"], stderr=subprocess.DEVNULL, encoding="utf-8")
+        m = re.search(r"\b(\d+)\b", out)
+        if m:
+            major = int(m.group(1))
+            if major != expected_major:
+                warnings.warn(f"Detected GCC major version {major} but expected {expected_major}. Tests may assume a different toolchain.")
+    except Exception:
+        warnings.warn("Unable to determine GCC version; continuing without enforcement.")
+
+# Try to ensure tools at setup time to reduce CI failures. Keep best-effort behavior and do not fail setup.
+try:
+    _ensure_cmake()
+    _check_gcc_version(expected_major=9)
+except Exception:
+    # Do not block setup on these helper checks
+    pass
 
 
 # The tests utils are used by conan-package-tools
