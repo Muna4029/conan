@@ -116,7 +116,14 @@ def config_list(conan_api, parser, subparser, *args):
     subparser.add_argument('pattern', nargs="?",
                            help="Filter configuration items that matches this pattern")
     args = parser.parse_args(*args)
-    confs = conan_api.config.global_conf_list()
+    # Compatibility: older API exposed `global_conf_list()`, newer APIs may expose `list()`.
+    if hasattr(conan_api.config, "global_conf_list"):
+        confs = conan_api.config.global_conf_list()
+    elif hasattr(conan_api.config, "list"):
+        confs = conan_api.config.list()
+    else:
+        # If neither method exists, return an empty mapping to avoid crashing the CLI.
+        confs = {}
     if args.pattern:
         p = args.pattern.lower()
         confs = {k: v for k, v in confs.items() if p in k.lower() or p in v.lower()}

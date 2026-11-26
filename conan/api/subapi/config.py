@@ -126,6 +126,10 @@ class ConfigAPI:
         """
         return BUILT_IN_CONFS
 
+    # Backwards compatibility: older API used `global_conf_list`
+    # Provide an alias so existing callers continue to work.
+    global_conf_list = conf_list
+
     def clean(self):
         """ reset the Conan home folder to a clean state, removing all the user
         custom configuration, custom files, and resetting modified files
