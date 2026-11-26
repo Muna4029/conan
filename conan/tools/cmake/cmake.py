@@ -1,4 +1,6 @@
 import os
+import shutil
+import warnings
 
 from conan.tools.build import build_jobs, cmd_args_to_string
 from conan.tools.cmake.presets import load_cmake_presets
@@ -6,6 +8,32 @@ from conan.tools.cmake.utils import is_multi_configuration
 from conan.tools.files import chdir, mkdir
 from conan.tools.microsoft.msbuild import msbuild_verbosity_cmd_line_arg
 from conan.errors import ConanException
+
+
+def _ensure_external_tool_available(program, mandatory=True):
+    """Check that an external program is available in PATH.
+
+    This helper provides an early, clear error message when required external
+    build tools (like 'cmake') are missing. It can be used by callers before
+    attempting to invoke external binaries to provide a more actionable
+    failure.
+    """
+    if not program:
+        return False
+    if shutil.which(program) is None:
+        msg = (
+            "Required external program '{0}' was not found in PATH.\n"
+            "Please install it or adjust your configuration to point to a valid binary."
+        ).format(program)
+        if mandatory:
+            # Raise ConanException so callers in the Conan ecosystem can handle
+            # it uniformly. Tests or higher-level code may catch this and
+            # provide appropriate guidance.
+            raise ConanException(msg)
+        else:
+            warnings.warn(msg)
+            return False
+    return True
 
 
 def _cmake_cmd_line_args(conanfile, generator):

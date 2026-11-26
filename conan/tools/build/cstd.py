@@ -87,7 +87,7 @@ def default_cstd(conanfile, compiler=None, compiler_version=None):
     compiler = compiler or conanfile.settings.get_safe("compiler")
     compiler_version = compiler_version or conanfile.settings.get_safe("compiler.version")
     if not compiler or not compiler_version:
-        raise ConanException("Called default_cppstd with no compiler or no compiler.version")
+        raise ConanException("Called default_cstd with no compiler or no compiler.version")
     return default_cstd_(compiler, Version(compiler_version))
 
 def supported_cstd(conanfile, compiler=None, compiler_version=None):
@@ -135,8 +135,9 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
     :param comparator: Operator to use to compare the detected and the required cstd versions.
     :param gnu_extensions: GNU extension is required (e.g gnu17)
     """
-    if not str(cstd).isdigit():
-        raise ConanException("cstd parameter must be a number")
+    # Accept numeric values and values prefixed with 'gnu' (e.g. 'gnu17')
+    if not str(cstd).replace("gnu", "").isdigit():
+        raise ConanException("cstd parameter must be a number or 'gnu' followed by a number")
 
     def compare(lhs, rhs, comp):
         def extract_cpp_version(_cstd):
@@ -151,9 +152,13 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
 
     current_cstd = conanfile.settings.get_safe("compiler.cstd")
     if current_cstd is None:
-        raise ConanInvalidConfiguration("The compiler.cstd is not defined for this configuration")
+        # Fallback to detecting the compiler default cstd when settings.compiler.cstd is not set
+        try:
+            current_cstd = default_cstd(conanfile)
+        except ConanException:
+            raise ConanInvalidConfiguration("The compiler.cstd is not defined for this configuration")
 
-    if gnu_extensions and "gnu" not in current_cstd:
+    if gnu_extensions and "gnu" not in str(current_cstd):
         raise ConanInvalidConfiguration("The cstd GNU extension is required")
 
     if not compare(current_cstd, cstd, comparator):
