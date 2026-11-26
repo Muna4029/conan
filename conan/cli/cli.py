@@ -60,7 +60,8 @@ class Cli:
 
         for custom_commands_path in custom_commands_folders:
             if not os.path.isdir(custom_commands_path):
-                return
+                # If a custom commands folder does not exist, skip it and continue with others
+                continue
 
             sys.path.append(custom_commands_path)
             for module in pkgutil.iter_modules([custom_commands_path]):
@@ -69,8 +70,10 @@ class Cli:
                     try:
                         self._add_command(module_name, module_name.replace("cmd_", ""))
                     except Exception as e:
+                        # Log the error and re-raise so failures are visible to callers/tests
                         ConanOutput().error(f"Error loading custom command '{module_name}.py': {e}",
                                             error_type="exception")
+                        raise
             # layers
             for folder in os.listdir(custom_commands_path):
                 layer_folder = os.path.join(custom_commands_path, folder)
@@ -85,8 +88,10 @@ class Cli:
                             self._add_command(module_path, module_name.replace("cmd_", ""),
                                               package=folder)
                         except Exception as e:
+                            # Log the error and re-raise so failures are visible to callers/tests
                             ConanOutput().error(f"Error loading custom command {module_path}: {e}",
                                                 error_type="exception")
+                            raise
 
     def _add_command(self, import_path, method_name, package=None):
         try:
@@ -106,6 +111,9 @@ class Cli:
                         raise ConanException("The name for the subcommand method should "
                                              "begin with the main command name + '_'. "
                                              "i.e. {}_<subcommand_name>".format(method_name))
+        except ImportError as e:
+            # Surface import errors as ConanException so callers can handle/log appropriately
+            raise ConanException(f"Error importing module {import_path}: {e}")
         except AttributeError:
             raise ConanException("There is no {} method defined in {}".format(method_name,
                                                                               import_path))
@@ -134,6 +142,12 @@ class Cli:
         """
         Prints a summary of all commands.
         """
+        if not self._commands:
+            # Nothing to show, avoid crashing when no commands are loaded
+            cli_out_write("")
+            cli_out_write('No commands available', Color.BRIGHT_MAGENTA)
+            return
+
         max_len = max((len(c) for c in self._commands)) + 1
         line_format = '{{: <{}}}'.format(max_len)
 
