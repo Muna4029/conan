@@ -119,7 +119,7 @@ class CMake:
             arg_list.extend(cli_args)
 
         command = " ".join(arg_list)
-        with chdir(self, build_folder):
+        with chdir(self._conanfile, build_folder):
             self._conanfile.run(command, stdout=stdout, stderr=stderr)
 
     def _config_arg(self, build_type):

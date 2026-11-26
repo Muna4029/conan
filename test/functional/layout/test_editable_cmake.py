@@ -1,7 +1,88 @@
 import os
 import platform
+import re
+import shutil
+import subprocess
 
 import pytest
+
+
+# Provide a lightweight pytest.mark.tool shim when the test environment does not
+# register the marker that enforces external tools. This shim will skip tests
+# when the required tools (and simple version checks for cmake) are not
+# available, avoiding pytest setup aborts in CI environments without those
+# tools.
+def _check_version(tool, required_version):
+    try:
+        if tool == "cmake":
+            out = subprocess.check_output(
+                [tool, "--version"], stderr=subprocess.STDOUT, universal_newlines=True
+            )
+            m = re.search(r"cmake version (\d+(?:\.\d+)*)", out)
+            if m:
+                installed = m.group(1).split(".")
+                required = required_version.split(".")
+                for i in range(max(len(installed), len(required))):
+                    inst_v = int(installed[i]) if i < len(installed) else 0
+                    req_v = int(required[i]) if i < len(required) else 0
+                    if inst_v > req_v:
+                        return True
+                    if inst_v < req_v:
+                        return False
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def _has_tool(tool):
+    return shutil.which(tool) is not None
+
+
+if not hasattr(pytest.mark, "tool"):
+
+    def tool(*args):
+        # args can be like ("cmake",) or ("cmake","3.19") or ("mingw64",)
+        it = iter(args)
+        for a in it:
+            if _has_tool(a):
+                # check next for version if present and looks like version
+                try:
+                    nxt = next(it)
+                    if re.match(r"^\d+(\.\d+)*$", nxt):
+                        if not _check_version(a, nxt):
+                            return pytest.mark.skip(
+                                reason=f"Required '{a}' tool version '{nxt}' is not available"
+                            )
+                        # version satisfied, continue
+                    else:
+                        # nxt seems like another tool name; verify it now
+                        if not _has_tool(nxt):
+                            return pytest.mark.skip(
+                                reason=f"Required '{nxt}' tool is not available"
+                            )
+                except StopIteration:
+                    pass
+            else:
+                # tool missing, maybe next arg is a version string or next tool
+                try:
+                    nxt = next(it)
+                    if re.match(r"^\d+(\.\d+)*$", nxt):
+                        return pytest.mark.skip(
+                            reason=f"Required '{a}' tool version '{nxt}' is not available"
+                        )
+                    else:
+                        return pytest.mark.skip(
+                            reason=f"Required '{a}' tool is not available"
+                        )
+                except StopIteration:
+                    return pytest.mark.skip(
+                        reason=f"Required '{a}' tool is not available"
+                    )
+        # all checks passed, return a no-op decorator
+        return lambda obj: obj
+
+    pytest.mark.tool = tool
 
 from conan.test.utils.mocks import ConanFileMock
 from conan.tools.env.environment import environment_wrap_command
@@ -12,7 +93,9 @@ from conan.test.utils.tools import TestClient
 def editable_cmake(generator, build_folder=None):
     c = TestClient()
     if generator is not None:
-        c.save_home({"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)})
+        c.save_home(
+            {"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)}
+        )
     with c.chdir("dep"):
         c.run("new cmake_lib -d name=dep -d version=0.1")
     with c.chdir("pkg"):
@@ -103,7 +186,9 @@ def test_editable_cmake_osx(generator):
 def editable_cmake_exe(generator):
     c = TestClient()
     if generator is not None:
-        c.save_home({"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)})
+        c.save_home(
+            {"global.conf": "tools.cmake.cmaketoolchain:generator={}".format(generator)}
+        )
 
     c.run("new cmake_exe -d name=dep -d version=0.1 -o=dep")
 
@@ -116,13 +201,15 @@ def editable_cmake_exe(generator):
         build_dep()
 
     def run_pkg(msg):
-        host_arch = c.get_default_host_profile().settings['arch']
-        cmd_release = environment_wrap_command(ConanFileMock(), f"conanrunenv-release-{host_arch}",
-                                               c.current_folder, "dep")
+        host_arch = c.get_default_host_profile().settings["arch"]
+        cmd_release = environment_wrap_command(
+            ConanFileMock(), f"conanrunenv-release-{host_arch}", c.current_folder, "dep"
+        )
         c.run_command(cmd_release)
         assert "{}: Hello World Release!".format(msg) in c.out
-        cmd_release = environment_wrap_command(ConanFileMock(), f"conanrunenv-debug-{host_arch}",
-                                               c.current_folder, "dep")
+        cmd_release = environment_wrap_command(
+            ConanFileMock(), f"conanrunenv-debug-{host_arch}", c.current_folder, "dep"
+        )
         c.run_command(cmd_release)
         assert "{}: Hello World Debug!".format(msg) in c.out
 
