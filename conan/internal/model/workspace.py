@@ -94,9 +94,24 @@ class Workspace:
         from conan.internal.loader import ConanFileLoader
         from conan.internal.cache.home_paths import HomePaths
         from conan.internal.conan_app import ConanFileHelpers, CmdWrapper
-        cmd_wrap = CmdWrapper(HomePaths(self._conan_api.home_folder).wrapper_path)
-        helpers = ConanFileHelpers(None, cmd_wrap, self._conan_api._api_helpers.global_conf,
-                                   cache=None, home_folder=self._conan_api.home_folder)
+        # Safely obtain home folder from the API, supporting different API implementations
+        home_folder = getattr(self._conan_api, "home_folder", None)
+        if home_folder is None:
+            # some implementations may expose a different attribute name
+            home_folder = getattr(self._conan_api, "home", None)
+        # Build wrapper path only if home_folder is available, otherwise pass None
+        wrapper_path = HomePaths(home_folder).wrapper_path if home_folder else None
+        cmd_wrap = CmdWrapper(wrapper_path)
+        # Safely obtain global_conf from possible locations without accessing private internals directly
+        global_conf = None
+        api_helpers = getattr(self._conan_api, "_api_helpers", None)
+        if api_helpers is not None:
+            global_conf = getattr(api_helpers, "global_conf", None)
+        else:
+            # Some API implementations may expose global_conf at top-level
+            global_conf = getattr(self._conan_api, "global_conf", None)
+        helpers = ConanFileHelpers(None, cmd_wrap, global_conf,
+                                   cache=None, home_folder=home_folder)
         loader = ConanFileLoader(pyreq_loader=None, conanfile_helpers=helpers)
         conanfile = loader.load_named(conanfile_path, name=None, version=None, user=None,
                                       channel=None, remotes=None, graph_lock=None)

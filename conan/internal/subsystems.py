@@ -41,14 +41,24 @@ def command_env_wrapper(conanfile, command, envfiles, envfiles_folder, scope="bu
         #  Is it necessary? Shouldn't be
         return command
 
-    active = conanfile.conf.get("tools.microsoft.bash:active", check_type=bool)
-    subsystem = conanfile.conf.get("tools.microsoft.bash:subsystem")
-    if platform.system() == "Windows" and (
-            (conanfile.win_bash and scope == "build") or
-            (conanfile.win_bash_run and scope == "run")):
+    # Only access configuration when needed (Windows + win_bash/win_bash_run).
+    # Avoid using conf.get with check_type to not exercise ConfigAPI internals
+    # that may be absent in some test-provided ConfigAPI implementations.
+    is_windows = platform.system() == "Windows"
+    need_win_bash = (conanfile.win_bash and scope == "build") or (conanfile.win_bash_run and scope == "run")
+
+    if is_windows and need_win_bash:
+        subsystem = conanfile.conf.get("tools.microsoft.bash:subsystem")
         if subsystem is None:
             raise ConanException("win_bash/win_bash_run defined but no "
                                  "tools.microsoft.bash:subsystem")
+        active_raw = conanfile.conf.get("tools.microsoft.bash:active")
+        if isinstance(active_raw, bool):
+            active = active_raw
+        elif isinstance(active_raw, str):
+            active = active_raw.lower() in ("1", "true", "yes", "on")
+        else:
+            active = bool(active_raw)
         if active:
             wrapped_cmd = environment_wrap_command(conanfile, envfiles, envfiles_folder, command)
         else:
@@ -147,7 +157,13 @@ def deduce_subsystem(conanfile, scope):
             raise ConanException("win_bash_run=True but tools.microsoft.bash:subsystem "
                                  "configuration not defined")
         return WINDOWS
-    active = conanfile.conf.get("tools.microsoft.bash:active", check_type=bool)
+    active_raw = conanfile.conf.get("tools.microsoft.bash:active")
+    if isinstance(active_raw, bool):
+        active = active_raw
+    elif isinstance(active_raw, str):
+        active = active_raw.lower() in ("1", "true", "yes", "on")
+    else:
+        active = bool(active_raw)
     if active:
         return subsystem
 

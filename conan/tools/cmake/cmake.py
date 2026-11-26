@@ -56,6 +56,33 @@ class CMake:
 
         self._cmake_program = conanfile.conf.get("tools.cmake:cmake_program", default="cmake")
 
+        # Try to detect if the configured cmake program is available in PATH and warn early
+        try:
+            # If an absolute path is provided, check it directly
+            if os.path.isabs(self._cmake_program):
+                exists = os.path.exists(self._cmake_program) and os.access(self._cmake_program, os.X_OK)
+            else:
+                exists = False
+                path_value = os.getenv("PATH", "")
+                for p in path_value.split(os.pathsep):
+                    candidate = os.path.join(p, self._cmake_program)
+                    if os.path.exists(candidate) and os.access(candidate, os.X_OK):
+                        exists = True
+                        break
+            if not exists:
+                # Emit a clear warning to help diagnosing missing external dependency
+                try:
+                    self._conanfile.output.warning(
+                        "CMake program '%s' not found in PATH. Invocations may fail if not installed." % self._cmake_program,
+                        warn_tag="tools.cmake"
+                    )
+                except Exception:
+                    # Be conservative: do not raise during initialization if output isn't available
+                    pass
+        except Exception:
+            # If any unexpected error happens while probing, do not break initialization
+            pass
+
     @property
     def is_multi_configuration(self):
         return is_multi_configuration(self._generator)
@@ -119,7 +146,7 @@ class CMake:
             arg_list.extend(cli_args)
 
         command = " ".join(arg_list)
-        with chdir(self, build_folder):
+        with chdir(self._conanfile, build_folder):
             self._conanfile.run(command, stdout=stdout, stderr=stderr)
 
     def _config_arg(self, build_type):
