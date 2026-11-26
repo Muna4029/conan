@@ -87,7 +87,7 @@ def default_cstd(conanfile, compiler=None, compiler_version=None):
     compiler = compiler or conanfile.settings.get_safe("compiler")
     compiler_version = compiler_version or conanfile.settings.get_safe("compiler.version")
     if not compiler or not compiler_version:
-        raise ConanException("Called default_cppstd with no compiler or no compiler.version")
+        raise ConanException("Called default_cstd with no compiler or no compiler.version")
     return default_cstd_(compiler, Version(compiler_version))
 
 def supported_cstd(conanfile, compiler=None, compiler_version=None):
@@ -135,8 +135,14 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
     :param comparator: Operator to use to compare the detected and the required cstd versions.
     :param gnu_extensions: GNU extension is required (e.g gnu17)
     """
-    if not str(cstd).isdigit():
-        raise ConanException("cstd parameter must be a number")
+    # Accept plain numeric cstd values (e.g. "17") and GNU-prefixed values (e.g. "gnu17")
+    cstd_str = str(cstd)
+    if cstd_str.startswith("gnu"):
+        numeric_part = cstd_str[len("gnu"):]
+    else:
+        numeric_part = cstd_str
+    if not numeric_part.isdigit():
+        raise ConanException("cstd parameter must be a number or 'gnu' followed by digits, e.g. '17' or 'gnu17'")
 
     def compare(lhs, rhs, comp):
         def extract_cpp_version(_cstd):

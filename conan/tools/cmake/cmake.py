@@ -15,10 +15,16 @@ def _cmake_cmd_line_args(conanfile, generator):
 
     # Arguments related to parallel
     njobs = build_jobs(conanfile)
-    if njobs and ("Makefiles" in generator or "Ninja" in generator) and "NMake" not in generator:
+    if (
+        njobs
+        and ("Makefiles" in generator or "Ninja" in generator)
+        and "NMake" not in generator
+    ):
         args.append("-j{}".format(njobs))
 
-    maxcpucount = conanfile.conf.get("tools.microsoft.msbuild:max_cpu_count", check_type=int)
+    maxcpucount = conanfile.conf.get(
+        "tools.microsoft.msbuild:max_cpu_count", check_type=int
+    )
     if maxcpucount is not None and "Visual Studio" in generator:
         args.append(f"/m:{maxcpucount}" if maxcpucount > 0 else "/m")
 
@@ -30,14 +36,14 @@ def _cmake_cmd_line_args(conanfile, generator):
             # -verbosity -> /verbosity
             # https://github.com/PowerShell/PowerShell/issues/17399
             if conanfile.conf.get("tools.env.virtualenv:powershell"):
-                verbosity = verbosity.replace('-', '/', 1)
+                verbosity = verbosity.replace("-", "/", 1)
             args.append(verbosity)
 
     return args
 
 
 class CMake:
-    """ CMake helper to use together with the CMakeToolchain feature """
+    """CMake helper to use together with the CMakeToolchain feature"""
 
     def __init__(self, conanfile):
         """
@@ -54,14 +60,106 @@ class CMake:
         self._toolchain_file = configure_preset.get("toolchainFile")
         self._cache_variables = configure_preset["cacheVariables"]
 
-        self._cmake_program = conanfile.conf.get("tools.cmake:cmake_program", default="cmake")
+        self._cmake_program = conanfile.conf.get(
+            "tools.cmake:cmake_program", default="cmake"
+        )
+
+        # Validate that the configured cmake program exists and optionally meets a minimum version
+        try:
+            import shutil
+            import subprocess
+            import re
+        except Exception:
+            shutil = None
+            subprocess = None
+            re = None
+
+        # Check presence on PATH when possible
+        if shutil is not None and shutil.which(self._cmake_program) is None:
+            raise ConanException(
+                "Required 'cmake' tool '{}' was not found in PATH. "
+                "Install CMake or set 'tools.cmake:cmake_program' in configuration to point to a valid binary.".format(
+                    self._cmake_program
+                )
+            )
+
+        # Support an optional configuration key for minimum required version
+        min_version = None
+        try:
+            # common possible keys, keep it flexible
+            min_version = conanfile.conf.get("tools.cmake:cmake_minimum_version")
+        except Exception:
+            min_version = None
+        if not min_version:
+            try:
+                min_version = conanfile.conf.get("tools.cmake:cmake_required_version")
+            except Exception:
+                min_version = None
+
+        if min_version and subprocess is not None and re is not None:
+            try:
+                output = subprocess.check_output(
+                    [self._cmake_program, "--version"],
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                )
+                m = re.search(
+                    r"cmake version\s*([0-9]+(?:\.[0-9]+){0,2})", output, re.IGNORECASE
+                )
+                if m:
+
+                    def _to_version_tuple(v):
+                        parts = v.split(".")
+                        parts = [int(p) for p in parts]
+                        # normalize to 3 components for safe comparison
+                        while len(parts) < 3:
+                            parts.append(0)
+                        return tuple(parts)
+
+                    found = _to_version_tuple(m.group(1))
+                    try:
+                        required = _to_version_tuple(str(min_version))
+                    except Exception:
+                        # if configured value is not numeric, skip strict check
+                        required = None
+
+                    if required is not None and found < required:
+                        raise ConanException(
+                            "Required 'cmake' tool version '{}' is not available (found '{}'). "
+                            "Install a newer CMake or set 'tools.cmake:cmake_program' to point to a compatible binary.".format(
+                                min_version, m.group(1)
+                            )
+                        )
+            except FileNotFoundError:
+                # Already handled by shutil.which above, but ensure clear error if subprocess failed
+                raise ConanException(
+                    "Required 'cmake' tool '{}' was not found or is not executable.".format(
+                        self._cmake_program
+                    )
+                )
+            except subprocess.CalledProcessError:
+                # Could not run `cmake --version`, skip strict version validation but warn the user
+                try:
+                    self._conanfile.output.warning(
+                        "Could not determine '{}' version by running '{} --version'. Skipping version check.".format(
+                            self._cmake_program, self._cmake_program
+                        )
+                    )
+                except Exception:
+                    pass
 
     @property
     def is_multi_configuration(self):
         return is_multi_configuration(self._generator)
 
-    def configure(self, variables=None, build_script_folder=None, cli_args=None,
-                  stdout=None, stderr=None):
+    def configure(
+        self,
+        variables=None,
+        build_script_folder=None,
+        cli_args=None,
+        stdout=None,
+        stderr=None,
+    ):
         """
 
         Reads the ``CMakePresets.json`` file generated by the
@@ -89,7 +187,9 @@ class CMake:
         self._conanfile.output.info("Running CMake.configure()")
         cmakelist_folder = self._conanfile.source_folder
         if build_script_folder:
-            cmakelist_folder = os.path.join(self._conanfile.source_folder, build_script_folder)
+            cmakelist_folder = os.path.join(
+                self._conanfile.source_folder, build_script_folder
+            )
         cmakelist_folder = cmakelist_folder.replace("\\", "/")
 
         build_folder = self._conanfile.build_folder
@@ -109,10 +209,14 @@ class CMake:
             variables = {}
         self._cache_variables.update(variables)
 
-        arg_list.extend(['-D{}="{}"'.format(k, v) for k, v in self._cache_variables.items()])
+        arg_list.extend(
+            ['-D{}="{}"'.format(k, v) for k, v in self._cache_variables.items()]
+        )
         arg_list.append('"{}"'.format(cmakelist_folder))
 
-        if not cli_args or ("--log-level" not in cli_args and "--loglevel" not in cli_args):
+        if not cli_args or (
+            "--log-level" not in cli_args and "--loglevel" not in cli_args
+        ):
             arg_list.extend(self._cmake_log_levels_args)
 
         if cli_args:
@@ -123,25 +227,38 @@ class CMake:
             self._conanfile.run(command, stdout=stdout, stderr=stderr)
 
     def _config_arg(self, build_type):
-        """ computes the '--config Release' arg when necessary, or warn or error if wrong
-        """
+        """computes the '--config Release' arg when necessary, or warn or error if wrong"""
         is_multi = is_multi_configuration(self._generator)
         if build_type and not is_multi:
-            self._conanfile.output.error("Don't specify 'build_type' at build time for "
-                                         "single-config build systems")
+            self._conanfile.output.error(
+                "Don't specify 'build_type' at build time for "
+                "single-config build systems"
+            )
         if not build_type:
             try:
-                build_type = self._conanfile.settings.build_type  # declared, but can be None
+                build_type = (
+                    self._conanfile.settings.build_type
+                )  # declared, but can be None
                 if not build_type:
                     raise ConanException("CMake: build_type setting should be defined.")
             except ConanException:
                 if is_multi:
                     raise ConanException("CMake: build_type setting should be defined.")
-        build_config = "--config {}".format(build_type) if build_type and is_multi else ""
+        build_config = (
+            "--config {}".format(build_type) if build_type and is_multi else ""
+        )
         return build_config
 
-    def _build(self, build_type=None, target=None, cli_args=None, build_tool_args=None, env="",
-               stdout=None, stderr=None):
+    def _build(
+        self,
+        build_type=None,
+        target=None,
+        cli_args=None,
+        build_tool_args=None,
+        env="",
+        stdout=None,
+        stderr=None,
+    ):
         bf = self._conanfile.build_folder
         build_config = self._config_arg(build_type)
 
@@ -160,15 +277,22 @@ class CMake:
         args.extend(self._compilation_verbosity_arg)
 
         if cmd_line_args:
-            args += ['--'] + cmd_line_args
+            args += ["--"] + cmd_line_args
 
         arg_list = ['"{}"'.format(bf), build_config, cmd_args_to_string(args)]
         arg_list = " ".join(filter(None, arg_list))
         command = "%s --build %s" % (self._cmake_program, arg_list)
         self._conanfile.run(command, env=env, stdout=stdout, stderr=stderr)
 
-    def build(self, build_type=None, target=None, cli_args=None, build_tool_args=None,
-              stdout=None, stderr=None):
+    def build(
+        self,
+        build_type=None,
+        target=None,
+        cli_args=None,
+        build_tool_args=None,
+        stdout=None,
+        stderr=None,
+    ):
         """
 
         :param build_type: Use it only to override the value defined in the ``settings.build_type``
@@ -186,9 +310,13 @@ class CMake:
         :param stderr: Use it to redirect stderr to this stream
         """
         self._conanfile.output.info("Running CMake.build()")
-        self._build(build_type, target, cli_args, build_tool_args, stdout=stdout, stderr=stderr)
+        self._build(
+            build_type, target, cli_args, build_tool_args, stdout=stdout, stderr=stderr
+        )
 
-    def install(self, build_type=None, component=None, cli_args=None, stdout=None, stderr=None):
+    def install(
+        self, build_type=None, component=None, cli_args=None, stdout=None, stderr=None
+    ):
         """
         Equivalent to running ``cmake --install``
 
@@ -214,12 +342,19 @@ class CMake:
             arg_list.extend(["--component", component])
         arg_list.extend(self._compilation_verbosity_arg)
 
-        deprecated_install_strip = self._conanfile.conf.get("tools.cmake:install_strip", check_type=bool)
+        deprecated_install_strip = self._conanfile.conf.get(
+            "tools.cmake:install_strip", check_type=bool
+        )
         if deprecated_install_strip:
-            self._conanfile.output.warning("The 'tools.cmake:install_strip' configuration is deprecated, "
-                                           "use 'tools.build:install_strip' instead.", warn_tag="deprecated")
+            self._conanfile.output.warning(
+                "The 'tools.cmake:install_strip' configuration is deprecated, "
+                "use 'tools.build:install_strip' instead.",
+                warn_tag="deprecated",
+            )
 
-        do_strip = self._conanfile.conf.get("tools.build:install_strip", check_type=bool)
+        do_strip = self._conanfile.conf.get(
+            "tools.build:install_strip", check_type=bool
+        )
         if do_strip or deprecated_install_strip:
             arg_list.append("--strip")
 
@@ -232,8 +367,16 @@ class CMake:
         command = "%s %s" % (self._cmake_program, arg_list)
         self._conanfile.run(command, stdout=stdout, stderr=stderr)
 
-    def test(self, build_type=None, target=None, cli_args=None, build_tool_args=None, env="",
-             stdout=None, stderr=None):
+    def test(
+        self,
+        build_type=None,
+        target=None,
+        cli_args=None,
+        build_tool_args=None,
+        env="",
+        stdout=None,
+        stderr=None,
+    ):
         """
         Equivalent to running cmake --build . --target=RUN_TESTS.
 
@@ -258,8 +401,15 @@ class CMake:
         # CTest behavior controlled by CTEST_ env-vars should be directly defined in [buildenv]
         # The default for ``test()`` is both the buildenv and the runenv
         env = ["conanbuild", "conanrun"] if env == "" else env
-        self._build(build_type=build_type, target=target, cli_args=cli_args,
-                    build_tool_args=build_tool_args, env=env, stdout=stdout, stderr=stderr)
+        self._build(
+            build_type=build_type,
+            target=target,
+            cli_args=cli_args,
+            build_tool_args=build_tool_args,
+            env=env,
+            stdout=stdout,
+            stderr=stderr,
+        )
 
     def ctest(self, cli_args=None, env="", stdout=None, stderr=None):
         """
@@ -282,7 +432,9 @@ class CMake:
         if njobs:
             arg_list.append(f"--parallel {njobs}")
 
-        verbosity = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
+        verbosity = self._conanfile.conf.get(
+            "tools.build:verbosity", choices=("quiet", "verbose")
+        )
         if verbosity:
             arg_list.append(f"--{verbosity}")
 
@@ -299,8 +451,9 @@ class CMake:
         Controls build tool verbosity, that is, those controlled by -DCMAKE_VERBOSE_MAKEFILE
         See https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-build-v
         """
-        verbosity = self._conanfile.conf.get("tools.compilation:verbosity",
-                                             choices=("quiet", "verbose"))
+        verbosity = self._conanfile.conf.get(
+            "tools.compilation:verbosity", choices=("quiet", "verbose")
+        )
         return ["--verbose"] if verbosity == "verbose" else []
 
     @property
@@ -310,7 +463,9 @@ class CMake:
         See https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-log-level
         :return:
         """
-        log_level = self._conanfile.conf.get("tools.build:verbosity", choices=("quiet", "verbose"))
+        log_level = self._conanfile.conf.get(
+            "tools.build:verbosity", choices=("quiet", "verbose")
+        )
         if log_level == "quiet":
             log_level = "error"
         return ["--loglevel=" + log_level.upper()] if log_level is not None else []

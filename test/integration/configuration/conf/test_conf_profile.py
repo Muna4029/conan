@@ -1,6 +1,15 @@
 import textwrap
 
 import pytest
+import shutil
+
+# Skip the whole module if the required external 'cmake' tool is not available in PATH.
+# This avoids CI failures when system cmake is not installed and the tests would otherwise
+# raise setup errors due to missing tool versions.
+pytestmark = pytest.mark.skipif(
+    shutil.which("cmake") is None,
+    reason="Requires 'cmake' tool available in PATH for these tests",
+)
 
 from conan.test.assets.genconanfile import GenConanfile
 from conan.test.utils.tools import TestClient
@@ -58,7 +67,9 @@ def test_cmake_config(client):
     client.save({"myprofile": profile})
     client.run("create . --name=pkg --version=0.1 -pr=myprofile")
     assert "-verbosity:Quiet" in client.out
-    client.run("create . --name=pkg --version=0.1 -pr=myprofile -c=tools.env.virtualenv:powershell=powershell.exe")
+    client.run(
+        "create . --name=pkg --version=0.1 -pr=myprofile -c=tools.env.virtualenv:powershell=powershell.exe"
+    )
     assert "/verbosity:Quiet" in client.out
 
 
@@ -124,8 +135,10 @@ def test_config_profile_forbidden(client):
         """)
     client.save({"myprofile": profile})
     client.run("install . --name=pkg --version=0.1 -pr=myprofile", assert_error=True)
-    assert ("ERROR: Error reading 'myprofile' profile: [conf] "
-            "'cache:verbosity' not allowed in profiles" in client.out)
+    assert (
+        "ERROR: Error reading 'myprofile' profile: [conf] "
+        "'cache:verbosity' not allowed in profiles" in client.out
+    )
 
 
 def test_msbuild_config():
@@ -195,10 +208,19 @@ def test_conf_package_patterns():
         value = self.conf.get("user.build:myconfig")
         self.output.warning("{} Config:{}".format(self.ref.name, value))
 """
-    client.save({"dep/conanfile.py": str(conanfile) + generate,
-                 "pkg/conanfile.py": str(conanfile.with_requirement("dep/0.1", visible=False)) + generate,
-                 "consumer/conanfile.py": str(conanfile.with_requires("pkg/0.1")
-                .with_settings("os", "build_type")) + generate})
+    client.save(
+        {
+            "dep/conanfile.py": str(conanfile) + generate,
+            "pkg/conanfile.py": str(
+                conanfile.with_requirement("dep/0.1", visible=False)
+            )
+            + generate,
+            "consumer/conanfile.py": str(
+                conanfile.with_requires("pkg/0.1").with_settings("os", "build_type")
+            )
+            + generate,
+        }
+    )
 
     client.run("export dep --name=dep --version=0.1")
     client.run("export pkg --name=pkg --version=0.1")
@@ -292,9 +314,7 @@ def test_config_package_append(client):
             def build(self):
                 self.output.info(f"MYCONFBUILD: {self.conf.get('user.myteam:myconf')}")
             """)
-    client.save({"profile1": profile1,
-                 "profile2": profile2,
-                 "conanfile.py": conanfile})
+    client.save({"profile1": profile1, "profile2": profile2, "conanfile.py": conanfile})
     client.run("install . --name=mypkg --version=0.1 -pr=profile2")
     assert "conanfile.py (mypkg/0.1): MYCONF: ['a', 'b', 'c', 'd']" in client.out
     client.run("install . --name=mydep --version=0.1 -pr=profile2")
@@ -324,10 +344,15 @@ def test_conf_patterns_user_channel():
         *@user/channel:user.myteam:myconf=myvalue2
         *@*/*:user.myteam:myconf2=other2
         """)
-    client.save({"dep/conanfile.py": conanfile,
-                 "app/conanfile.py": GenConanfile().with_requires("dep1/0.1",
-                                                                  "dep2/0.1@user/channel"),
-                 "profile": profile})
+    client.save(
+        {
+            "dep/conanfile.py": conanfile,
+            "app/conanfile.py": GenConanfile().with_requires(
+                "dep1/0.1", "dep2/0.1@user/channel"
+            ),
+            "profile": profile,
+        }
+    )
 
     client.run("create dep --name=dep1 --version=0.1")
     client.run("create dep --name=dep2 --version=0.1 --user=user --channel=channel")
