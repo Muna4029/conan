@@ -94,10 +94,11 @@ class Version:
         # better not make it public yet, keep it internal
         items = list(self._items[:index])
         try:
-            items.append(self._items[index]+1)
+            items.append(self._items[index] + 1)
         except TypeError:
-            raise ConanException(f"Cannot bump '{self._value} version index {index}, not an int")
-        items.extend([0] * (len(items) - index - 1))
+            raise ConanException(f"Cannot bump '{self._value}' version index {index}, not an int")
+        # Use the original length of self._items to determine how many trailing zeros are needed
+        items.extend([0] * (len(self._items) - index - 1))
         v = ".".join(str(i) for i in items)
         # prerelease and build are dropped while bumping digits
         return Version(v)
@@ -107,8 +108,9 @@ class Version:
         try:
             items.append(self._items[index] + 1)
         except TypeError:
-            raise ConanException(f"Cannot bump '{self._value} version index {index}, not an int")
-        items.extend([0] * (len(items) - index - 1))
+            raise ConanException(f"Cannot bump '{self._value}' version index {index}, not an int")
+        # Use the original length of self._items to determine how many trailing zeros are needed
+        items.extend([0] * (len(self._items) - index - 1))
         v = ".".join(str(i) for i in items)
         v += "-"  # Exclude prereleases
         return Version(v)

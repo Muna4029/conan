@@ -70,7 +70,7 @@ class TestBrokenDownload:
         manifest = os.path.join(path, "conanmanifest.txt")
         os.unlink(manifest)
         client.run("install --requires=hello/0.1", assert_error=True)
-        assert "ERROR: Binary package not found: 'hello/0.1" in client.out
+        assert "ERROR: Binary package not found: 'hello/0.1'" in client.out
 
     def test_remove_recipe_conanmanifest(self, setup):
         """
@@ -83,7 +83,7 @@ class TestBrokenDownload:
         manifest = os.path.join(path, "conanmanifest.txt")
         os.unlink(manifest)
         client.run("install --requires=hello/0.1", assert_error=True)
-        assert "Recipe not found: 'hello/0.1" in client.out
+        assert "Recipe not found: 'hello/0.1'" in client.out
 
 
 def test_client_retries():
@@ -146,7 +146,7 @@ def test_forbidden_blocked_conanmanifest():
         def get(self, url, **kwargs):
             if "conanmanifest.txt" in url:
                 r = Response()
-                r._content = "Forbidden because of security!!!"
+                r._content = b"Forbidden because of security!!!"
                 r.status_code = 403
                 return r
             else:
@@ -181,7 +181,7 @@ def test_forbidden_blocked_package_conanmanifest():
         def get(self, url, **kwargs):
             if "packages/" in url and "conanmanifest.txt" in url:
                 r = Response()
-                r._content = "Forbidden because of security!!!"
+                r._content = b"Forbidden because of security!!!"
                 r.status_code = 403
                 return r
             else:

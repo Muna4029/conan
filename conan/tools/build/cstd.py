@@ -55,7 +55,7 @@ def valid_min_cstd(conanfile, cstd, gnu_extensions=False):
     """
     try:
         check_min_cstd(conanfile, cstd, gnu_extensions)
-    except ConanInvalidConfiguration:
+    except (ConanInvalidConfiguration, ConanException):
         return False
     return True
 
@@ -70,7 +70,7 @@ def valid_max_cstd(conanfile, cstd, gnu_extensions=False):
     """
     try:
         check_max_cstd(conanfile, cstd, gnu_extensions)
-    except ConanInvalidConfiguration:
+    except (ConanInvalidConfiguration, ConanException):
         return False
     return True
 
@@ -135,8 +135,14 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
     :param comparator: Operator to use to compare the detected and the required cstd versions.
     :param gnu_extensions: GNU extension is required (e.g gnu17)
     """
-    if not str(cstd).isdigit():
-        raise ConanException("cstd parameter must be a number")
+    # Accept plain digits (e.g. "17") or GNU-prefixed (e.g. "gnu17")
+    cstd_str = str(cstd)
+    if cstd_str.startswith("gnu"):
+        if not cstd_str[3:].isdigit():
+            raise ConanException("cstd parameter must be a number")
+    else:
+        if not cstd_str.isdigit():
+            raise ConanException("cstd parameter must be a number")
 
     def compare(lhs, rhs, comp):
         def extract_cpp_version(_cstd):
@@ -151,9 +157,12 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
 
     current_cstd = conanfile.settings.get_safe("compiler.cstd")
     if current_cstd is None:
-        raise ConanInvalidConfiguration("The compiler.cstd is not defined for this configuration")
+        # Try to detect the compiler default cstd as a fallback (per docstring behaviour)
+        current_cstd = default_cstd(conanfile)
+        if current_cstd is None:
+            raise ConanInvalidConfiguration("The compiler.cstd is not defined for this configuration and no default could be detected")
 
-    if gnu_extensions and "gnu" not in current_cstd:
+    if gnu_extensions and "gnu" not in str(current_cstd):
         raise ConanInvalidConfiguration("The cstd GNU extension is required")
 
     if not compare(current_cstd, cstd, comparator):
