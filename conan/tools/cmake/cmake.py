@@ -95,6 +95,11 @@ class CMake:
         build_folder = self._conanfile.build_folder
         mkdir(self._conanfile, build_folder)
 
+        # Ensure the configured cmake program is available before attempting to run it
+        import shutil
+        if not shutil.which(self._cmake_program):
+            raise ConanException("Required 'cmake' tool version 'Any' is not available")
+
         arg_list = [self._cmake_program]
         if self._generator:
             arg_list.append('-G "{}"'.format(self._generator))
@@ -144,6 +149,11 @@ class CMake:
                stdout=None, stderr=None):
         bf = self._conanfile.build_folder
         build_config = self._config_arg(build_type)
+
+        # Ensure the configured cmake program is available before attempting to run it
+        import shutil
+        if not shutil.which(self._cmake_program):
+            raise ConanException("Required 'cmake' tool version 'Any' is not available")
 
         args = []
         if target is not None:
@@ -206,6 +216,11 @@ class CMake:
         mkdir(self._conanfile, self._conanfile.package_folder)
 
         build_config = self._config_arg(build_type)
+
+        # Ensure the configured cmake program is available before attempting to run it
+        import shutil
+        if not shutil.which(self._cmake_program):
+            raise ConanException("Required 'cmake' tool version 'Any' is not available")
 
         pkg_folder = '"{}"'.format(self._conanfile.package_folder.replace("\\", "/"))
         build_folder = '"{}"'.format(self._conanfile.build_folder)
@@ -272,6 +287,11 @@ class CMake:
         """
         if self._conanfile.conf.get("tools.build:skip_test", check_type=bool):
             return
+
+        # Ensure the ctest executable is available before attempting to run it
+        import shutil
+        if not shutil.which("ctest"):
+            raise ConanException("Required 'ctest' tool is not available")
 
         arg_list = []
         bt = self._conanfile.settings.get_safe("build_type")

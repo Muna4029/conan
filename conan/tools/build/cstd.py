@@ -135,15 +135,28 @@ def _check_cstd(conanfile, cstd, comparator, gnu_extensions):
     :param comparator: Operator to use to compare the detected and the required cstd versions.
     :param gnu_extensions: GNU extension is required (e.g gnu17)
     """
-    if not str(cstd).isdigit():
-        raise ConanException("cstd parameter must be a number")
+    s = str(cstd)
+    # Accept plain digits like '11' or gcc-style 'gnu17'
+    if s.startswith("gnu"):
+        ver = s[3:]
+    else:
+        ver = s
+    if not ver.isdigit():
+        raise ConanException("cstd parameter must be a number or start with 'gnu' followed by a number")
 
     def compare(lhs, rhs, comp):
         def extract_cpp_version(_cstd):
             return str(_cstd).replace("gnu", "")
 
         def add_millennium(_cstd):
-            return "19%s" % _cstd if _cstd == "99" else "20%s" % _cstd
+            # Normalize C standard version to a 4-digit year string for reliable comparison.
+            v = str(_cstd)
+            if v == "99":
+                return "19" + v
+            # single digit standards like '9' -> '2009'
+            if len(v) == 1:
+                return "200" + v
+            return "20" + v
 
         lhs = add_millennium(extract_cpp_version(lhs))
         rhs = add_millennium(extract_cpp_version(rhs))
