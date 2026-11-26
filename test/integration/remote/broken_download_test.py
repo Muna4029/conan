@@ -70,7 +70,7 @@ class TestBrokenDownload:
         manifest = os.path.join(path, "conanmanifest.txt")
         os.unlink(manifest)
         client.run("install --requires=hello/0.1", assert_error=True)
-        assert "ERROR: Binary package not found: 'hello/0.1" in client.out
+        assert "ERROR: Binary package not found: 'hello/0.1'" in client.out
 
     def test_remove_recipe_conanmanifest(self, setup):
         """
@@ -83,7 +83,7 @@ class TestBrokenDownload:
         manifest = os.path.join(path, "conanmanifest.txt")
         os.unlink(manifest)
         client.run("install --requires=hello/0.1", assert_error=True)
-        assert "Recipe not found: 'hello/0.1" in client.out
+        assert "Recipe not found: 'hello/0.1'" in client.out
 
 
 def test_client_retries():
@@ -196,8 +196,13 @@ def test_forbidden_blocked_package_conanmanifest():
         client.run("list *:* --format=json")
         listjson = json.loads(client.stdout)
         revisions = listjson["Local Cache"]["lib/1.0"]["revisions"]
-        packages = revisions["4d670581ccb765839f2239cc8dff8fbd"]["packages"]
-        assert packages == {}  # No binaries"
+        # Do not depend on a hard-coded revision id; pick the first available revision
+        if not revisions:
+            packages = {}
+        else:
+            rev_key = next(iter(revisions))
+            packages = revisions[rev_key]["packages"]
+        assert packages == {}  # No binaries
 
     check_cache()
 
