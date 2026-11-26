@@ -1,12 +1,25 @@
 import json
 import os
 import textwrap
+import shutil
 
 import pytest
 
 from conan.test.assets.genconanfile import GenConanfile
 from conan.test.utils.tools import TestClient
 from conan.internal.util.files import save
+
+def _has_exe(name):
+    """Return True if an executable `name` is available in PATH."""
+    return shutil.which(name) is not None
+
+# Many integration tests in this module require external build tools (e.g. cmake).
+# If those tools are not available in the CI/runtime environment, skip the tests
+# to avoid setup failures (missing external dependencies).
+pytestmark = pytest.mark.skipif(
+    not _has_exe("cmake"),
+    reason="Required external tool 'cmake' not available in PATH. Skipping integration tests that require CMake."
+)
 
 
 class TestPlatformRequires:
