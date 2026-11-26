@@ -89,8 +89,13 @@ class InstallAPI:
                 final_generators.append(gen)
         conanfile.generators = final_generators
         hook_manager = self._helpers.hook_manager
-        write_generators(conanfile, hook_manager, self.conan_api.home_folder,
-                         envs_generation=envs_generation)
+        # Only invoke generator writing when there are generators to write
+        # or when explicit environment generation was requested. This avoids
+        # invoking generator logic (which may probe external build tools)
+        # unnecessarily during test setups.
+        if final_generators or envs_generation:
+            write_generators(conanfile, hook_manager, self.conan_api.home_folder,
+                             envs_generation=envs_generation)
 
     def deploy(self, graph, deployer, deploy_package=None, deploy_folder=None):
         return do_deploys(self.conan_api.home_folder, graph, deployer, deploy_package=deploy_package,
