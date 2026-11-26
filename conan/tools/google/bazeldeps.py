@@ -2,7 +2,24 @@ import os
 import re
 import textwrap
 
-from jinja2 import Template, StrictUndefined
+try:
+    from jinja2 import Template, StrictUndefined
+except ImportError:
+    # During test collection jinja2 might not be installed in the environment.
+    # Provide a clear runtime error when Template is actually used instead of
+    # raising at import time, so tests that don't exercise jinja rendering can
+    # still be collected.
+    class _MissingJinja2Template:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError(
+                "Jinja2 is required for BazelDeps template rendering. "
+                "Install it (e.g. `pip install jinja2`) or add it to the test requirements."
+            )
+    class _MissingStrictUndefined:
+        pass
+
+    Template = _MissingJinja2Template
+    StrictUndefined = _MissingStrictUndefined
 
 from conan.internal import check_duplicated_generator
 from conan.internal.model.dependencies import get_transitive_requires
