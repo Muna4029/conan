@@ -51,6 +51,32 @@ class CMake:
 
         self._cmake_program = conanfile.conf.get("tools.cmake:cmake_program", default="cmake")
 
+        # Basic availability check for the configured cmake program to provide a clearer error
+        # message early in CI environments that don't have CMake installed.
+        def _is_executable_in_path(prog):
+            # Absolute path and executable
+            try:
+                if os.path.isabs(prog) and os.access(prog, os.X_OK):
+                    return True
+            except Exception:
+                # In case os.path.isabs or os.access behave unexpectedly, fall through to PATH checks
+                pass
+            # Search through PATH entries for an executable file. Consider common Windows extensions.
+            paths = os.environ.get("PATH", "").split(os.pathsep)
+            exts = ("", ".exe", ".bat", ".cmd")
+            for p in paths:
+                for ext in exts:
+                    candidate = os.path.join(p, prog + ext)
+                    if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                        return True
+            return False
+
+        if not _is_executable_in_path(self._cmake_program):
+            raise ConanException(
+                "Required 'cmake' tool '{}' is not available in PATH. "
+                "Please install CMake or set 'tools.cmake:cmake_program' to a valid path.".format(self._cmake_program)
+            )
+
     @property
     def is_multi_configuration(self):
         return is_multi_configuration(self._generator)
@@ -283,7 +309,32 @@ class CMake:
 
         arg_list.extend(cli_args or [])
         arg_list = " ".join(filter(None, arg_list))
-        command = f"ctest {arg_list}"
+
+        # Allow overriding the ctest program via configuration, default to 'ctest'
+        ctest_program = self._conanfile.conf.get("tools.cmake:ctest_program", default="ctest")
+
+        def _is_executable_in_path(prog):
+            try:
+                if os.path.isabs(prog) and os.access(prog, os.X_OK):
+                    return True
+            except Exception:
+                pass
+            paths = os.environ.get("PATH", "").split(os.pathsep)
+            exts = ("", ".exe", ".bat", ".cmd")
+            for p in paths:
+                for ext in exts:
+                    candidate = os.path.join(p, prog + ext)
+                    if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+                        return True
+            return False
+
+        if not _is_executable_in_path(ctest_program):
+            raise ConanException(
+                "Required 'ctest' tool '{}' is not available in PATH. "
+                "Please install CTest or set 'tools.cmake:ctest_program' to a valid path.".format(ctest_program)
+            )
+
+        command = f"{ctest_program} {arg_list}"
 
         env = ["conanbuild", "conanrun"] if env == "" else env
         self._conanfile.run(command, env=env, stdout=stdout, stderr=stderr)

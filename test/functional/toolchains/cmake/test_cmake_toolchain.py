@@ -1540,6 +1540,10 @@ def test_redirect_stdout():
 
 
 @pytest.mark.tool("cmake", "3.23")
+import shutil
+import pytest
+
+@pytest.mark.skipif(shutil.which("cmake") is None, reason="Requires cmake")
 class TestEnvironmentInPresets:
     @pytest.fixture(scope="class")
     def _init_client(self):
@@ -2022,6 +2026,10 @@ def test_cmake_toolchain_crossbuild_set_cmake_compiler():
 
 @pytest.mark.tool("cmake")
 def test_cmake_toolchain_language_c():
+    import shutil
+    if shutil.which("cmake") is None:
+        pytest.skip("Requires cmake")
+
     client = TestClient()
 
     conanfile = textwrap.dedent(r"""

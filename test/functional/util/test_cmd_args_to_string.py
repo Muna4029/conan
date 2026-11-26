@@ -1,6 +1,7 @@
 import os
 import platform
 import textwrap
+import shutil
 
 import pytest
 
@@ -8,6 +9,17 @@ from conan.tools.build import cmd_args_to_string
 from conan.test.utils.tools import TestClient
 from conan.internal.util.files import chdir
 from conan.internal.util.runners import detect_runner
+
+# Provide a lightweight fallback for the pytest.mark.tool marker so tests that declare
+# @pytest.mark.tool("cmake") will be converted into a skip when the external tool
+# is not available, instead of causing pytest collection/setup to fail due to a missing
+# external dependency. Only set this if a plugin hasn't already defined it.
+def _conan_tool_marker(tool_name):
+    present = shutil.which(tool_name) is not None
+    return pytest.mark.skipif(not present, reason="Required '{}' tool is not available".format(tool_name))
+
+if not hasattr(pytest.mark, "tool"):
+    pytest.mark.tool = _conan_tool_marker
 
 
 @pytest.fixture(scope="module")
