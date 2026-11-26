@@ -1,11 +1,19 @@
 import json
 import os
 import textwrap
+import shutil
 
 import pytest
 
 from conan.test.assets.genconanfile import GenConanfile
 from conan.test.utils.tools import TestClient
+
+# Skip these integration tests when the required system tools (notably cmake) are not
+# available in the test environment (CI often does not install system-level tools).
+pytestmark = pytest.mark.skipif(
+    shutil.which("cmake") is None,
+    reason="Skipping tests requiring external system tools (cmake) not available in this environment",
+)
 
 
 class TestPlatformRequires:
