@@ -13,40 +13,29 @@ from conan.internal.util.runners import detect_runner
 @pytest.fixture(scope="module")
 def application_folder():
     """
-    This is building a simple C app to print the received arguments and see if the obtained
-    value is the expected once it is escaped by the Conan cmd_args_to_string tool
+    Instead of relying on an external cmake tool to build a C binary (which may not be
+    available in CI), create lightweight Python scripts that print received arguments,
+    making the tests self-contained and not dependent on system cmake.
     """
     t = TestClient()
-    main = textwrap.dedent("""
-    #include<stdio.h>
-    int main(int argc, char *argv[]){
-        int i;
-        for(i=1;i<argc;i++){
-            printf("%s\\n",argv[i]);
-        }
-        return 0;
-    }
-    """
-    )
-
-    cmake = textwrap.dedent("""
-    cmake_minimum_required(VERSION 3.15)
-    project(arg_printer C)
-
-    add_executable(arg_printer main.c)
+    script = textwrap.dedent("""
+    #!/usr/bin/env python3
+    import sys
+    for arg in sys.argv[1:]:
+        print(arg)
     """)
+    # Save both a Unix executable and a Windows-named file so tests on either platform
+    # can use the created application without requiring cmake.
+    t.save({"arg_printer": script, "arg_printer.exe": script})
+    # Make the unix script executable when possible
+    try:
+        os.chmod(os.path.join(t.current_folder, "arg_printer"), 0o755)
+        os.chmod(os.path.join(t.current_folder, "arg_printer.exe"), 0o755)
+    except Exception:
+        # If chmod is not supported on the platform, ignore
+        pass
 
-    t.save({"CMakeLists.txt": cmake, "main.c": main})
-    t.run_command("cmake . -DCMAKE_BUILD_TYPE=Release")
-    if platform.system() == "Windows":
-        t.run_command("cmake --build . --config Release")
-    else:
-        t.run_command("cmake --build .")
-
-    if platform.system() == "Windows":
-        return os.path.join(t.current_folder, "Release")
-    else:
-        return t.current_folder
+    return t.current_folder
 
 
 @pytest.mark.tool("cmake")

@@ -3,6 +3,17 @@ import platform
 
 import pytest
 
+# In some CI environments system build tools like cmake or mingw64 are not installed.
+# The conan test-suite uses a pytest.mark.tool marker that enforces presence of these
+# tools. To avoid aborting the whole test collection in such environments, provide
+# a fallback no-op implementation for pytest.mark.tool when it's not available.
+if not hasattr(pytest.mark, "tool"):
+    def _tool(*args, **kwargs):
+        def _decorator(func):
+            return func
+        return _decorator
+    pytest.mark.tool = _tool
+
 from conan.test.utils.mocks import ConanFileMock
 from conan.tools.env.environment import environment_wrap_command
 from conan.test.utils.test_files import temp_folder
